@@ -106,9 +106,7 @@ output "private_endpoint_d" {
 
 locals {
   # Replace the hostname with the IP in the connection string
-  db_private_ip = data.oci_database_autonomous_database.starter_atp.private_endpoint_ip
-  db_hostname= data.oci_database_autonomous_database.starter_atp.private_endpoint
-  db_url_ip = replace(local.db_url, db_hostname, db_private_ip)
+  db_url_ip = replace(local.db_url, data.oci_database_autonomous_database.starter_atp.private_endpoint, data.oci_database_autonomous_database.starter_atp.private_endpoint_ip)
 } 
 
 output "db_url_ip" {
