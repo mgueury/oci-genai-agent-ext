@@ -111,7 +111,7 @@ locals {
 } 
 
 output "db_url_ip" {
-  value = db_url_ip
+  value = local.db_url_ip
 }
 
 # Connection - Resource
