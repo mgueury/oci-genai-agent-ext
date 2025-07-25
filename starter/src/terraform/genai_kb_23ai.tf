@@ -132,7 +132,8 @@ output "connection_r" {
   value = oci_database_tools_database_tools_connection.starter_dbtools_connection
 }
 
-# Connection - Data Sources
+# -- Connection - Data Sources-----------------------------------------------
+
 data "oci_database_tools_database_tools_connections" "starter_database_tools_connections" {
   compartment_id = local.lz_db_cmp_ocid
   display_name   = oci_database_tools_database_tools_connection.starter_dbtools_connection.display_name
@@ -145,7 +146,7 @@ output "connections_d" {
 
 # -- Knowledge Base ---------------------------------------------------------
 
-resource "oci_generative_ai_agent_knowledge_base" "starter_db23ai_kb" {
+resource "oci_generative_ai_agent_knowledge_base" "starter_agent_kb" {
 	compartment_id = local.lz_serv_cmp_ocid
     display_name = "${var.prefix}-db23ai-kb"
     description = "${var.prefix}-db23ai-kb"
