@@ -51,6 +51,7 @@ export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$AGENT_ENDPOINT_OCID' where key='agent_endpoint';
+  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key, value) values ('region','$TF_VAR_region');  
   commit;
 end;
 /
