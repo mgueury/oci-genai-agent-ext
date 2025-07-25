@@ -104,26 +104,23 @@ output "private_endpoint_d" {
 
 // -- Connection ------------------------------------------------------------
 
+locals {
+  # Replace the hostname with the IP in the connection string
+  db_private_ip = data.oci_database_autonomous_database.starter_atp.private_endpoint_ip
+  db_url_ip = replace(local.db_url, "/(host=.*?)/", "(host=${db_private_ip})")
+} 
+
 # Connection - Resource
 resource "oci_database_tools_database_tools_connection" "starter_dbtools_connection" {
   compartment_id    = local.lz_db_cmp_ocid
   display_name      = "${var.prefix}-dbtools-connection"
   type              = "ORACLE_DATABASE"
-  connection_string = local.db_url
-  user_name         = "admin"
+  connection_string = local.db_url_ip
+  user_name         = "apex_app"
   user_password {
     value_type = "SECRETID"
     # The user password to use exists as a secret in an OCI Vault
     secret_id  = oci_vault_secret.starter_secret_atp.id
-  }
-
-  # Optional
-  advanced_properties = {
-    "oracle.jdbc.loginTimeout": "0"
-  }
-  related_resource {
-    entity_type = "DATABASE"
-    identifier  = oci_database_autonomous_database.starter_atp.id
   }
   private_endpoint_id = oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint.id
 }

@@ -11,8 +11,7 @@ CREATE TABLE APEX_APP.docs (
     region varchar2(256),    
     application_name varchar2(256),
     author varchar2(256),
-    creation_date 
-    varchar2(256),    
+    creation_date varchar2(256),    
     modified varchar2(256),    
     other1 varchar2(1024),    
     other2 varchar2(1024),    
@@ -117,15 +116,26 @@ BEGIN
     OPEN v_results FOR
         select 
             doc_id as DOCID, 
+            content as BODY, 
+            vector_distance(embed, query_vec) AS SCORE,
             id as CHUNKID, 
             filename as TITLE, 
-            path as URL,
-            TO_CHAR(content) as BODY, 
-            vector_distance(embed, query_vec) AS SCORE
+            path as URL
         from docs_chunck
         order by score 
         fetch first top_k rows only;
 /*
+insert into DOCS_CHUNCK(
+       DOC_ID,
+       FILENAME,
+       PATH,
+       Content,
+       embed)
+values( 1, 'oracle', 'https://www.oracle.com', 'hello world', embedtext('hello_world'));
+
+
+
+
     -- Oracle Text score: 0 - 100.0 (higher is better)
     -- Vector distance : 
     -- 0 - 1.0 (closer is better)
@@ -157,4 +167,41 @@ BEGIN
 
 end RETRIEVAL_FUNC;
 /
+
+/*
+insert into DOCS_CHUNCK(
+       DOC_ID,
+       FILENAME,
+       PATH,
+       Content,
+       embed)
+values( 1, 'oracle', 'https://www.oracle.com', 'hello world', embedtext('hello_world'));
+
+-- Run & check the function
+-- Display the DOCID and SCORE
+DECLARE
+  v_results SYS_REFCURSOR;
+  v_docid VARCHAR2(100);
+  v_body VARCHAR2(4000);
+  v_score NUMBER;
+  p_query VARCHAR2(100) := 'hi';
+  top_k NUMBER := 10;
+BEGIN
+  v_results := RETRIEVAL_FUNC(p_query, top_k);
+ 
+  DBMS_OUTPUT.PUT_LINE('DOCID | SCORE');
+  DBMS_OUTPUT.PUT_LINE('--------|------');
+ 
+  LOOP
+    FETCH v_results INTO v_docid, v_body, v_score;
+    EXIT WHEN v_results%NOTFOUND;
+ 
+    DBMS_OUTPUT.PUT_LINE(v_docid || ' | ' || v_score);
+  END LOOP;
+ 
+  CLOSE v_results;
+END; 
+
+*/
+
 exit 
