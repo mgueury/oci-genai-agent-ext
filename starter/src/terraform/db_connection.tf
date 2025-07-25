@@ -1,5 +1,5 @@
 // -- Vault -----------------------------------------------------------------
-// Create only if necessary. The vault and key are precious resource that should be shared. 
+// Create only if necessary. The vault and key are precious resource that should be shared.
 
 variable "vault_ocid" {
   default = ""
@@ -10,7 +10,7 @@ variable "vault_key_ocid" {
 }
 
 resource "oci_kms_vault" "starter_vault" {
-  count = var.vault_ocid=="" ? 1 : 0  
+  count = var.vault_ocid=="" ? 1 : 0
   compartment_id = local.lz_app_cmp_ocid
   display_name   = "${var.prefix}-vault"
   vault_type     = "DEFAULT"
@@ -22,7 +22,7 @@ data "oci_kms_vault" "starter_vault" {
 
 resource "oci_kms_key" "starter_key" {
   #Required
-  count = var.vault_key_ocid=="" ? 1 : 0  
+  count = var.vault_key_ocid=="" ? 1 : 0
   compartment_id      = local.lz_app_cmp_ocid
   display_name        = "${var.prefix}-key"
   management_endpoint = data.oci_kms_vault.starter_vault.management_endpoint
@@ -35,8 +35,8 @@ resource "oci_kms_key" "starter_key" {
 }
 
 locals {
-  vault_ocid = var.vault_ocid=="" ? oci_kms_vault.starter_vault[0].id : var.vault_ocid 
-  vault_key_ocid = var.vault_key_ocid=="" ? oci_kms_key.starter_key[0].id : var.vault_key_ocid 
+  vault_ocid = var.vault_ocid=="" ? oci_kms_vault.starter_vault[0].id : var.vault_ocid
+  vault_key_ocid = var.vault_key_ocid=="" ? oci_kms_key.starter_key[0].id : var.vault_key_ocid
 }
 
 // -- Secret ----------------------------------------------------------------
@@ -107,7 +107,7 @@ output "private_endpoint_d" {
 locals {
   # Replace the hostname with the IP in the connection string (else KB creation will give Internal Server Error)
   db_url_ip = replace(local.db_url, data.oci_database_autonomous_database.starter_atp.private_endpoint, data.oci_database_autonomous_database.starter_atp.private_endpoint_ip)
-} 
+}
 
 output "db_url_ip" {
   value = local.db_url_ip
@@ -148,7 +148,7 @@ output "connections_d" {
 resource "oci_generative_ai_agent_knowledge_base" "starter_db23ai_kb" {
 	compartment_id = local.lz_serv_cmp_ocid
     display_name = "${var.prefix}-db23ai-kb"
-    description = "${var.prefix}-db23ai-kb"  
+    description = "${var.prefix}-db23ai-kb"
 	index_config {
 		index_config_type = "OCI_DATABASE_CONFIG"
 
