@@ -110,6 +110,10 @@ locals {
   db_url_ip = replace(local.db_url, "/(host=.*?)/", "(host=${db_private_ip})")
 } 
 
+output "db_url_ip" {
+  value = db_url_ip
+}
+
 # Connection - Resource
 resource "oci_database_tools_database_tools_connection" "starter_dbtools_connection" {
   compartment_id    = local.lz_db_cmp_ocid
