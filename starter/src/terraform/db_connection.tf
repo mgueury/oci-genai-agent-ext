@@ -105,7 +105,7 @@ output "private_endpoint_d" {
 // -- Connection ------------------------------------------------------------
 
 locals {
-  # Replace the hostname with the IP in the connection string
+  # Replace the hostname with the IP in the connection string (else KB creation will give Internal Server Error)
   db_url_ip = replace(local.db_url, data.oci_database_autonomous_database.starter_atp.private_endpoint, data.oci_database_autonomous_database.starter_atp.private_endpoint_ip)
 } 
 
@@ -146,8 +146,9 @@ output "connections_d" {
 # -- Knowledge Base ---------------------------------------------------------
 
 resource "oci_generative_ai_agent_knowledge_base" "starter_db23ai_kb" {
-	#Required
-	compartment_id  = local.lz_serv_cmp_ocid
+	compartment_id = local.lz_serv_cmp_ocid
+    display_name = "${var.prefix}-db23ai-kb"
+    description = "${var.prefix}-db23ai-kb"  
 	index_config {
 		index_config_type = "OCI_DATABASE_CONFIG"
 
