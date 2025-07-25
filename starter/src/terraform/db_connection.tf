@@ -143,21 +143,7 @@ output "connections_d" {
   value = data.oci_database_tools_database_tools_connections.starter_database_tools_connections
 }
 
-----
-
 # -- Knowledge Base ---------------------------------------------------------
-
-resource "oci_generative_ai_agent_knowledge_base" "starter_db23ai_kb" {
-  #Required
-  compartment_id                 = local.lz_serv_cmp_ocid
-  index_config  {
-    index_config_type = "DEFAULT_INDEX_CONFIG"
-    should_enable_hybrid_search   = "true"
-  }
-  display_name                  = "${var.prefix}-23ai-kb"
-  description                   = "${var.prefix}-23ai-kb"
-  freeform_tags = local.freeform_tags
-}
 
 resource "oci_generative_ai_agent_knowledge_base" "starter_db23ai_kb" {
 	#Required
