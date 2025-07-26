@@ -127,7 +127,7 @@ resource "oci_database_tools_database_tools_connection" "starter_dbtools_connect
     secret_id  = oci_vault_secret.starter_secret_atp.id
   }
   related_resource {
-    entity_type = "DATABASE"
+    entity_type = "AUTONOMOUSDATABASE"
     identifier  = oci_database_autonomous_database.starter_atp.id
   }  
   private_endpoint_id = oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint.id
