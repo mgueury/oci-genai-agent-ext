@@ -2,7 +2,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR/..
 
-cp -r oracle/* starter/.
+cp -r custom_chunck/* starter/.
 
 # sed -i 's/TF_VAR_prefix="psql"/TF_VAR_prefix="db23ai"/' starter/env.sh
 # sed -i 's/TF_VAR_db_user="postgres"/TF_VAR_db_user="admin"/' starter/env.sh
