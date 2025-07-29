@@ -8,6 +8,24 @@ from shared_oci import dictInt
 import shared_oci
 import shared_langchain
 
+# Langchain
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.documents import Document
+from langchain_community.vectorstores.oraclevs import OracleVS
+from langchain_community.embeddings import OCIGenAIEmbeddings
+from langchain_text_splitters import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores.utils import DistanceStrategy
+from typing import List, Tuple
+
+# Globals
+embeddings = OCIGenAIEmbeddings(
+    model_id="cohere.embed-multilingual-v3.0",
+    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    compartment_id=os.getenv("TF_VAR_compartment_ocid"),
+    auth_type="INSTANCE_PRINCIPAL"
+)
+
 # Connection
 dbConn = None
 
@@ -40,7 +58,47 @@ def createDoc(result):
             insertDocsChunck(result,c,pageNumber)
     shared_langchain.insertDocsChunck(dbConn,result)     
 
+# -- insertFile -----------------------------------------------------------------
+# See https://python.langchain.com/docs/integrations/document_loaders/
+
+def insertDoc( result, file_path, content_type ):
+    if file_path:
+        if content_type=="text/html":
+            loader = langchain_community.document_loaders.text.TextLoader( file_path=file_path )
+            docs = loader.load()
+            f = open(file_path=file_path, mode="r")
+            print(f.read()) 
+            pass
+        elif content_type=="application/pdf":
+            # loader = PyPDFLoader(
+            #     file_path,
+            #     mode="single",
+            #     pages_delimiter="\n-------THIS IS A CUSTOM END OF PAGE-------\n",
+            loader = PyPDFLoader(
+                file_path,
+                mode="page",
+            )
+            docs = loader.load()
+            # loader = PyPDFLoader(
+            #     file_path,
+            #     mode="single",
+            #     pages_delimiter="\n-------THIS IS A CUSTOM END OF PAGE-------\n",
+            # )
+            # docs = loader.load()
+            # print(docs[0].page_content[:5780])
+            shared_langchain.insertDocsChunck(dbConn,result)  
+        else:
+            log(f"<insertDoc> Error: unknown content_type: {content_type}")
+            return
+        print(len(docs))
+        print("-- medata --------------------")
+        pprint.pp(docs[0].metadata)
+        print("-- docs --------------------")
+        pprint.pp(docs)
+
+
 # -- insertDocs -----------------------------------------------------------------
+# Normal insert
 
 def insertDocs(result ):  
     global dbConn
@@ -90,43 +148,38 @@ def insertDocs(result ):
         if cur:
             cur.close()
 
+# -- insertDocsChunck -----------------------------------------------------------------
 
-# -- insertDocChunck -----------------------------------------------------------------
+def insertDocsChunck(dbConn, result):  
 
-def insertDocsChunck(result,c,pageNumber):  
-    global dbConn
-    cur = dbConn.cursor()
-    stmt = """
-        INSERT INTO docs_chunck (
-            doc_id, translation, cohere_embed, content, content_type,
-            filename, path, region, summary, page, char_start, char_end
-        )
-        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)
-    """
-    data = [
-        (dictInt(result,"docId"), 
-            dictString(result,"translation"),
-            array.array("f", c["cohereEmbed"]),        
-            c["chunck"],
-            dictString(result,"contentType"),
-            dictString(result,"filename"),
-            dictString(result,"path"),
-            os.getenv("TF_VAR_region"),
-            dictString(result,"summary"),
-            pageNumber,
-            c["char_start"],
-            c["char_end"]
-        )
-    ]
-    try:
-        cur.executemany(stmt, data)
-        log(f"<insertDocsChunck> Successfully inserted {cur.rowcount} records.")
-    except (Exception) as error:
-        log(f"<insertDocsChunck> Error inserting records: {error}")
-    finally:
-        # Close the cursor and connection
-        if cur:
-            cur.close()
+    log("<langchain insertDocsChunck>")
+    vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
+    for pageNumber in result["pages"]:
+        p = result["pages"][pageNumber]; 
+        log(f"<langchain insertDocsChunck> Page {pageNumber}")
+        docs = [
+            Document(
+                page_content=dictString(result,"content"),
+                metadata=
+                {
+                    "doc_id": dictInt(result,"docId"), 
+                    "translation": dictString(result,"translation"), 
+                    "content_type": dictString(result,"contentType"),
+                    "filename": dictString(result,"filename"), 
+                    "path": dictString(result,"path"), 
+                    "region": os.getenv("TF_VAR_region"), 
+                    "summary": dictString(result,"summary"), 
+                    "page": pageNumber, 
+                    "char_start": "0", 
+                    "char_end": "0" 
+                },
+            )
+        ]
+        docs_chunck = text_splitter.split_documents(docs)
+        print( docs_chunck )
+        vectorstore.add_documents( docs_chunck )
+    log("</langchain insertDocsChunck>")
 
 # -- deleteDoc -----------------------------------------------------------------
 
@@ -209,6 +262,3 @@ def getDocByPath( path ):
         return str(row[2])  
     log("<getDocByPath>Docs not found: " + path)
     return "-"  
-
-
-
