@@ -21,11 +21,6 @@ get_id_from_tfstate "AGENT_ENDPOINT_OCID" "starter_agent_endpoint"
 get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
 get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
 
-# Define empty value for DB23ai setup
-if [ "$AGENT_DATASOURCE_OCID" == "" ]; then
-  export AGENT_DATASOURCE_OCID="-"
-fi
-
 # echo "TENANCY_NAME=$TENANCY_NAME"
 echo
 echo "-- STREAMING CONNECTION --------------------------"

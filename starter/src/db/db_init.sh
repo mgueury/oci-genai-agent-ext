@@ -8,6 +8,17 @@ rm -Rf sqlcl
 unzip sqlcl-latest.zip
 sudo dnf install -y java-17 
 
+# Install SQL*Plus
+if [[ `arch` == "aarch64" ]]; then
+  sudo dnf install -y oracle-release-el8 
+  sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus
+else
+  wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-basic-23.8.0.25.04-1.el8.x86_64.rpm
+  wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-sqlplus-23.8.0.25.04-1.el8.x86_64.rpm
+  sudo dnf install -y oracle-instantclient-basic-23.8.0.25.04-1.el8.x86_64.rpm oracle-instantclient-sqlplus-23.8.0.25.04-1.el8.x86_64.rpm
+  mv *.rpm /tmp
+fi
+
 # Create the script to install the APEX Application
 cat > import_application.sql << EOF 
 create user if not exists apex_app identified by "$DB_PASSWORD" default tablespace USERS quota unlimited on USERS temporary tablespace TEMP; 

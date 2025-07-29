@@ -4,7 +4,9 @@ cd $SCRIPT_DIR/..
 
 cp -r custom_chunck/* starter/.
 
-# sed -i 's/TF_VAR_prefix="psql"/TF_VAR_prefix="db23ai"/' starter/env.sh
+sed -i '/export TF_VAR_agent_datasource_ocid=/d' starter/src/compute/app/env.sh
+
+# sed -i 's/export AGENT_DATASOURCE_OCID/TF_VAR_prefix="db23ai"/' starter/env.sh
 # sed -i 's/TF_VAR_db_user="postgres"/TF_VAR_db_user="admin"/' starter/env.sh
 # sed -i 's/POSTGRES/DB23ai/' starter/src/compute/app/requirements.txt
-# sed -i 's/psycopg2-binary/oracledb/' starter/src/compute/app/requirements.txt
+
