@@ -120,7 +120,8 @@ BEGIN
             vector_distance(embed, query_vec) AS SCORE,
             id as CHUNKID, 
             filename as TITLE, 
-            path as URL
+            path as URL,
+            1 as page_numbers
         from docs_chunck
         order by score 
         fetch first top_k rows only;

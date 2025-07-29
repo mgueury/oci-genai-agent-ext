@@ -106,3 +106,19 @@ LIMIT 10;
 Conclusion
 By following these steps, you should be able to migrate your OpenSearch solution to PostgreSQL with the pgvector plugin, adapting your data structures, ingestion pipeline, and search functionality accordingly.
 While PostgreSQL does not provide a built-in REST API like OpenSearch, you can easily create one using tools like PostgREST, Hasura, or by building a custom solution with Node.js and Express. Each method has its own advantages and flexibility, depending on your requirements.
+
+
+---
+Error DB23ai
+
+{"message":"User Error: The vector search function encountered a key error: internal_logon.\nPlease refer to the documentation on creating and using this function."}
+
+markitdown path-to-file.pdf > document.md
+
+(DESCRIPTION=(CONNECT_TIMEOUT=5)(TRANSPORT_CONNECT_TIMEOUT=3)(RETRY_COUNT=3)(ADDRESS_LIST=(LOAD_BALANCE=on)(ADDRESS=(PROTOCOL=TCP)(HOST=10.0.3.227)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=PDB1.agext4db.agext4vcn.oraclevcn.com)))
+
+(DESCRIPTION=(CONNECT_TIMEOUT=5)(TRANSPORT_CONNECT_TIMEOUT=3)(RETRY_COUNT=3)(ADDRESS_LIST=(LOAD_BALANCE=on)(ADDRESS=(PROTOCOL=TCP)(HOST=10.0.3.231)(PORT=1521)))(CONNECT_DATA=(SERVICE_NAME=gaed7f4ac794a14_agext4atptyn2_medium.adb.oraclecloud.com)))
+
+(description=(retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1521)(host=10.0.3.231))(connect_data=(service_name=gaed7f4ac794a14_agext4atptyn2_medium.adb.oraclecloud.com))
+
+(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=eeqapzhz.adb.eu-frankfurt-1.oraclecloud.com))(connect_data=(service_name=gaed7f4ac794a14_agext4atptyn2_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=no)))

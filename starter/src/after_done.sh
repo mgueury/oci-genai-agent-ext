@@ -23,7 +23,7 @@ get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet"
 
 # Define empty value for DB23ai setup
 if [ "$AGENT_DATASOURCE_OCID" == "" ]; then
-  export AGENT_DATASOURCE_OCID=""
+  export AGENT_DATASOURCE_OCID="-"
 fi
 
 # echo "TENANCY_NAME=$TENANCY_NAME"
