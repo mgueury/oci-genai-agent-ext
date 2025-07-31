@@ -3,11 +3,9 @@ import os
 import array
 import pprint
 import oracledb
-from shared_oci import log
-from shared_oci import dictString
-from shared_oci import dictInt
-import shared_oci
-import shared_langchain
+from shared import log
+from shared import dictString
+from shared import dictInt
 
 # Langchain
 from langchain_community.document_loaders import PyPDFLoader
@@ -30,6 +28,43 @@ embeddings = OCIGenAIEmbeddings(
 
 # Connection
 dbConn = None
+
+
+## -- log ------------------------------------------------------------------
+
+def log(s):
+   dt = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+   print( "["+dt+"] "+ str(s), flush=True)
+
+## -- log_in_file --------------------------------------------------------
+
+def log_in_file(prefix, value):
+    global UNIQUE_ID
+    # Create Log directory
+    if os.path.isdir(LOG_DIR) == False:
+        os.mkdir(LOG_DIR)     
+    filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
+    with open(filename, "w") as text_file:
+        text_file.write(value)
+    log("log file: " +filename )  
+
+## -- dictString ------------------------------------------------------------
+
+def dictString(d,key):
+   value = d.get(key)
+   if value is None:
+       return "-"
+   else:
+       return value  
+   
+## -- dictInt ------------------------------------------------------------
+
+def dictInt(d,key):
+   value = d.get(key)
+   if value is None:
+       return 0
+   else:
+       return int(float(value))     
 
 ## -- initDbConn --------------------------------------------------------------
 

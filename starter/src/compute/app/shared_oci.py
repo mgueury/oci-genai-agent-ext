@@ -38,7 +38,6 @@ def find_executable_path(prefix):
 ## --------------------------------------------------------------------------------
 
 # Constant
-LOG_DIR = '/tmp/app_log'
 UNIQUE_ID = "ID"
 
 # Signer
@@ -47,6 +46,7 @@ config = {'region': signer.region, 'tenancy': signer.tenancy_id}
 libreoffice_exe = find_executable_path("libreoffice")
 
 # Create Log directory
+LOG_DIR = '/tmp/app_log'
 if os.path.isdir(LOG_DIR) == False:
     os.mkdir(LOG_DIR) 
 
