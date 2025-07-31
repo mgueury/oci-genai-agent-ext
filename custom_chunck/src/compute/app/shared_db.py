@@ -1,6 +1,7 @@
 # Import
 import os
 import array
+import pprint
 import oracledb
 from shared_oci import log
 from shared_oci import dictString
@@ -10,6 +11,7 @@ import shared_langchain
 
 # Langchain
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders.text import TextLoader
 from langchain_core.documents import Document
 from langchain_community.vectorstores.oraclevs import OracleVS
 from langchain_community.embeddings import OCIGenAIEmbeddings
@@ -21,7 +23,7 @@ from typing import List, Tuple
 # Globals
 embeddings = OCIGenAIEmbeddings(
     model_id="cohere.embed-multilingual-v3.0",
-    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    service_endpoint="https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )
@@ -34,7 +36,7 @@ dbConn = None
 def initDbConn():
     global dbConn 
     # Thick driver...
-    oracledb.init_oracle_client()
+    # oracledb.init_oracle_client()
     dbConn = oracledb.connect( user=os.getenv('DB_USER'), password=os.getenv('DB_PASSWORD'), dsn=os.getenv('DB_URL'))
     dbConn.autocommit = True
 
@@ -64,11 +66,8 @@ def createDoc(result):
 def insertDoc( result, file_path, content_type ):
     if file_path:
         if content_type=="text/html":
-            loader = langchain_community.document_loaders.text.TextLoader( file_path=file_path )
+            loader = TextLoader( file_path=file_path )
             docs = loader.load()
-            f = open(file_path=file_path, mode="r")
-            print(f.read()) 
-            pass
         elif content_type=="application/pdf":
             # loader = PyPDFLoader(
             #     file_path,
@@ -76,7 +75,7 @@ def insertDoc( result, file_path, content_type ):
             #     pages_delimiter="\n-------THIS IS A CUSTOM END OF PAGE-------\n",
             loader = PyPDFLoader(
                 file_path,
-                mode="page",
+                mode="page"
             )
             docs = loader.load()
             # loader = PyPDFLoader(
@@ -86,15 +85,14 @@ def insertDoc( result, file_path, content_type ):
             # )
             # docs = loader.load()
             # print(docs[0].page_content[:5780])
-            shared_langchain.insertDocsChunck(dbConn,result)  
         else:
             log(f"<insertDoc> Error: unknown content_type: {content_type}")
             return
         print(len(docs))
         print("-- medata --------------------")
         pprint.pp(docs[0].metadata)
-        print("-- docs --------------------")
-        pprint.pp(docs)
+        insertDocs(result)
+        insertDocsChunck(result, docs)  
 
 
 # -- insertDocs -----------------------------------------------------------------
@@ -105,19 +103,19 @@ def insertDocs(result ):
     cur = dbConn.cursor()
     stmt = """
         INSERT INTO docs (
-            application_name, author, translation, summary_embed, content, content_type,
+            application_name, author, translation, content, content_type,
             creation_date, modified, other1, other2, other3, parsed_by,
             filename, path, publisher, region, summary, source_type
         )
-        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18)
-        RETURNING id INTO :19
+        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17)
+        RETURNING id INTO :18
     """
     id_var = cur.var(oracledb.NUMBER)
     data = (
             dictString(result,"applicationName"), 
             dictString(result,"author"),
             dictString(result,"translation"),
-            array.array("f", result["summaryEmbed"]),
+            # array.array("f", result["summaryEmbed"]),
             dictString(result,"content"),
             dictString(result,"contentType"),
             dictString(result,"creationDate"),
@@ -150,35 +148,24 @@ def insertDocs(result ):
 
 # -- insertDocsChunck -----------------------------------------------------------------
 
-def insertDocsChunck(dbConn, result):  
-
+def insertDocsChunck(result, docs):  
+    
+    global dbConn
     log("<langchain insertDocsChunck>")
+    print("-- docs --------------------")
+    pprint.pp(docs)
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
-    for pageNumber in result["pages"]:
-        p = result["pages"][pageNumber]; 
-        log(f"<langchain insertDocsChunck> Page {pageNumber}")
-        docs = [
-            Document(
-                page_content=dictString(result,"content"),
-                metadata=
-                {
-                    "doc_id": dictInt(result,"docId"), 
-                    "translation": dictString(result,"translation"), 
-                    "content_type": dictString(result,"contentType"),
-                    "filename": dictString(result,"filename"), 
-                    "path": dictString(result,"path"), 
-                    "region": os.getenv("TF_VAR_region"), 
-                    "summary": dictString(result,"summary"), 
-                    "page": pageNumber, 
-                    "char_start": "0", 
-                    "char_end": "0" 
-                },
-            )
-        ]
-        docs_chunck = text_splitter.split_documents(docs)
-        print( docs_chunck )
-        vectorstore.add_documents( docs_chunck )
+    for doc in docs:
+        doc.metadata["doc_id"] = dictString(result,"docId")
+        doc.metadata["path"] = dictString(result,"path")
+        doc.metadata["content_type"] = dictString(result,"contentType")
+    print("-- docs --------------------")
+    pprint.pp(docs)
+    docs_chunck = text_splitter.split_documents(docs)
+    print("-- docs_chunck --------------------")  
+    pprint.pp( docs_chunck )
+    vectorstore.add_documents( docs_chunck )
     log("</langchain insertDocsChunck>")
 
 # -- deleteDoc -----------------------------------------------------------------

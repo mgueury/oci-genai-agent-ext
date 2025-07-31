@@ -13,6 +13,7 @@ import urllib.parse
 import anonym_pdf
 from PIL import Image
 import subprocess
+import shared_db
 
 # Sitemap
 import base64
@@ -733,7 +734,6 @@ def sitemap(value):
         fileList = []
 
         os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)            
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
         folder = resourceName
@@ -773,7 +773,7 @@ def sitemap(value):
                         metadata=  {'customized_url_source': full_uri, 'gaas-metadata-filtering-field-folder': folder }    
 
                         # Upload to object storage as "site/"+pdf_path
-                        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
+                        upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
                         fileList.append( prefix+"/"+pdf_path )
 
     #                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
@@ -878,17 +878,17 @@ def decodeJson(value):
     log( "</decodeJson>")
     return result
 
-## -- get_metadata_from_resource_id --------------------------------------------------------
+## -- get_metadata_from_resource_id -----------------------------------------
 def get_metadata_from_resource_id( resourceId ):
     region = os.getenv("TF_VAR_region")
     customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
     return get_upload_metadata( customized_url_source )
 
-## -- has_non_latin1 ------------------------------------------------------------------
+## -- has_non_latin1 --------------------------------------------------------
 def has_non_latin1(input_string):
     return not all(ord(char) < 255 for char in input_string)
 
-## -- get_upload_metadata ------------------------------------------------------------------
+## -- get_upload_metadata ---------------------------------------------------
 
 def get_upload_metadata( customized_url_source ):
     log( "customized_url_source="+customized_url_source )
@@ -900,7 +900,17 @@ def get_upload_metadata( customized_url_source ):
     # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
     return {'customized_url_source': customized_url_source, 'gaas-metadata-filtering-field-folder': folder}
 
-## -- upload_agent_bucket ------------------------------------------------------------------
+
+## -- upload_file -----------------------------------------------------------
+
+def upload_file( value, namespace_name, bucket_name, object_name, file_path, content_type, metadata ):
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace_name, bucket_name=bucket_name, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
+        log( "Uploaded "+object_name, content_type )
+        shared_db.insertDoc( value, file_path, content_type )
+
+## -- upload_agent_bucket ---------------------------------------------------
 
 def upload_agent_bucket(value, content=None, path=None):
 
@@ -938,8 +948,7 @@ def upload_agent_bucket(value, content=None, path=None):
             with open(file_name, 'w') as f:
                 f.write(content)
 
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<upload_agent_bucket> Delete")
         try: 
@@ -995,12 +1004,10 @@ def libreoffice2pdf(value):
         else:
             raise subprocess.SubprocessError(stderr)
         metadata = get_metadata_from_resource_id( resourceId )
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         log( "pdf_file=" + pdf_file )
         log( "metadata=" + str(metadata) )
         log( "resourceGenAI=" + resourceGenAI )
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
-        log( "Uploaded PDF "+resourceGenAI )
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<libreoffice2pdf> Delete")
         try: 
@@ -1056,9 +1063,7 @@ def image2pdf(value, content=None, path=None):
         pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
         save_image_as_pdf( pdf_file, [image] )         
 
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
-        log( "Uploaded PDF "+resourceGenAI )
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<image2pdf> Delete")
         try: 
@@ -1090,9 +1095,7 @@ def webp2png(value, content=None, path=None):
         png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
         image.save(png_file, "png")        
 
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
-        log( "Uploaded PNG "+resourceGenAI )
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<webp2png> Delete")
         try: 
