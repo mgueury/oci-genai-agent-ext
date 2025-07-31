@@ -46,21 +46,7 @@ def closeDbConn():
     global dbConn 
     dbConn.close()
 
-# -- createDoc -----------------------------------------------------------------
-
-def createDoc(result):  
-    result["summaryEmbed"] = shared_oci.embedText(result["summary"])        
-    insertDocs( result )
-    for pageNumber in result["pages"]:
-        p = result["pages"][pageNumber]; 
-        log(f"<createDoc> Page {pageNumber}")
-        chuncks = shared_oci.cutInChunks( p )
-        for c in chuncks:
-            c["cohereEmbed"] = shared_oci.embedText(c["chunck"])
-            insertDocsChunck(result,c,pageNumber)
-    shared_langchain.insertDocsChunck(dbConn,result)     
-
-# -- insertFile -----------------------------------------------------------------
+# -- insertDoc -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
 
 def insertDoc( value, file_path, object_name ):
@@ -93,14 +79,15 @@ def insertDoc( value, file_path, object_name ):
         print(len(docs))
         print("-- medata --------------------")
         pprint.pp(docs[0].metadata)
-        insertDocs(value)
-        insertDocsChunck(value, docs)  
+        deleteDoc( value ) 
+        insertTableDocs(value)
+        insertTableDocsChunck(value, docs)  
 
 
-# -- insertDocs -----------------------------------------------------------------
+# -- insertTableDocs -----------------------------------------------------------------
 # Normal insert
 
-def insertDocs(result ):  
+def insertTableDocs( value ):  
     global dbConn
     cur = dbConn.cursor()
     stmt = """
@@ -114,24 +101,24 @@ def insertDocs(result ):
     """
     id_var = cur.var(oracledb.NUMBER)
     data = (
-            dictString(result,"applicationName"), 
-            dictString(result,"author"),
-            dictString(result,"translation"),
+            dictString(value,"applicationName"), 
+            dictString(value,"author"),
+            dictString(value,"translation"),
             # array.array("f", result["summaryEmbed"]),
-            dictString(result,"content"),
-            dictString(result,"contentType"),
-            dictString(result,"creationDate"),
-            dictString(result,"modified"),
-            dictString(result,"other1"),
-            dictString(result,"other2"),
-            dictString(result,"other3"),
-            dictString(result,"parsed_by"),
-            dictString(result,"filename"),
-            dictString(result,"path"),
-            dictString(result,"publisher"),
+            dictString(value,"content"),
+            dictString(value,"contentType"),
+            dictString(value,"creationDate"),
+            dictString(value,"modified"),
+            dictString(value,"other1"),
+            dictString(value,"other2"),
+            dictString(value,"other3"),
+            dictString(value,"parsed_by"),
+            dictString(value,"resourceName"), # filename
+            dictString(value,"customized_url_source"), # path
+            dictString(value,"publisher"),
             os.getenv("TF_VAR_region"),
-            dictString(result,"summary"),
-            dictString(result,"source_type"),
+            dictString(value,"summary"),
+            dictString(value,"source_type"),
             id_var
         )
     try:
@@ -139,7 +126,7 @@ def insertDocs(result ):
         # Get generated id
         id = id_var.getvalue()    
         log("<insertDocs> returning id=" + str(id[0]) )        
-        result["docId"] = id[0]
+        value["docId"] = id[0]
         log(f"<insertDocs> Successfully inserted {cur.rowcount} records.")
     except (Exception) as error:
         log(f"<insertDocs> Error inserting records: {error}")
@@ -148,9 +135,9 @@ def insertDocs(result ):
         if cur:
             cur.close()
 
-# -- insertDocsChunck -----------------------------------------------------------------
+# -- insertTableDocsChunck -----------------------------------------------------------------
 
-def insertDocsChunck(result, docs):  
+def insertTableDocsChunck(value, docs):  
     
     global dbConn
     log("<langchain insertDocsChunck>")
@@ -159,10 +146,10 @@ def insertDocsChunck(result, docs):
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
     for doc in docs:
-        doc.metadata["doc_id"] = dictString(result,"docId")
-        doc.metadata["file_name"] = result["data"]["resourceName"]
-        doc.metadata["path"] = result["customized_url_source"]
-        doc.metadata["content_type"] = dictString(result,"contentType")
+        doc.metadata["doc_id"] = dictString(value,"docId")
+        doc.metadata["file_name"] = value["data"]["resourceName"]
+        doc.metadata["path"] = value["customized_url_source"]
+        doc.metadata["content_type"] = dictString(value,"contentType")
     print("-- docs --------------------")
     pprint.pp(docs)
     docs_chunck = text_splitter.split_documents(docs)
@@ -173,13 +160,14 @@ def insertDocsChunck(result, docs):
 
 # -- deleteDoc -----------------------------------------------------------------
 
-def deleteDoc(path):  
+def deleteDoc( value ):  
     global dbConn
     cur = dbConn.cursor()
+    path = value["customized_url_source"]
     log(f"<deleteDoc> path={path}")
+
+    # Delete the document record
     try:
-        cur.execute("delete from docs_chunck where path=:1", (path,))
-        print(f"<deleteDoc> Successfully {cur.rowcount} docs_chunck deleted")
         cur.execute("delete from docs where path=:1", (path,))
         print(f"<deleteDoc> Successfully {cur.rowcount} docs deleted")
     except (Exception) as error:
@@ -188,8 +176,20 @@ def deleteDoc(path):
         # Close the cursor and connection
         if cur:
             cur.close()
-    shared_langchain.deleteDoc(dbConn,path)     
 
+    # Delete from the table directly..
+    cur = dbConn.cursor()
+    stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.path')=:1"
+    log(f"<langchain deleteDoc> path={path}")
+    try:
+        cur.execute(stmt, (path,))
+        print(f"<deleteDoc> langchain: Successfully {cur.rowcount} deleted")
+    except (Exception) as error:
+        print(f"<deleteDoc> langchain: Error deleting: {error}")
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()    
 
 # -- queryDb ----------------------------------------------------------------------
 

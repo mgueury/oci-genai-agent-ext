@@ -3,6 +3,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR/..
 
 cp -r custom_chunck/* starter/.
+rm starter/custom_chunck.sh
 
 sed -i '/export TF_VAR_agent_datasource_ocid=/d' starter/src/compute/app/env.sh
 
