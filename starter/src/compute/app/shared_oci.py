@@ -773,7 +773,7 @@ def sitemap(value):
                         metadata=  {'customized_url_source': full_uri, 'gaas-metadata-filtering-field-folder': folder }    
 
                         # Upload to object storage as "site/"+pdf_path
-                        upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, part_size=2 * MEBIBYTE, content_type='application/pdf', metadata=metadata)
+                        upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
                         fileList.append( prefix+"/"+pdf_path )
 
     #                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
@@ -907,8 +907,9 @@ def upload_file( value, namespace_name, bucket_name, object_name, file_path, con
         os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace_name, bucket_name=bucket_name, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
-        log( "Uploaded "+object_name, content_type )
-        shared_db.insertDoc( value, file_path, content_type )
+        log( "Uploaded "+object_name + " - " + content_type )
+        value["customized_url_source"] = metadata.get("customized_url_source")
+        shared_db.insertDoc( value, file_path, object_name )
 
 ## -- upload_agent_bucket ---------------------------------------------------
 
@@ -948,7 +949,7 @@ def upload_agent_bucket(value, content=None, path=None):
             with open(file_name, 'w') as f:
                 f.write(content)
 
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, part_size=2 * MEBIBYTE, content_type=contentType, metadata=metadata)
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, content_type=contentType, metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<upload_agent_bucket> Delete")
         try: 
@@ -964,16 +965,17 @@ def genai_agent_datasource_ingest():
     log( "<genai_agent_datasource_ingest>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
-    name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    log( "ingest_job="+name )
-    genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
-    genai_agent_client.create_data_ingestion_job(
-        create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
-		    data_source_id=datasourceId,
-		    compartment_id=compartmentId,
-		    display_name=name,
-		    description=name
-        ))
+    if datasourceId:
+        name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        log( "ingest_job="+name )
+        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
+        genai_agent_client.create_data_ingestion_job(
+            create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
+                data_source_id=datasourceId,
+                compartment_id=compartmentId,
+                display_name=name,
+                description=name
+            ))
     log( "</genai_agent_datasource_ingest>")             
 
 ## -- libreoffice2pdf ------------------------------------------------------------
@@ -1007,7 +1009,7 @@ def libreoffice2pdf(value):
         log( "pdf_file=" + pdf_file )
         log( "metadata=" + str(metadata) )
         log( "resourceGenAI=" + resourceGenAI )
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<libreoffice2pdf> Delete")
         try: 
@@ -1063,7 +1065,7 @@ def image2pdf(value, content=None, path=None):
         pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
         save_image_as_pdf( pdf_file, [image] )         
 
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf", metadata=metadata)
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<image2pdf> Delete")
         try: 
@@ -1095,7 +1097,7 @@ def webp2png(value, content=None, path=None):
         png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
         image.save(png_file, "png")        
 
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, content_type="image/png", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<webp2png> Delete")
         try: 

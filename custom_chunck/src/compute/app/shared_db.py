@@ -3,6 +3,7 @@ import os
 import array
 import pprint
 import oracledb
+import pathlib
 from shared import log
 from shared import dictString
 from shared import dictInt
@@ -29,42 +30,6 @@ embeddings = OCIGenAIEmbeddings(
 # Connection
 dbConn = None
 
-
-## -- log ------------------------------------------------------------------
-
-def log(s):
-   dt = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-   print( "["+dt+"] "+ str(s), flush=True)
-
-## -- log_in_file --------------------------------------------------------
-
-def log_in_file(prefix, value):
-    global UNIQUE_ID
-    # Create Log directory
-    if os.path.isdir(LOG_DIR) == False:
-        os.mkdir(LOG_DIR)     
-    filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
-    with open(filename, "w") as text_file:
-        text_file.write(value)
-    log("log file: " +filename )  
-
-## -- dictString ------------------------------------------------------------
-
-def dictString(d,key):
-   value = d.get(key)
-   if value is None:
-       return "-"
-   else:
-       return value  
-   
-## -- dictInt ------------------------------------------------------------
-
-def dictInt(d,key):
-   value = d.get(key)
-   if value is None:
-       return 0
-   else:
-       return int(float(value))     
 
 ## -- initDbConn --------------------------------------------------------------
 
@@ -98,12 +63,14 @@ def createDoc(result):
 # -- insertFile -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
 
-def insertDoc( result, file_path, content_type ):
+def insertDoc( value, file_path, object_name ):
     if file_path:
-        if content_type=="text/html":
+        extension = pathlib.Path(object_name.lower()).suffix
+
+        if extension in [ "txt", "md", "html", "htm" ]:
             loader = TextLoader( file_path=file_path )
             docs = loader.load()
-        elif content_type=="application/pdf":
+        elif extension in [ "pdf" ]:
             # loader = PyPDFLoader(
             #     file_path,
             #     mode="single",
@@ -121,13 +88,13 @@ def insertDoc( result, file_path, content_type ):
             # docs = loader.load()
             # print(docs[0].page_content[:5780])
         else:
-            log(f"<insertDoc> Error: unknown content_type: {content_type}")
+            log(f"<insertDoc> Error: unknown extension: {extension}")
             return
         print(len(docs))
         print("-- medata --------------------")
         pprint.pp(docs[0].metadata)
-        insertDocs(result)
-        insertDocsChunck(result, docs)  
+        insertDocs(value)
+        insertDocsChunck(value, docs)  
 
 
 # -- insertDocs -----------------------------------------------------------------
@@ -193,7 +160,8 @@ def insertDocsChunck(result, docs):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
     for doc in docs:
         doc.metadata["doc_id"] = dictString(result,"docId")
-        doc.metadata["path"] = dictString(result,"path")
+        doc.metadata["file_name"] = result["data"]["resourceName"]
+        doc.metadata["path"] = result["customized_url_source"]
         doc.metadata["content_type"] = dictString(result,"contentType")
     print("-- docs --------------------")
     pprint.pp(docs)

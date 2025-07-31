@@ -108,6 +108,60 @@ BEGIN
 END;
 */
 
+SELECT id, text, metadata, vector_distance(embedding, :embedding,	DOT) as distance FROM docs_langchain ORDER BY distance FETCH APPROX FIRST 10 ROWS ONLY
+
+create or replace FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
+    v_results SYS_REFCURSOR;
+    query_vec VECTOR;
+BEGIN
+    query_vec := to_vector(embedText( p_query ));
+    OPEN v_results FOR
+        select 
+            id as DOCID, 
+            text as BODY, 
+            vector_distance(embedding, query_vec) AS SCORE,
+            id as CHUNKID, 
+            'xxx'' as TITLE, 
+            'xxx'' as URL,
+            1 as page_numbers        
+        from docs_langchain
+        order by score 
+        fetch first top_k rows only;
+
+    -- Oracle Text score: 0 - 100.0 (higher is better)
+    -- Vector distance : 
+    -- 0 - 1.0 (closer is better)
+    OPEN v_results FOR
+        WITH text_search AS (
+            SELECT id, score(99)/100 as score FROM docs_chunck
+            WHERE CONTAINS(content, :P14_ABOUT, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+        ),
+        vector_search AS (
+
+            SELECT id, embed <=> :P14_VECTOR AS vector_distance
+            FROM docs_chunck
+        )
+        SELECT 
+            o.doc_id as docid, 
+            o.id as CHUNKID,
+            o.filename as TITLE, 
+            o.path as URL, 
+            TO_CHAR(content) as BODY
+            (0.3 * ts.score + 0.7 * (1 - vs.vector_distance)) AS score
+        FROM docs_chunck o
+        JOIN text_search ts ON o.id = ts.id
+        JOIN vector_search vs ON o.id = vs.id
+        ORDER BY score DESC
+        FETCH FIRST 10 ROWS ONLY;
+*/
+
+    RETURN v_results;
+
+end RETRIEVAL_FUNC;
+/
+
+
+/*
 create or replace FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     query_vec VECTOR;
