@@ -67,10 +67,10 @@ def insertDoc( value, file_path, object_name ):
     if file_path:
         extension = pathlib.Path(object_name.lower()).suffix
 
-        if extension in [ "txt", "md", "html", "htm" ]:
+        if extension in [ ".txt", ".md", ".html", ".htm" ]:
             loader = TextLoader( file_path=file_path )
             docs = loader.load()
-        elif extension in [ "pdf" ]:
+        elif extension in [ ".pdf" ]:
             # loader = PyPDFLoader(
             #     file_path,
             #     mode="single",

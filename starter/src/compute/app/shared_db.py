@@ -7,5 +7,5 @@ def closeDbConn():
     pass
 
 ## -- closeDbConn --------------------------------------------------------------
-def insertDoc( result, file_path ):
+def insertDoc( result, file_path, object_name ):
     pass

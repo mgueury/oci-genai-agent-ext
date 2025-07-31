@@ -108,8 +108,6 @@ BEGIN
 END;
 */
 
-SELECT id, text, metadata, vector_distance(embedding, :embedding,	DOT) as distance FROM docs_langchain ORDER BY distance FETCH APPROX FIRST 10 ROWS ONLY
-
 create or replace FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     query_vec VECTOR;
@@ -117,17 +115,17 @@ BEGIN
     query_vec := to_vector(embedText( p_query ));
     OPEN v_results FOR
         select 
-            id as DOCID, 
+            JSON_VALUE(metadata,'$.doc_id') as DOCID, 
             text as BODY, 
             vector_distance(embedding, query_vec) AS SCORE,
             id as CHUNKID, 
-            'xxx'' as TITLE, 
-            'xxx'' as URL,
-            1 as page_numbers        
+            JSON_VALUE(metadata,'$.file_name') as TITLE, 
+            JSON_VALUE(metadata,'$.path') as URL,
+            JSON_VALUE(metadata,'$.page_label') as page_numbers    
         from docs_langchain
         order by score 
         fetch first top_k rows only;
-
+/*
     -- Oracle Text score: 0 - 100.0 (higher is better)
     -- Vector distance : 
     -- 0 - 1.0 (closer is better)
