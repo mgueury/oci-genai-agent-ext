@@ -13,9 +13,10 @@ if [[ `arch` == "aarch64" ]]; then
   sudo dnf install -y oracle-release-el8 
   sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus
 else
-  wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-basic-23.8.0.25.04-1.el8.x86_64.rpm
-  wget https://download.oracle.com/otn_software/linux/instantclient/2380000/oracle-instantclient-sqlplus-23.8.0.25.04-1.el8.x86_64.rpm
-  sudo dnf install -y oracle-instantclient-basic-23.8.0.25.04-1.el8.x86_64.rpm oracle-instantclient-sqlplus-23.8.0.25.04-1.el8.x86_64.rpm
+  export INSTANT_VERSION=23.9.0.25.07-1
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
+  sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
   mv *.rpm /tmp
 fi
 
