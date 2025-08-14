@@ -7,9 +7,9 @@ rm starter/custom_chunck.sh
 
 sed -i '/export TF_VAR_agent_datasource_ocid=/d' starter/src/compute/app/env.sh
 
-echo > starter/compute/app/requirements.txt
-echo "# Docling" > starter/compute/app/requirements.txt
-echo docling > starter/compute/app/requirements.txt
+echo > starter/src/compute/app/requirements.txt
+echo "# Docling" > starter/src/compute/app/requirements.txt
+echo docling > starter/src/compute/app/requirements.txt
 
 # sed -i 's/export AGENT_DATASOURCE_OCID/TF_VAR_prefix="db23ai"/' starter/env.sh
 # sed -i 's/TF_VAR_db_user="postgres"/TF_VAR_db_user="admin"/' starter/env.sh
