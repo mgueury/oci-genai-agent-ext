@@ -11,13 +11,13 @@ function download()
 }
 
 # Python 
-sudo dnf install -y python39 python39-devel wget
+sudo dnf install -y python3.12 python3.12-pip python3-devel wget
 
 # Anonymize
 sudo dnf install -y poppler-utils mesa-libGL
 
-sudo pip3.9 install pip --upgrade
-pip3.9 install -r requirements.txt
+sudo pip3.12 install pip --upgrade
+pip3.12 install -r requirements.txt
 
 # PDFKIT
 wget -nv https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
