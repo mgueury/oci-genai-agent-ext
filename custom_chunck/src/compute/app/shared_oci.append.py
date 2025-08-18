@@ -44,12 +44,12 @@ def docling2md(value):
 ## -- run_crawler ------------------------------------------------------------
 def run_crawler(url):
     """
-    Executes the Scrapy spider and, upon completion, reads and
+    Executes the spider and, upon completion, reads and
     prints the contents of the generated links.csv file.
     """
-    # Define the command to run the Scrapy spider.
+    # Define the command to run the Spider.
     # The command assumes you are running this script from the
-    # root directory of the Scrapy project (where scrapy.cfg is located).
+    # root directory of the project (where scrapy.cfg is located).
     crawler_command = ['./crawler.sh', url]
     
     # Define the path to the output CSV file.
@@ -59,19 +59,13 @@ def run_crawler(url):
 
     print("--- Starting Crawler. Please wait... ---")   
     try:
-        # Run the Scrapy command. The 'check=True' argument will raise an
+        # Run the command. The 'check=True' argument will raise an
         # exception if the command fails, which is good for error handling.
         result = subprocess.run(crawler_command, check=True, capture_output=True, text=True)
         print("\n--- Crawler finished successfully. ---")
         
-        # Check if the CSV file was created by the spider.
-        if not os.path.exists(csv_file_path):
-            print(f"Error: The file '{csv_file_path}' was not created.")
-            print("Please check the spider's output for any errors.")
-            return
-
     except subprocess.CalledProcessError as e:
-        # Handle cases where the Scrapy command fails.
+        # Handle cases where the command fails.
         print(f"\n--- Error: Crawler command failed with return code {e.returncode} ---")
         print(f"Stdout:\n{e.stdout}")
         print(f"Stderr:\n{e.stderr}")
@@ -119,6 +113,11 @@ def crawler(value):
                         print(f"\n--- Reading data from '{csv_file_path}'... ---")
                        
                         # Open and read the CSV file.
+                        if not os.path.exists(csv_file_path):
+                            print(f"Error: The file '{csv_file_path}' was not created.")
+                            print("Please check the spider's output for any errors.")
+                            return
+
                         with open(csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
                             # Use DictReader for easy access to columns by their header.
                             reader = csv.DictReader(csvfile)            
