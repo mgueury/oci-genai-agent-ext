@@ -14,6 +14,8 @@ echo >> starter/src/compute/app/requirements.txt
 echo "# Docling" >> starter/src/compute/app/requirements.txt
 echo langchain_docling >> starter/src/compute/app/requirements.txt
 
+echo "http://www.gueury.com">> samples_files/gueury.crawler
+
 # sed -i 's/export AGENT_DATASOURCE_OCID/TF_VAR_prefix="db23ai"/' starter/env.sh
 # sed -i 's/TF_VAR_db_user="postgres"/TF_VAR_db_user="admin"/' starter/env.sh
 # sed -i 's/POSTGRES/DB23ai/' starter/src/compute/app/requirements.txt

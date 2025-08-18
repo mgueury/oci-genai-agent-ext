@@ -49,6 +49,10 @@ def eventDocument(value):
         # This will create a PDFs file in Object Storage with the content of each site (line) ".sitemap" 
         shared_oci.sitemap(value)
         return
+    elif resourceExtension in [".crawler"]:
+        # This will crawl all HTML pages of a website 
+        shared_oci.crawler(value)
+        return    
     elif resourceExtension in [".webp"]:
         # Convert webp to PNG
         shared_oci.webp2png(value)

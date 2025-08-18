@@ -1,7 +1,7 @@
-# Scrapy settings for my_scraper project
-BOT_NAME = 'my_scraper'
-SPIDER_MODULES = ['my_scraper.spiders']
-NEWSPIDER_MODULE = 'my_scraper.spiders'
+# Scrapy settings for scraper project
+BOT_NAME = 'scraper'
+SPIDER_MODULES = ['scraper.spiders']
+NEWSPIDER_MODULE = 'scraper.spiders'
 
 # Obey robots.txt rules - set to False for this example to ensure full crawling
 ROBOTSTXT_OBEY = True
@@ -18,3 +18,9 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 
 # Logging level
 LOG_LEVEL = 'INFO'
+
+# Configure the CSV feed export
+FEED_FORMAT = 'csv'
+FEED_URI = '/tmp/scraper/links.csv'
+# Define the order of the fields in the CSV file
+FEED_EXPORT_FIELDS = ['url', 'filename']
