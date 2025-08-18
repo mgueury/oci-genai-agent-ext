@@ -20,6 +20,7 @@ requests
 langchain
 langchain_community
 langchain_chroma
+langchain_docling 
 
 # Sitemap
 pdfkit
@@ -39,4 +40,4 @@ selenium
 # sitemap.xml
 xmltodict
 
-
+# Docling

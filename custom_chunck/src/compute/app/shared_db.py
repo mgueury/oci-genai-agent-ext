@@ -17,6 +17,12 @@ from langchain_community.embeddings import OCIGenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import DistanceStrategy
+
+# Docling
+from langchain_docling import DoclingLoader
+from langchain_docling.loader import ExportType
+from langchain_text_splitters import MarkdownHeaderTextSplitter
+
 from typing import List, Tuple
 
 # Globals
@@ -29,7 +35,6 @@ embeddings = OCIGenAIEmbeddings(
 
 # Connection
 dbConn = None
-
 
 ## -- initDbConn --------------------------------------------------------------
 
@@ -52,10 +57,12 @@ def closeDbConn():
 def insertDoc( value, file_path, object_name ):
     if file_path:
         extension = pathlib.Path(object_name.lower()).suffix
+        resourceName = value["data"]["resourceName"]
 
-        if extension in [ ".txt", ".md", ".html", ".htm" ]:
+        if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
+            return
+        elif extension in [ ".txt", ".json", ".md", ".html", ".htm" ]:
             loader = TextLoader( file_path=file_path )
-            docs = loader.load()
         elif extension in [ ".pdf" ]:
             # loader = PyPDFLoader(
             #     file_path,
@@ -65,7 +72,6 @@ def insertDoc( value, file_path, object_name ):
                 file_path,
                 mode="page"
             )
-            docs = loader.load()
             # loader = PyPDFLoader(
             #     file_path,
             #     mode="single",
@@ -76,13 +82,21 @@ def insertDoc( value, file_path, object_name ):
         else:
             log(f"<insertDoc> Error: unknown extension: {extension}")
             return
+        docs = loader.load()        
+
+        value["content"] = ""
+        for d in docs:
+            value["content"] = value["content"] + d.page_content
+
+        # XXX Make a summary...
+        # Embed it...
+
         print(len(docs))
         print("-- medata --------------------")
         pprint.pp(docs[0].metadata)
         deleteDoc( value ) 
         insertTableDocs(value)
-        insertTableDocsChunck(value, docs)  
-
+        insertTableDocsChunck(value, docs, extension)  
 
 # -- insertTableDocs -----------------------------------------------------------------
 # Normal insert
@@ -137,22 +151,34 @@ def insertTableDocs( value ):
 
 # -- insertTableDocsChunck -----------------------------------------------------------------
 
-def insertTableDocsChunck(value, docs):  
+def insertTableDocsChunck(value, docs, extension):  
     
     global dbConn
     log("<langchain insertDocsChunck>")
     print("-- docs --------------------")
     pprint.pp(docs)
+
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
-    for doc in docs:
-        doc.metadata["doc_id"] = dictString(value,"docId")
-        doc.metadata["file_name"] = value["data"]["resourceName"]
-        doc.metadata["path"] = value["customized_url_source"]
-        doc.metadata["content_type"] = dictString(value,"contentType")
-    print("-- docs --------------------")
-    pprint.pp(docs)
-    docs_chunck = text_splitter.split_documents(docs)
+
+    if extension==".md":
+        splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=[
+                ("#", "Header_1"),
+                ("##", "Header_2"),
+                ("###", "Header_3"),
+            ],
+        )
+        docs_chunck = [split for doc in docs for split in splitter.split_text(doc.page_content)]
+    else:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
+        docs_chunck = splitter.split_documents(docs)
+
+    for d in docs_chunck:
+        d.metadata["doc_id"] = dictString(value,"docId")
+        d.metadata["file_name"] = value["data"]["resourceName"]
+        d.metadata["path"] = value["customized_url_source"]
+        d.metadata["content_type"] = dictString(value,"contentType")
+
     print("-- docs_chunck --------------------")  
     pprint.pp( docs_chunck )
     vectorstore.add_documents( docs_chunck )
