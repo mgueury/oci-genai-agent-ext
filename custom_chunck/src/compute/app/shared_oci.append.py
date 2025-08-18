@@ -53,7 +53,7 @@ def run_crawler(url):
     crawler_command = ['./crawler.sh', url]
     
     # Define the path to the output CSV file.
-    output_dir = '/tmp/scraper'
+    output_dir = '/tmp/crawler'
     csv_filename = 'links.csv'
     csv_file_path = os.path.join(output_dir, csv_filename)
 
@@ -108,8 +108,8 @@ def crawler(value):
                         full_uri = line
                         run_crawler(full_uri)
                         # Check if the CSV file was created by the spider.
-                        CRAWLER_DIR='/tmp/scraper'
-                        csv_file_path='/tmp/scraper/links.csv'
+                        CRAWLER_DIR='/tmp/crawler'
+                        csv_file_path=CRAWLER_DIR+'/links.csv'
                         print(f"\n--- Reading data from '{csv_file_path}'... ---")
                        
                         # Open and read the CSV file.
@@ -125,6 +125,7 @@ def crawler(value):
                             for row in reader:
                                 url = row.get('url', 'N/A')
                                 filename = row.get('filename', 'N/A')
+                                filename = filename[len(CRAWLER_DIR)+1:]
                                 print("-" * 50)
                                 print(f"URL: {url} - Filename: {filename}")
                                 metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder }    

@@ -14,7 +14,7 @@ class TestSpider(scrapy.Spider):
     allowed_domains = [] # This is now determined dynamically.
 
     # The directory where the HTML files will be stored
-    output_dir = '/tmp/scraper'
+    output_dir = '/tmp/crawler'
 
     def __init__(self, url=None, *args, **kwargs):
         """

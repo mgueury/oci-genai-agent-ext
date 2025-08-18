@@ -21,6 +21,6 @@ LOG_LEVEL = 'INFO'
 
 # Configure the CSV feed export
 FEED_FORMAT = 'csv'
-FEED_URI = '/tmp/scraper/links.csv'
+FEED_URI = '/tmp/crawler/links.csv'
 # Define the order of the fields in the CSV file
 FEED_EXPORT_FIELDS = ['url', 'filename']
