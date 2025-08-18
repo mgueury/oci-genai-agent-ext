@@ -40,4 +40,5 @@ selenium
 # sitemap.xml
 xmltodict
 
-# Docling
+# Crawler
+scrapy
