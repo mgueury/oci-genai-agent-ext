@@ -3,6 +3,7 @@ import os
 import json 
 import requests
 import oci
+import csv
 import time
 from datetime import datetime
 from pathlib import Path
