@@ -41,8 +41,8 @@ def docling2md(value):
            log("Exception: Delete failed: " + resourceGenAI)   
     log("</docling2md>")
 
-## -- run_scraper ------------------------------------------------------------
-def run_scraper(url):
+## -- run_crawler ------------------------------------------------------------
+def run_crawler(url):
     """
     Executes the Scrapy spider and, upon completion, reads and
     prints the contents of the generated links.csv file.
@@ -50,19 +50,19 @@ def run_scraper(url):
     # Define the command to run the Scrapy spider.
     # The command assumes you are running this script from the
     # root directory of the Scrapy project (where scrapy.cfg is located).
-    scrapy_command = ['scrapy', 'crawl', 'test_spider', '-a', f'urrl={url}']
+    crawler_command = ['./crawler.sh', url]
     
     # Define the path to the output CSV file.
     output_dir = '/tmp/scraper'
     csv_filename = 'links.csv'
     csv_file_path = os.path.join(output_dir, csv_filename)
 
-    print("--- Starting Scraper. Please wait... ---")   
+    print("--- Starting Crawler. Please wait... ---")   
     try:
         # Run the Scrapy command. The 'check=True' argument will raise an
         # exception if the command fails, which is good for error handling.
-        result = subprocess.run(scrapy_command, check=True, capture_output=True, text=True)
-        print("\n--- Scraper finished successfully. ---")
+        result = subprocess.run(crawler_command, check=True, capture_output=True, text=True)
+        print("\n--- Crawler finished successfully. ---")
         
         # Check if the CSV file was created by the spider.
         if not os.path.exists(csv_file_path):
@@ -72,7 +72,7 @@ def run_scraper(url):
 
     except subprocess.CalledProcessError as e:
         # Handle cases where the Scrapy command fails.
-        print(f"\n--- Error: Scrapy command failed with return code {e.returncode} ---")
+        print(f"\n--- Error: Crawler command failed with return code {e.returncode} ---")
         print(f"Stdout:\n{e.stdout}")
         print(f"Stderr:\n{e.stderr}")
         raise
@@ -112,7 +112,7 @@ def crawler(value):
                             continue
 
                         full_uri = line
-                        run_scraper(full_uri)
+                        run_crawler(full_uri)
                         # Check if the CSV file was created by the spider.
                         CRAWLER_DIR='/tmp/scraper'
                         csv_file_path='/tmp/scraper/links.csv'
