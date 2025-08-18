@@ -3,9 +3,9 @@ import os, shutil
 import re
 from scraper.items import MyScraperItem
 
-class TestSpider(scrapy.Spider):
+class CrawlerSpider(scrapy.Spider):
     # Name of the spider
-    name = 'test_spider'
+    name = 'crawler_spider'
 
     # The URLs where the spider will start crawling
     # start_urls = ['http://www.gueury.com/']
@@ -20,7 +20,7 @@ class TestSpider(scrapy.Spider):
         """
         Initializes the spider with a URL from the command line.
         """
-        super(TestSpider, self).__init__(*args, **kwargs)
+        super(CrawlerSpider, self).__init__(*args, **kwargs)
         if url:
             # Set the start URL from the argument
             self.start_urls = [url]
@@ -64,6 +64,7 @@ class TestSpider(scrapy.Spider):
         item = MyScraperItem()
         item['url'] = response.url
         item['filename'] = filename
+        item['title'] = response.xpath('/html/head/title')
         yield item
 
         # Follow all links found on the page

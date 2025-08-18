@@ -2,4 +2,4 @@
 cd crawler
 echo "--- crawler.sh"
 export PATH=$PATH:~/.local/bin
-scrapy crawl test_spider -a url=$1
+scrapy crawl $1 -a url=$2
