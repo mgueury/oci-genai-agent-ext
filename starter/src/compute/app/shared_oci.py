@@ -1144,13 +1144,14 @@ def crawler(value):
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+    bucketDest = bucketName
+    # bucketDest = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     prefix=resourceName+".download"
 
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
         # Delete previous speech conversion 
-        delete_bucket_folder( namespace, bucketGenAI, prefix )
+        delete_bucket_folder( namespace, bucketDest, prefix )
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
@@ -1197,7 +1198,7 @@ def crawler(value):
                                 print(f"URL: {url} - Filename: {filename}")
                                 metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder } 
                                 value["data"]["resourceName"] = title   
-                                upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
+                                upload_file(value=value, namespace_name=namespace, bucket_name=bucketDest, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
                                 fileList.append(filename)
                         
                     except Exception as e:
@@ -1205,14 +1206,14 @@ def crawler(value):
                         log("<crawler>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the crawler
-            response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+            response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketDest, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
             for object_file in response.data.objects:
                 f = object_file.name
                 if f in fileList:
                     fileList.remove(f)
                 else: 
                     log( "<crawler>Deleting: " + f )
-                    os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
+                    os_client.delete_object( namespace_name=namespace, bucket_name=bucketDest, object_name=f )
                     log( "<crawler>Deleted: " + f )
 
         except FileNotFoundError as e:

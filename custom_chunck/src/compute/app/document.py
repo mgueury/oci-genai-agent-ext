@@ -38,7 +38,7 @@ def eventDocument(value):
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.image2pdf(value)
     #    return    
-    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"]:
+    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt", ".html"]:
         shared_oci.docling2md(value)
         return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:

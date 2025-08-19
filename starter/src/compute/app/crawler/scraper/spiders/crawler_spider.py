@@ -64,7 +64,11 @@ class CrawlerSpider(scrapy.Spider):
         item = MyScraperItem()
         item['url'] = response.url
         item['filename'] = filename
-        item['title'] = response.xpath('/html/head/title')
+        title = response.xpath('/html/head/title/text()')
+        if title:
+            item['title'] = str(title[0]).replace("\\n", " ").strip()
+        else:
+            item['title'] = url
         yield item
 
         # Follow all links found on the page
