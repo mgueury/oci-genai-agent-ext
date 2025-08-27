@@ -61,8 +61,13 @@ def insertDoc( value, file_path, object_name ):
 
         if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
             return
-        elif extension in [ ".txt", ".json", ".md", ".html", ".htm" ]:
+        elif extension in [ ".txt", ".json", ".md" ]:
             loader = TextLoader( file_path=file_path )
+        elif extension in [ ".html", ".htm" ]:
+            loader = DoclingLoader(
+                file_path=file_path,
+                export_type=ExportType.MARKDOWN
+            )            
         elif extension in [ ".pdf" ]:
             # loader = PyPDFLoader(
             #     file_path,
@@ -160,7 +165,7 @@ def insertTableDocsChunck(value, docs, extension):
 
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
 
-    if extension==".md":
+    if extension in [ ".md", ".html", ".htm" ]:
         splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[
                 ("#", "Header_1"),
