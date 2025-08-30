@@ -26,9 +26,10 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter
 from typing import List, Tuple
 
 # Globals
+region = os.getenv("TF_VAR_region")
 embeddings = OCIGenAIEmbeddings(
     model_id="cohere.embed-multilingual-v3.0",
-    service_endpoint="https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com",
+    service_endpoint="https://inference.generativeai."+region+".oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )
@@ -92,12 +93,17 @@ def insertDoc( value, file_path, object_name ):
         value["content"] = ""
         for d in docs:
             value["content"] = value["content"] + d.page_content
+        value["source_type"] = "OBJECT_STORAGE"
 
-        # XXX Make a summary...
-        # Embed it...
+        # Summary 
+        if len(value["content"])>250:
+            value["summary"] = shared.summarizeContent(value, value["content"])
+        else:    
+            value["summary"] = value["content"]            
+        value["summaryEmbed"] = embeddings.embed_query(value["summary"])
 
         print(len(docs))
-        print("-- medata --------------------")
+        print("-- doc[0].metadata --------------------")
         pprint.pp(docs[0].metadata)
         deleteDoc( value ) 
         insertTableDocs(value)
@@ -113,9 +119,9 @@ def insertTableDocs( value ):
         INSERT INTO docs (
             application_name, author, translation, content, content_type,
             creation_date, modified, other1, other2, other3, parsed_by,
-            filename, path, publisher, region, summary, source_type
+            filename, path, publisher, region, summary, summary_embed, source_type
         )
-        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17)
+        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18)
         RETURNING id INTO :18
     """
     id_var = cur.var(oracledb.NUMBER)
@@ -137,6 +143,7 @@ def insertTableDocs( value ):
             dictString(value,"publisher"),
             os.getenv("TF_VAR_region"),
             dictString(value,"summary"),
+            dictString(value,"summaryEmbed"),            
             dictString(value,"source_type"),
             id_var
         )
