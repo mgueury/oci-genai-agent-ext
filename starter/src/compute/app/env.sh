@@ -17,3 +17,7 @@ export TF_VAR_namespace="##TF_VAR_namespace##"
 
 # LibreOffice
 export INSTALL_LIBREOFFICE="##INSTALL_LIBREOFFICE##"
+
+# GenAI_MODEL
+export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
+export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"

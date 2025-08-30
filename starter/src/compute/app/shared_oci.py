@@ -159,32 +159,6 @@ def cutInChunks(text):
             appendChunck( result2, text, chunck_start, c["char_end"] )
         return result2
 
-## -- embedText -------------------------------------------------------------
-
-# Ideally all vectors should be created in one call
-def embedText(c):
-    global signer
-    log( "<embedText>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/embedText'
-    body = {
-        "inputs" : [ c ],
-        "servingMode" : {
-            "servingType" : "ON_DEMAND",
-            "modelId" : "cohere.embed-multilingual-v3.0"
-        },
-        "truncate" : "START",
-        "compartmentId" : compartmentId
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("embedText_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    log( "</embedText>")
-    return dictString(j,"embeddings")[0] 
-
 ## -- generateText ----------------------------------------------------------
 
 def generateText(prompt):
@@ -278,11 +252,11 @@ def llama_chat(messages):
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": "cohere.command-r-plus-08-2024",
+    #         "modelId": shared.LLAMA_MODEL,
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": "meta.llama-3.1-70b-instruct",
+            "modelId": shared.LLAMA_MODEL,
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
@@ -320,11 +294,11 @@ def cohere_chat(prompt, chatHistory, documents):
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": "cohere.command-r-plus-08-2024",
+    #         "modelId": shared.COHERE_MODEL,
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": "cohere.command-r-plus-08-2024",
+            "modelId": shared.COHERE_MODEL,
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
@@ -389,51 +363,7 @@ def invokeTika(value):
     log( "</invokeTika>")
     return result
 
-## -- summarizeContent ------------------------------------------------------
-
-def summarizeContent(value,content):
-    log( "<summarizeContent>")
-    global signer
-    compartmentId = value["data"]["compartmentId"]
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
-    # Avoid Limit of 4096 Tokens
-    if len(content) > 12000:
-        log( "Truncating to 12000 characters")
-        content = content[:12000]
-
-    body = { 
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": "cohere.command-r-plus-08-2024",
-            "servingType": "ON_DEMAND"
-        },
-        "chatRequest": {
-            "maxTokens": 4000,
-            "temperature": 0,
-            "preambleOverride": "",
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "message": "Summarise the following text in 200 words.\n\n"+content,
-            "apiFormat": "COHERE"
-        }
-    }
-    try: 
-        resp = requests.post(endpoint, json=body, auth=signer)
-        resp.raise_for_status()
-        log(resp)   
-        log_in_file("summarizeContent_resp",str(resp.content)) 
-        j = json.loads(resp.content)   
-        log( "</summarizeContent>")
-        return dictString(j,"summary") 
-    except requests.exceptions.HTTPError as err:
-        log("Exception: summarizeContent") 
-        log(err.response.status_code)
-        log(err.response.text)
-        return "-"
-    
+   
 ## -- vision --------------------------------------------------------------
 
 def vision(value):

@@ -9,6 +9,7 @@ if os.path.isdir(LOG_DIR) == False:
     os.mkdir(LOG_DIR) 
 
 COHERE_MODEL="cohere.command-a-03-2025"
+LLAMA_MODEL= "meta.llama-3.1-70b-instruct"
 
 ## -- log ------------------------------------------------------------------
 

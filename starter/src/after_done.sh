@@ -21,6 +21,13 @@ get_id_from_tfstate "AGENT_ENDPOINT_OCID" "starter_agent_endpoint"
 get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
 get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
 
+oci generative-ai model-collection list-models --compartment-id $TF_VAR_compartment_ocid --all > $TARGET_DIR/genai_models.json 
+export TF_VAR_genai_meta_model=$(jq -r '.data.items[]|select(.vendor=="meta" and (.capabilities|index("CHAT")))|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
+echo $TF_VAR_genai_meta_model
+
+export TF_VAR_genai_cohere_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("CHAT")))|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
+echo $TF_VAR_genai_cohere_model
+
 # echo "TENANCY_NAME=$TENANCY_NAME"
 echo
 echo "-- STREAMING CONNECTION --------------------------"
