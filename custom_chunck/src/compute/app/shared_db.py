@@ -4,6 +4,7 @@ import array
 import pprint
 import oracledb
 import pathlib
+import shared
 from shared import log
 from shared import dictString
 from shared import dictInt
@@ -100,6 +101,7 @@ def insertDoc( value, file_path, object_name ):
             value["summary"] = shared.summarizeContent(value, value["content"])
         else:    
             value["summary"] = value["content"]            
+        log("Summary="+value["summary"])
         value["summaryEmbed"] = embeddings.embed_query(value["summary"])
 
         print(len(docs))
@@ -115,14 +117,18 @@ def insertDoc( value, file_path, object_name ):
 def insertTableDocs( value ):  
     global dbConn
     cur = dbConn.cursor()
+    log("<insertTableDocs>")
+    # pprint.pp(value)    
+    # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
     stmt = """
         INSERT INTO docs (
-            application_name, author, translation, content, content_type,
+            application_name, author, translation, content_type,
             creation_date, modified, other1, other2, other3, parsed_by,
-            filename, path, publisher, region, summary, summary_embed, source_type
+            filename, path, publisher, region, summary_embed, source_type,
+            content, summary
         )
         VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18)
-        RETURNING id INTO :18
+        RETURNING id INTO :19
     """
     id_var = cur.var(oracledb.NUMBER)
     data = (
@@ -130,7 +136,6 @@ def insertTableDocs( value ):
             dictString(value,"author"),
             dictString(value,"translation"),
             # array.array("f", result["summaryEmbed"]),
-            dictString(value,"content"),
             dictString(value,"contentType"),
             dictString(value,"creationDate"),
             dictString(value,"modified"),
@@ -142,20 +147,21 @@ def insertTableDocs( value ):
             dictString(value,"customized_url_source"), # path
             dictString(value,"publisher"),
             os.getenv("TF_VAR_region"),
-            dictString(value,"summary"),
-            dictString(value,"summaryEmbed"),            
+            str(dictString(value,"summaryEmbed")),            
             dictString(value,"source_type"),
+            dictString(value,"content"),
+            dictString(value,"summary"),
             id_var
         )
     try:
         cur.execute(stmt, data)
         # Get generated id
         id = id_var.getvalue()    
-        log("<insertDocs> returning id=" + str(id[0]) )        
+        log("<insertTableDocs> returning id=" + str(id[0]) )        
         value["docId"] = id[0]
-        log(f"<insertDocs> Successfully inserted {cur.rowcount} records.")
+        log(f"<insertTableDocs> Successfully inserted {cur.rowcount} records.")
     except (Exception) as error:
-        log(f"<insertDocs> Error inserting records: {error}")
+        log(f"<insertTableDocs> Error inserting records: {error}")
     finally:
         # Close the cursor and connection
         if cur:

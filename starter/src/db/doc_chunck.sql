@@ -22,6 +22,15 @@ CREATE TABLE APEX_APP.docs (
 );
 alter table "APEX_APP"."DOCS" add constraint "DOCS_PK" primary key ( "ID" );
 
+CREATE TABLE APEX_APP."DOCS_LANGCHAIN" (
+    "ID" RAW(16) DEFAULT SYS_GUID(), 
+	"TEXT" CLOB, 
+	"METADATA" JSON, 
+	"EMBEDDING" VECTOR(1024), 
+	PRIMARY KEY ("ID")
+);
+create index APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
+
 -- DROP TABLE docs_chunck;
 /*
 CREATE TABLE APEX_APP.docs_chunck (
@@ -42,7 +51,7 @@ CREATE TABLE APEX_APP.docs_chunck (
 );
 alter table "APEX_APP"."DOCS_CHUNCK" add constraint "DOCS_CHUNCK_PK" primary key ( "ID" );
 alter table "APEX_APP"."DOCS_CHUNCK" add constraint "DOCS_FK" foreign key ( "DOC_ID" ) references "APEX_APP.DOCS" ( "ID" ) on delete cascade;
-create index APEX_APP.docs_index on APEX_APP.docs_chunck( content ) indextype is ctxsys.context;  
+create index APEX_APP.docs_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 */
 
 create or replace FUNCTION APEX_APP.embedText( c VARCHAR2 ) 
@@ -54,16 +63,18 @@ RETURN clob IS
     stop_vector number;
     region varchar2(128);
     compartment_ocid varchar2(128);    
+    embed_modelid varchar2(128);    
 BEGIN 
     select value into region from AI_AGENT_RAG_CONFIG where key='region';
     select value into compartment_ocid from AI_AGENT_RAG_CONFIG where key='compartment_ocid';    
+    select value into embed_modelid from AI_AGENT_RAG_CONFIG where key='embed_modelid';    
     resp := DBMS_CLOUD.send_request( 
         credential_name => 'OCI$RESOURCE_PRINCIPAL', 
         uri =>'https://inference.generativeai.'|| region || '.oci.oraclecloud.com/20231130/actions/embedText',
         method => 'POST', 
         body => UTL_RAW.cast_to_raw( JSON_OBJECT (
             'compartmentId' VALUE compartment_ocid,
-            'servingMode' VALUE JSON_OBJECT( 'modelId' VALUE 'cohere.embed-multilingual-v3.0', 
+            'servingMode' VALUE JSON_OBJECT( 'modelId' VALUE embed_modelid, 
                                              'servingType' VALUE 'ON_DEMAND' ),   
             'inputs' VALUE JSON_ARRAY( c ),
             'truncate' VALUE 'START'
@@ -93,6 +104,7 @@ BEGIN
             JSON_VALUE(metadata,'$.path') as URL,
             JSON_VALUE(metadata,'$.page_label') as page_numbers    
         from docs_langchain
+        -- where JSON_VALUE(metadata,'$.doc_id') in (select to_char(id) from docs order by vector_distance(summary_embed,  to_vector(embedText( 'what is jazz' ))) fetch first 3 rows only)
         order by score 
         fetch first top_k rows only;
 /*
@@ -101,30 +113,29 @@ BEGIN
     -- 0 - 1.0 (closer is better)
     OPEN v_results FOR
         WITH text_search AS (
-            SELECT id, score(99)/100 as score FROM docs_chunck
-            WHERE CONTAINS(content, :P14_ABOUT, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+            SELECT id, score(99)/100 as score FROM docs_langchain
+            WHERE CONTAINS(text, p_query, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
         ),
         vector_search AS (
 
-            SELECT id, embed <=> :P14_VECTOR AS vector_distance
-            FROM docs_chunck
+            SELECT id, vector_distance(embedding, to_vector(embedText( p_query ))) AS vector_distance
+            FROM docs_langchain
         )
         SELECT 
-            o.doc_id as docid, 
+            JSON_VALUE(metadata,'$.doc_id') as docid, 
+            text as BODY,
+            (0.3 * ts.score + 0.7 * (1 - vs.vector_distance)) AS score,
             o.id as CHUNKID,
-            o.filename as TITLE, 
-            o.path as URL, 
-            TO_CHAR(content) as BODY
-            (0.3 * ts.score + 0.7 * (1 - vs.vector_distance)) AS score
-        FROM docs_chunck o
+            JSON_VALUE(metadata,'$.file_name') as TITLE, 
+            JSON_VALUE(metadata,'$.path') as URL,
+            JSON_VALUE(metadata,'$.page_label') as page_numbers             
+        FROM docs_langchain o
         JOIN text_search ts ON o.id = ts.id
         JOIN vector_search vs ON o.id = vs.id
         ORDER BY score DESC
         FETCH FIRST 10 ROWS ONLY;
 */
-
     RETURN v_results;
-
 end RETRIEVAL_FUNC;
 /
 
@@ -139,28 +150,34 @@ values( 1, 'oracle', 'https://www.oracle.com', 'hello world', embedtext('hello_w
 
 -- Check the RETRIEVAL_FUNC function
 -- Display the DOCID and SCORE
+
 DECLARE
   v_results SYS_REFCURSOR;
   v_docid VARCHAR2(100);
   v_body VARCHAR2(4000);
   v_score NUMBER;
-  p_query VARCHAR2(100) := 'hi';
+  v_chunck_id VARCHAR2(4000);
+  v_title VARCHAR2(4000);
+  v_url VARCHAR2(4000);
+  v_page_numbers VARCHAR2(4000);
+  p_query VARCHAR2(100) := 'what is jazz';
   top_k NUMBER := 10;
 BEGIN
   v_results := RETRIEVAL_FUNC(p_query, top_k);
  
-  DBMS_OUTPUT.PUT_LINE('DOCID | SCORE');
-  DBMS_OUTPUT.PUT_LINE('--------|------');
+  DBMS_OUTPUT.PUT_LINE('DOCID   | SCORE  | URL');
+  DBMS_OUTPUT.PUT_LINE('--------|--------|--------');
  
   LOOP
-    FETCH v_results INTO v_docid, v_body, v_score;
+    FETCH v_results INTO v_docid, v_body, v_score, v_chunck_id, v_title, v_url, v_page_numbers;
     EXIT WHEN v_results%NOTFOUND;
  
-    DBMS_OUTPUT.PUT_LINE(v_docid || ' | ' || v_score);
+    DBMS_OUTPUT.PUT_LINE(v_docid || ' | ' || v_score || ' | ' || v_url);
   END LOOP;
  
   CLOSE v_results;
 END; 
+
 */
 
 exit 

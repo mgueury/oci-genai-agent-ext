@@ -2,22 +2,32 @@ import os
 import json
 import requests
 from datetime import datetime
+import oci
+
+# -- globals ----------------------------------------------------------------
+
+# OCI Signer
+signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+
 
 # Create Log directory
 LOG_DIR = '/tmp/app_log'
 if os.path.isdir(LOG_DIR) == False:
     os.mkdir(LOG_DIR) 
 
+UNIQUE_ID = "ID"
+
 COHERE_MODEL="cohere.command-a-03-2025"
 LLAMA_MODEL= "meta.llama-3.1-70b-instruct"
 
-## -- log ------------------------------------------------------------------
+## -- log -------------------------------------------------------------------
 
 def log(s):
    dt = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
    print( "["+dt+"] "+ str(s), flush=True)
 
-## -- log_in_file --------------------------------------------------------
+## -- log_in_file -----------------------------------------------------------
 
 def log_in_file(prefix, value):
     global UNIQUE_ID
@@ -85,7 +95,7 @@ def summarizeContent(value,content):
         log_in_file("summarizeContent_resp",str(resp.content)) 
         j = json.loads(resp.content)   
         log( "</summarizeContent>")
-        return dictString(j,"summary") 
+        return dictString(dictString(j,"chatResponse"),"text") 
     except requests.exceptions.HTTPError as err:
         log("Exception: summarizeContent") 
         log(err.response.status_code)

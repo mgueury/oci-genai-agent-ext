@@ -19,5 +19,6 @@ export TF_VAR_namespace="##TF_VAR_namespace##"
 export INSTALL_LIBREOFFICE="##INSTALL_LIBREOFFICE##"
 
 # GenAI_MODEL
-export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
 export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
+export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
+export TF_VAR_genai_cohere_embed="##TF_VAR_genai_cohere_embed##"

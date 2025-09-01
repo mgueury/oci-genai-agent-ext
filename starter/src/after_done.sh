@@ -28,6 +28,10 @@ echo $TF_VAR_genai_meta_model
 export TF_VAR_genai_cohere_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("CHAT")))|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
 echo $TF_VAR_genai_cohere_model
 
+export TF_VAR_genai_cohere_embed="cohere.embed-multilingual-v3.0"
+# export TF_VAR_genai_cohere_embed=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
+echo $TF_VAR_genai_cohere_embed
+
 # echo "TENANCY_NAME=$TENANCY_NAME"
 echo
 echo "-- STREAMING CONNECTION --------------------------"

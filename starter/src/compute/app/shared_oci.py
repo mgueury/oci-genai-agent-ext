@@ -24,6 +24,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+# Shared
+from shared import log
+from shared import log_in_file
+from shared import dictString
+from shared import dictInt
+from shared import LOG_DIR
+from shared import signer
+from shared import UNIQUE_ID
+
 ## -- find_executable_path --------------------------------------------------------
 
 def find_executable_path(prefix):
@@ -39,54 +48,7 @@ def find_executable_path(prefix):
 ## --------------------------------------------------------------------------------
 
 # Constant
-UNIQUE_ID = "ID"
-
-# Signer
-signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-config = {'region': signer.region, 'tenancy': signer.tenancy_id}
 libreoffice_exe = find_executable_path("libreoffice")
-
-# Create Log directory
-LOG_DIR = '/tmp/app_log'
-if os.path.isdir(LOG_DIR) == False:
-    os.mkdir(LOG_DIR) 
-
-## -- log ------------------------------------------------------------------
-
-def log(s):
-   dt = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-   print( "["+dt+"] "+ str(s), flush=True)
-
-## -- log_in_file --------------------------------------------------------
-
-def log_in_file(prefix, value):
-    global UNIQUE_ID
-    # Create Log directory
-    if os.path.isdir(LOG_DIR) == False:
-        os.mkdir(LOG_DIR)     
-    filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
-    with open(filename, "w") as text_file:
-        text_file.write(value)
-    log("log file: " +filename )  
-
-## -- dictString ------------------------------------------------------------
-
-def dictString(d,key):
-   value = d.get(key)
-   if value is None:
-       return "-"
-   else:
-       return value  
-   
-## -- dictInt ------------------------------------------------------------
-
-def dictInt(d,key):
-   value = d.get(key)
-   if value is None:
-       return 0
-   else:
-       return int(float(value))     
-
 
 ## -- appendChunk -----------------------------------------------------------
 

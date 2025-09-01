@@ -5,6 +5,7 @@ import json
 import time
 import pathlib
 import traceback
+import shared
 import shared_oci
 from shared_oci import log
 from shared_oci import log_in_file
@@ -49,7 +50,7 @@ def stream_loop(client, stream_id, initial_cursor):
                     key = b64decode(message.key.encode()).decode()
                 json_value = b64decode(message.value.encode()).decode(); 
                 log(json_value)
-                shared_oci.UNIQUE_ID = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
+                shared.UNIQUE_ID = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
                 log_in_file("stream", json_value)
                 value = json.loads(json_value)
                 document.eventDocument(value)
