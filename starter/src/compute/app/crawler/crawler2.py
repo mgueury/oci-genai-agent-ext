@@ -43,7 +43,7 @@ class SmartSpider(scrapy.Spider):
                 "title": response.xpath("//title/text()").get(),
             }
 
-            for href in response.css("a::attr(href)").getall():
+            for href in response.css('a::attr(href), area::attr(href), iframe::attr(src)'):
                 absolute_url = response.urljoin(href)
                 if self.allowed_domain in urlparse(absolute_url).netloc:
                     yield response.follow(absolute_url, callback=self.parse)
