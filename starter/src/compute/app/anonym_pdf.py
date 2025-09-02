@@ -1,5 +1,6 @@
 import oci
 import os
+import shared
 import shared_oci
 from pdf2image import convert_from_path
 from PIL import Image, ImageDraw 
@@ -15,7 +16,7 @@ def remove_entities(anonym_pdf_file, j):
         draw_boxes(images[idx], pages_boxes[idx])
     pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
     shared_oci.save_image_as_pdf( pdf_file, images )  
-    shared_oci.log( "</remove_entities> pdf_file created: "+ pdf_file )
+    shared.log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file
 
 # ---------------------------------------------------------------------------
@@ -39,7 +40,7 @@ def add_box( boxes, p, width, height, text, type ):
 
 # ---------------------------------------------------------------------------
 def get_box( p, width, height, text, type ):
-    shared_oci.log( "<get_box>" + text)
+    shared.log( "<get_box>" + text)
     if type=="PERSON":
         color = "#330"
     elif type=="DATETIME":
@@ -58,20 +59,20 @@ def get_box( p, width, height, text, type ):
         line_text = line.get("text")
         if text in line_text:
             if line.get("boxed"):
-                shared_oci.log( "<get_box> WARNING: already boxed. Continuing to search." )         
+                shared.log( "<get_box> WARNING: already boxed. Continuing to search." )         
             else:  
                c = line.get("confidence")
                v = line.get("boundingPolygon").get("normalizedVertices")
                box= ( int(v[0].get("x")*width), int(v[0].get("y")*height), int(v[2].get("x")*width), int(v[3].get("y")*height), color )
-               shared_oci.log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
+               shared.log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
                line["boxed"] = True
                return box
-    shared_oci.log( "<get_box> ERROR: text not found: " + text )         
+    shared.log( "<get_box> ERROR: text not found: " + text )         
     return None         
 
 # ---------------------------------------------------------------------------
 def entities( images, j ):
-    shared_oci.log( "<entities>")
+    shared.log( "<entities>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     
     documents = []
@@ -93,24 +94,24 @@ def entities( images, j ):
         "compartmentId": compartmentId
     }
     response = ai_client.batch_detect_language_entities( details )
-    shared_oci.log_in_file( "entities", str(response.data) )
+    shared.log_in_file( "entities", str(response.data) )
 
     # Calculate the boxes
     pages_boxes = []
     
     for p in j.get("pages"):
         pageNumber = str(p.get("pageNumber"))
-        shared_oci.log( "<entities> pageNumber " + pageNumber )
+        shared.log( "<entities> pageNumber " + pageNumber )
         image = images [int(pageNumber)-1]
         width, height = image.size
         boxes = []
         for doc in response.data.documents:
-            shared_oci.log( "<entities> doc.key " + doc.key )
+            shared.log( "<entities> doc.key " + doc.key )
             if doc.key==pageNumber:
                 for entity in doc.entities:
                     add_box( boxes, p, width, height, entity.text, entity.type )  
         pages_boxes.append( boxes )    
-    shared_oci.log( "</entities> ")
+    shared.log( "</entities> ")
     return pages_boxes
 
 

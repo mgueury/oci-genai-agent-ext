@@ -3,12 +3,10 @@ import oci
 import os
 import json 
 import time
-import pathlib
 import traceback
 import shared
-import shared_oci
-from shared_oci import log
-from shared_oci import log_in_file
+from shared import log
+from shared import log_in_file
 import shared_db
 import document
 
@@ -71,7 +69,7 @@ ociMessageEndpoint = os.getenv('STREAM_MESSAGE_ENDPOINT')
 ociStreamOcid = os.getenv('STREAM_OCID')
 
 while True:
-    stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared_oci.signer)
+    stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared.signer)
     try:
         while True:
             shared_db.initDbConn()

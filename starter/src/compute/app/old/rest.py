@@ -28,7 +28,7 @@ def query():
     else:
         try:
             shared_db.initDbConn()
-            embed = shared_oci.embedText(question)
+            embed = shared.embedText(question)
             a = shared_db.queryDb( type, question, embed) 
         finally:
             shared_db.closeDbConn()
@@ -44,7 +44,7 @@ def generate():
         prompt = request.json.get('prompt')
     else:
         prompt = request.args.get('prompt')
-    result = shared_oci.generateText( prompt )  
+    result = shared.generateText( prompt )  
     log("Result="+str(result))  
     return str(result)   
 
@@ -52,7 +52,7 @@ def generate():
 @app.route('/llama_chat', methods=['POST'])
 def llama_chat():
     messages = request.json.get('messages')
-    result = shared_oci.llama_chat( messages )  
+    result = shared.llama_chat( messages )  
     log("Result="+str(result))  
     return json.dumps(result)  
 
@@ -67,7 +67,7 @@ def cohere_chat():
         content = shared_db.getDocByPath( documentPath )
         shared_db.closeDbConn()
         documents = [ { "path": documentPath, "snippet": content } ]    
-    result = shared_oci.cohere_chat( message, chatHistory, documents )  
+    result = shared.cohere_chat( message, chatHistory, documents )  
     log("Result="+str(result))  
     return json.dumps(result)  
 
