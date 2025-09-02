@@ -484,8 +484,8 @@ def convertJson(value):
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     
-    log(f"<convertJson>resourceName={namespace}" )
-    log(f"<convertJson>resourceName={bucketName}" )
+    log(f"<convertJson>namespace={namespace}" )
+    log(f"<convertJson>bucketName={bucketName}" )
     log(f"<convertJson>resourceName={resourceName}" )
     # Read the JSON file from the object storage
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)

@@ -32,16 +32,13 @@ def eventDocument(value):
         # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
         shared_oci.convertOciDocumentUnderstanding(value)
         return
-    elif resourceExtension in [".pdf", ".txt", ".csv", ".md", ""] or resourceName in ["_metadata_schema.json", "_all.metadata.json"] :
+    elif resourceExtension in [".pdf", ".txt", ".csv", ".md", "", ".docx", ".doc",".pptx", ".ppt", ".html"] or resourceName in ["_metadata_schema.json", "_all.metadata.json"] :
         # Simply copy the file to the agent bucket
         shared_oci.convertUpload(value)
         return
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    shared_oci.convertImage2Pdf(value)
     #    return    
-    elif resourceExtension in [".docx", ".doc",".pptx", ".ppt", ".html"]:
-        shared_oci.convertDocling(value)
-        return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         shared_oci.convertOciSpeech(value)

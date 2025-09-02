@@ -62,7 +62,9 @@ def insertDoc( value, file_path, object_name ):
         extension = pathlib.Path(object_name.lower()).suffix
         resourceName = value["data"]["resourceName"]
 
-        if value.get("content")!=None:               
+        if value.get("content"):
+            log( "value[content] exists")
+        else:               
             if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
                 return
             elif extension in [ ".txt", ".json", ".md" ]:
@@ -97,6 +99,10 @@ def insertDoc( value, file_path, object_name ):
             for d in docs:
                 value["content"] = value["content"] + d.page_content
 
+            log("len(docs)="+len(docs))
+            log("-- doc[0].metadata --------------------")
+            pprint.pp(docs[0].metadata)
+
         value["source_type"] = "OBJECT_STORAGE"
 
         # Summary 
@@ -107,9 +113,6 @@ def insertDoc( value, file_path, object_name ):
         log("Summary="+value["summary"])
         value["summaryEmbed"] = embeddings.embed_query(value["summary"])
 
-        print(len(docs))
-        print("-- doc[0].metadata --------------------")
-        pprint.pp(docs[0].metadata)
         deleteDoc( value ) 
         insertTableDocs(value)
         insertTableDocsChunck(value, docs, extension)  
