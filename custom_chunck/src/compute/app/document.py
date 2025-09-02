@@ -40,7 +40,7 @@ def eventDocument(value):
     #    shared_oci.convertImage2Pdf(value)
     #    return    
     elif resourceExtension in [".docx", ".doc",".pptx", ".ppt", ".html"]:
-        shared_oci.docling2md(value)
+        shared_oci.convertDocling(value)
         return        
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 

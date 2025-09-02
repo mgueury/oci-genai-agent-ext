@@ -3,11 +3,11 @@
 from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
 
-## -- docling2md ------------------------------------------------------------
+## -- convertDocling ------------------------------------------------------------
 
 
-def docling2md(value):
-    log("<docling2md>")
+def convertDocling(value):
+    log("<convertDocling>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -35,12 +35,12 @@ def docling2md(value):
             f_out.write(value["content"])       
         upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=dest_file, content_type="text/markdown", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<docling2md> Delete")
+        log( "<convertDocling> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
-    log("</docling2md>")
+    log("</convertDocling>")
 
 
 
