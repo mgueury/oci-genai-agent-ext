@@ -33,7 +33,7 @@ from shared import LOG_DIR
 from shared import signer
 from shared import UNIQUE_ID
 
-## -- find_executable_path --------------------------------------------------------
+## -- find_executable_path --------------------------------------------------
 
 def find_executable_path(prefix):
     for path in os.environ['PATH'].split(os.pathsep):
@@ -45,255 +45,50 @@ def find_executable_path(prefix):
             continue
     return None
 
-## --------------------------------------------------------------------------------
+## -- CONSTANTS -------------------------------------------------------------
 
-# Constant
 libreoffice_exe = find_executable_path("libreoffice")
 
-## -- appendChunk -----------------------------------------------------------
+## -- delete_bucket_folder --------------------------------------------------
 
-def appendChunck(result, text, char_start, char_end ):
-    chunck = text[char_start:char_end]
-    result.append( { "chunck": chunck, "char_start": char_start, "char_end": char_end } )
-    log("chunck (" + str(char_start) + "-" + str(char_end-1) + ") - " + chunck)      
+def delete_bucket_folder(namespace, bucketName, prefix):
+    log( "<delete_bucket_folder> "+prefix)
+    try:
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+        for object_file in response.data.objects:
+            f = object_file.name
+            log( "<delete_bucket_folder> Deleting: " + f )
+            os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
+            log( "<delete_bucket_folder> Deleted: " + f )
+    except:
+        log("Exception: delete_bucket_folder") 
+        log(traceback.format_exc())            
+    log( "</delete_bucket_folder>" )
 
-## -- cutInChunks -----------------------------------------------------------
+## -- get_metadata_from_resource_id -----------------------------------------
+def get_metadata_from_resource_id( resourceId ):
+    region = os.getenv("TF_VAR_region")
+    customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
+    return get_upload_metadata( customized_url_source )
 
-def cutInChunks(text):
-    result = []
-    prev = ""
-    i = 0
-    last_good_separator = 0
-    last_medium_separator = 0
-    last_bad_separator = 0
-    MAXLEN = 250
-    char_start = 0
-    char_end = 0
+## -- get_upload_metadata ---------------------------------------------------
 
-    i = 0
-    while i<len(text)-1:
-        i += 1
-        cur = text[i]
-        cur2 = prev + cur
-        prev = cur
+def get_upload_metadata( customized_url_source ):
+    log( "customized_url_source="+customized_url_source )
+    customized_url_source = urllib.parse.quote(customized_url_source, safe=':/', encoding=None, errors=None)
+    log( "After encoding="+customized_url_source )
+    folder = os.path.dirname( '/' + customized_url_source.split("/o/",1)[1] )
+    log( "folder="+folder )
+    # Add folder metadata
+    # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
+    return {'customized_url_source': customized_url_source, 'gaas-metadata-filtering-field-folder': folder}
 
-        if cur2 in [ ". ", ".[" , ".\n", "\n\n" ]:
-            last_good_separator = i
-        if cur in [ "\n" ]:          
-            last_medium_separator = i
-        if cur in [ " " ]:          
-            last_bad_separator = i
-        # log( 'cur=' + cur + ' / cur2=' + cur2 )
-        if i-char_start>MAXLEN:
-            char_end = i
-            if last_good_separator > 0:
-               char_end = last_good_separator
-            elif last_medium_separator > 0:
-               char_end = last_medium_separator
-            elif last_bad_separator > 0:
-               char_end = last_bad_separator
-            # XXXX
-            if text[char_end] in [ "[", "(" ]:
-                appendChunck( result, text, char_start, char_end )
-            else:     
-                appendChunck( result, text, char_start, char_end )
-            char_start=char_end 
-            last_good_separator = 0
-            last_medium_separator = 0
-            last_bad_separator = 0
-    # Last chunck
-    appendChunck( result, text, char_start, len(text) )
+## -- convertOciFunctionTika ------------------------------------------------
 
-    # Overlapping chuncks
-    if len(result)==1:
-        return result
-    else: 
-        result2 = []
-        chunck_count=0
-        chunck_start=0
-        for c in result:
-            chunck_count = chunck_count + 1
-            if chunck_count==4:
-                appendChunck( result2, text, chunck_start, c["char_end"] )
-                chunck_start = c["char_start"]
-                chunck_count = 0
-        if chunck_count>0:
-            appendChunck( result2, text, chunck_start, c["char_end"] )
-        return result2
-
-## -- generateText ----------------------------------------------------------
-
-def generateText(prompt):
+def convertOciFunctionTika(value):
     global signer
-    log( "<generateText>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/generateText'
-    body = {
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-            "servingType": "ON_DEMAND"
-        },
-        "inferenceRequest": {
-            "prompt": prompt,
-            "maxTokens": 600,
-            "temperature": 0,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "stopSequences": [],
-            "runtimeType": "COHERE"
-        }
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("generateText_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["inferenceResponse"]["generatedTexts"][0]["text"]
-    log( "</generateText>")
-    return s
-
-## -- llama_chat2 -----------------------------------------------------------
-
-def llama_chat2(prompt):
-    global signer
-    log( "<llama_chat2>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
-    body = { 
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": "meta.llama-3.3-70b-instruct",
-            "servingType": "ON_DEMAND"
-        },
-        "chatRequest": {
-            "apiFormat": "GENERIC",
-            "maxTokens": 600,
-            "temperature": 0,
-            "preambleOverride": "",
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "messages": [
-                {
-                    "role": "USER", 
-                    "content": [
-                        {
-                            "type": "TEXT",
-                            "text": prompt
-                        }
-                    ]
-                }  
-            ]
-        }
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["chatResponse"]["text"]
-    if s.startswith('```json'):
-        start_index = s.find("{") 
-        end_index = s.rfind("}")+1
-        s = s[start_index:end_index]
-    log( "</llama_chat2>")
-    return s
-
-## -- llama_chat ------------------------------------------------------------
-
-def llama_chat(messages):
-    ## XXXX DOES NOT WORK XXXX ?
-    global signer
-    log( "<llama_chat>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
-    #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": shared.LLAMA_MODEL,
-    body = { 
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": shared.LLAMA_MODEL,
-            "servingType": "ON_DEMAND"
-        },
-        "chatRequest": {
-            "maxTokens": 600,
-            "temperature": 0,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "messages": messages,
-            "apiFormat": "GENERIC"
-        }
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["chatResponse"]["text"]
-    if s.startswith('```json'):
-        start_index = s.find("{") 
-        end_index = s.rfind("}")+1
-        s = s[start_index:end_index]
-    log( "</llama_chat>")
-    return s
-
-## -- cohere_chat -----------------------------------------------------------
-
-def cohere_chat(prompt, chatHistory, documents):
-    global signer
-    log( "<cohere_chat>")
-
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
-    #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": shared.COHERE_MODEL,
-    body = { 
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": shared.COHERE_MODEL,
-            "servingType": "ON_DEMAND"
-        },
-        "chatRequest": {
-            "maxTokens": 600,
-            "temperature": 0,
-            "preambleOverride": "",
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "message": prompt,
-            "chatHistory": chatHistory,
-            "documents": documents,
-            "apiFormat": "COHERE"
-        }
-    }
-    log_in_file("cohere_chat_request", json.dumps(body)) 
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("cohere_chat_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["chatResponse"]
-    log( "</cohere_chat>")
-    return s
-
-## -- invokeTika ------------------------------------------------------------------
-
-def invokeTika(value):
-    global signer
-    log( "<invokeTika>")
+    log( "<convertOciFunctionTika>")
     fnOcid = os.getenv('FN_OCID')
     fnInvokeEndpoint = os.getenv('FN_INVOKE_ENDPOINT')
     namespace = value["data"]["additionalDetails"]["namespace"]
@@ -322,14 +117,14 @@ def invokeTika(value):
         "content": j["content"],
         "path": resourceId
     }
-    log( "</invokeTika>")
+    log( "</convertOciFunctionTika>")
     return result
 
    
-## -- vision --------------------------------------------------------------
+## -- convertOciVision --------------------------------------------------------------
 
-def vision(value):
-    log( "<vision>")
+def convertOciVision(value):
+    log( "<convertOciVision>")
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
@@ -379,13 +174,13 @@ def vision(value):
         "path": resourceId,
         "other1": concat_labels
     }
-    log( "</vision>")
+    log( "</convertOciVision>")
     return result    
 
-## -- belgian --------------------------------------------------------------
+## -- convertOciVisionBelgianID --------------------------------------------------------------
 
-def belgian(value):
-    log( "<belgian>")
+def convertOciVisionBelgianID(value):
+    log( "<convertOciVisionBelgianID>")
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
@@ -423,38 +218,21 @@ def belgian(value):
         "filename": resourceName,
         "date": UNIQUE_ID,
         "modified": UNIQUE_ID,
-        "contentType": "Belgian ID",
+        "contentType": "convertOciVisionBelgianID ID",
         "parsedBy": "OCI Vision",
         "creationDate": UNIQUE_ID,
-        "content": "Belgian identity card. Name="+name,
+        "content": "convertOciVisionBelgianID identity card. Name="+name,
         "path": resourceId,
         "other1": id,
         "other2": birthdate,
     }
-    log( "</belgian>")
+    log( "</convertOciVisionBelgianID>")
     return result  
 
-## -- delete_bucket_folder --------------------------------------------------
+## -- convertOciSpeech ------------------------------------------------------
 
-def delete_bucket_folder(namespace, bucketName, prefix):
-    log( "<delete_bucket_folder> "+prefix)
-    try:
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
-        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-        for object_file in response.data.objects:
-            f = object_file.name
-            log( "<delete_bucket_folder> Deleting: " + f )
-            os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
-            log( "<delete_bucket_folder> Deleted: " + f )
-    except:
-        log("Exception: delete_bucket_folder") 
-        log(traceback.format_exc())            
-    log( "</delete_bucket_folder>" )
-
-## -- speech ----------------------------------------------------------------
-
-def speech(value):
-    log( "<speech>")
+def convertOciSpeech(value):
+    log( "<convertOciSpeech>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -502,13 +280,13 @@ def speech(value):
         resp = speech_client.create_transcription_job(job)
         log_in_file("speech_resp",str(resp.data))
 
-    log( "</speech>")
+    log( "</convertOciSpeech>")
 
-## -- documentUnderstanding -------------------------------------------------
+## -- convertOciDocumentUnderstanding ---------------------------------------
 
-def documentUnderstanding(value):
+def convertOciDocumentUnderstanding(value):
 
-    log( "<documentUnderstanding>")
+    log( "<convertOciDocumentUnderstanding>")
     eventType = value["eventType"]    
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -551,10 +329,11 @@ def documentUnderstanding(value):
         }
         document_understanding_client = oci.ai_document.AIServiceDocumentClient(config = {}, signer=signer)
         resp = document_understanding_client.create_processor_job(job)
-        log_in_file("documentUnderstanding_resp",str(resp.data))
-    log( "</documentUnderstanding>")
+        log_in_file("convertOciDocumentUnderstanding_resp",str(resp.data))
+    log( "</convertOciDocumentUnderstanding>")
 
 ## -- chrome_webdriver ---------------------------------------------------
+
 def chrome_webdriver():
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
@@ -606,13 +385,13 @@ def chrome_download_url_as_pdf( driver, url, output_filename):
         f.write(bytes(base64.b64decode(pdf_data)))
     log(f"<chrome_download_url_as_pdf> Saved {output_filename}")   
 
-## -- sitemap ------------------------------------------------------------------
-def sitemap(value):
+## -- convertSitemapText ----------------------------------------------------
+def convertSitemapText(value):
 
     # Read the SITEMAP file from the object storage
     # The format of the file expected is a txt file. Each line contains a full URI.
     # Transforms all the links in PDF and reupload them as PDF in the same object storage
-    log( "<sitemap>")
+    log( "<convertSitemapText>")
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -657,7 +436,7 @@ def sitemap(value):
 
                         pdf_path = pdf_path.replace('/', '___');
                         pdf_path = pdf_path+'.pdf'
-                        log("<sitemap>"+full_uri)
+                        log("<convertSitemapText>"+full_uri)
                         if os.getenv("INSTALL_LIBREOFFICE")!="no":
                             chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
                         else:
@@ -673,8 +452,8 @@ def sitemap(value):
     #                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
                         
                     except Exception as e:
-                        log("<sitemap>Error parsing line: "+line+" in "+resourceName)
-                        log("<sitemap>Exception:" + str(e))
+                        log("<convertSitemapText>Error parsing line: "+line+" in "+resourceName)
+                        log("<convertSitemapText>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the sitemap
             response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
@@ -683,31 +462,31 @@ def sitemap(value):
                 if f in fileList:
                     fileList.remove(f)
                 else: 
-                    log( "<sitemap>Deleting: " + f )
+                    log( "<convertSitemapText>Deleting: " + f )
                     os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
-                    log( "<sitemap>Deleted: " + f )
+                    log( "<convertSitemapText>Deleted: " + f )
 
         except FileNotFoundError as e:
-            log("<sitemap>Error: File not found= "+file_name)
+            log("<convertSitemapText>Error: File not found= "+file_name)
         except Exception as e:
-            log("<sitemap>An unexpected error occurred: " + str(e))
+            log("<convertSitemapText>An unexpected error occurred: " + str(e))
         if os.getenv("INSTALL_LIBREOFFICE")!="no":    
             driver.quit()            
-    log( "</sitemap>")
+    log( "</convertSitemapText>")
 
 
-## -- decodeJson ------------------------------------------------------------------
+## -- convertJson ------------------------------------------------------------------
 
-def decodeJson(value):
-    log( "<decodeJson>")
+def convertJson(value):
+    log( "<convertJson>")
     global signer
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     
-    log(f"<decodeJson>resourceName={namespace}" )
-    log(f"<decodeJson>resourceName={bucketName}" )
-    log(f"<decodeJson>resourceName={resourceName}" )
+    log(f"<convertJson>resourceName={namespace}" )
+    log(f"<convertJson>resourceName={bucketName}" )
+    log(f"<convertJson>resourceName={resourceName}" )
     # Read the JSON file from the object storage
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
@@ -768,47 +547,24 @@ def decodeJson(value):
             "content": j["transcriptions"][0]["transcription"],
             "path": original_resourceid
         }
-    log( "</decodeJson>")
+    log( "</convertJson>")
     return result
-
-## -- get_metadata_from_resource_id -----------------------------------------
-def get_metadata_from_resource_id( resourceId ):
-    region = os.getenv("TF_VAR_region")
-    customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + resourceId
-    return get_upload_metadata( customized_url_source )
-
-## -- has_non_latin1 --------------------------------------------------------
-def has_non_latin1(input_string):
-    return not all(ord(char) < 255 for char in input_string)
-
-## -- get_upload_metadata ---------------------------------------------------
-
-def get_upload_metadata( customized_url_source ):
-    log( "customized_url_source="+customized_url_source )
-    customized_url_source = urllib.parse.quote(customized_url_source, safe=':/', encoding=None, errors=None)
-    log( "After encoding="+customized_url_source )
-    folder = os.path.dirname( '/' + customized_url_source.split("/o/",1)[1] )
-    log( "folder="+folder )
-    # Add folder metadata
-    # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
-    return {'customized_url_source': customized_url_source, 'gaas-metadata-filtering-field-folder': folder}
-
 
 ## -- upload_file -----------------------------------------------------------
 
 def upload_file( value, namespace_name, bucket_name, object_name, file_path, content_type, metadata ):
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace_name, bucket_name=bucket_name, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
-        log( "Uploaded "+object_name + " - " + content_type )
-        value["customized_url_source"] = metadata.get("customized_url_source")
-        shared_db.insertDoc( value, file_path, object_name )
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+    upload_manager.upload_file(namespace_name=namespace_name, bucket_name=bucket_name, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
+    log( "Uploaded "+object_name + " - " + content_type )
+    value["customized_url_source"] = metadata.get("customized_url_source")
+    shared_db.insertDoc( value, file_path, object_name )
 
-## -- upload_agent_bucket ---------------------------------------------------
+## -- convertUpload ---------------------------------------------------
 
-def upload_agent_bucket(value, content=None, path=None):
+def convertUpload(value, content=None, path=None):
 
-    log( "<upload_agent_bucket>")
+    log( "<convertUpload>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -844,37 +600,17 @@ def upload_agent_bucket(value, content=None, path=None):
 
         upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, content_type=contentType, metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<upload_agent_bucket> Delete")
+        log( "<convertUpload> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)     
-    log( "</upload_agent_bucket>")                      
+    log( "</convertUpload>")                                  
 
-## -- genai_agent_datasource_ingest -----------------------------------------
+## -- convertLibreoffice2Pdf ------------------------------------------------------------
 
-def genai_agent_datasource_ingest():
-
-    log( "<genai_agent_datasource_ingest>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
-    if datasourceId:
-        name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-        log( "ingest_job="+name )
-        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
-        genai_agent_client.create_data_ingestion_job(
-            create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
-                data_source_id=datasourceId,
-                compartment_id=compartmentId,
-                display_name=name,
-                description=name
-            ))
-    log( "</genai_agent_datasource_ingest>")             
-
-## -- libreoffice2pdf ------------------------------------------------------------
-
-def libreoffice2pdf(value):
-    log( "<libreoffice2pdf>")
+def convertLibreoffice2Pdf(value):
+    log( "<convertLibreoffice2Pdf>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -895,7 +631,7 @@ def libreoffice2pdf(value):
         time.sleep(10) 
         pdf_file = str(Path(office_file).with_suffix('.pdf'))
         if os.path.exists(pdf_file):
-            log( f"<libreoffice2pdf> pdf found {pdf_file}")
+            log( f"<convertLibreoffice2Pdf> pdf found {pdf_file}")
         else:
             raise subprocess.SubprocessError(stderr)
         metadata = get_metadata_from_resource_id( resourceId )
@@ -904,12 +640,12 @@ def libreoffice2pdf(value):
         log( "resourceGenAI=" + resourceGenAI )
         upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<libreoffice2pdf> Delete")
+        log( "<convertLibreoffice2Pdf> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
-    log( "</libreoffice2pdf>")
+    log( "</convertLibreoffice2Pdf>")
 
 ## -- download_file ---------------------------------------------------------
 
@@ -937,8 +673,8 @@ def save_image_as_pdf( file_name, images ):
         im.save(file_name, save_all=True,append_images=images)
 
 # ---------------------------------------------------------------------------
-def image2pdf(value, content=None, path=None):
-    log( "<image2pdf>")
+def convertImage2Pdf(value, content=None, path=None):
+    log( "<convertImage2Pdf>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -960,17 +696,17 @@ def image2pdf(value, content=None, path=None):
 
         upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<image2pdf> Delete")
+        log( "<convertImage2Pdf> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
-    log( "</image2pdf>")
+    log( "</convertImage2Pdf>")
 
-## -- webp2png -----------------------------------------------------
+## -- convertWebp2Png -----------------------------------------------------
 
-def webp2png(value, content=None, path=None):
-    log( "<webp2png>")
+def convertWebp2Png(value, content=None, path=None):
+    log( "<convertWebp2Png>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -992,12 +728,12 @@ def webp2png(value, content=None, path=None):
 
         upload_file( value=value, namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, content_type="image/png", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<webp2png> Delete")
+        log( "<convertWebp2Png> Delete")
         try: 
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI)
         except:
            log("Exception: Delete failed: " + resourceGenAI)   
-    log( "</webp2png>")    
+    log( "</convertWebp2Png>")    
 
 ## -- run_crawler ------------------------------------------------------------
 
@@ -1030,9 +766,9 @@ def run_crawler(url):
         print(f"Stderr:\n{e.stderr}")
         raise
 
-## -- crawler ------------------------------------------------------------------
-def crawler(value):
-    log( "<crawler>")
+## -- convertCrawler ------------------------------------------------------------------
+def convertCrawler(value):
+    log( "<convertCrawler>")
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -1093,8 +829,8 @@ def crawler(value):
                                 fileList.append(filename)
                         
                     except Exception as e:
-                        log("<crawler>Error parsing line: "+line+" in "+resourceName)
-                        log("<crawler>Exception:" + str(e))
+                        log("<convertCrawler>Error parsing line: "+line+" in "+resourceName)
+                        log("<convertCrawler>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the crawler
             response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
@@ -1103,12 +839,12 @@ def crawler(value):
                 if f in fileList:
                     fileList.remove(f)
                 else: 
-                    log( "<crawler>Deleting: " + f )
+                    log( "<convertCrawler>Deleting: " + f )
                     os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
-                    log( "<crawler>Deleted: " + f )
+                    log( "<crawconvertCrawlerler>Deleted: " + f )
 
         except FileNotFoundError as e:
-            log("<crawler>Error: File not found= "+file_name)
+            log("<convertCrawler>Error: File not found= "+file_name)
         except Exception as e:
-            log("<crawler>An unexpected error occurred: " + str(e))     
-    log( "</crawler>")
+            log("<convertCrawler>An unexpected error occurred: " + str(e))     
+    log( "</convertCrawler>")

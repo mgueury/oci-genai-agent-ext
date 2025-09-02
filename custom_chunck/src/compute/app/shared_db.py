@@ -22,6 +22,7 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 # Docling
 from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
+from docling.chunking import HybridChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 from typing import List, Tuple
@@ -61,39 +62,41 @@ def insertDoc( value, file_path, object_name ):
         extension = pathlib.Path(object_name.lower()).suffix
         resourceName = value["data"]["resourceName"]
 
-        if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
-            return
-        elif extension in [ ".txt", ".json", ".md" ]:
-            loader = TextLoader( file_path=file_path )
-        elif extension in [ ".html", ".htm" ]:
-            loader = DoclingLoader(
-                file_path=file_path,
-                export_type=ExportType.MARKDOWN
-            )            
-        elif extension in [ ".pdf" ]:
-            # loader = PyPDFLoader(
-            #     file_path,
-            #     mode="single",
-            #     pages_delimiter="\n-------THIS IS A CUSTOM END OF PAGE-------\n",
-            loader = PyPDFLoader(
-                file_path,
-                mode="page"
-            )
-            # loader = PyPDFLoader(
-            #     file_path,
-            #     mode="single",
-            #     pages_delimiter="\n-------THIS IS A CUSTOM END OF PAGE-------\n",
-            # )
-            # docs = loader.load()
-            # print(docs[0].page_content[:5780])
-        else:
-            log(f"<insertDoc> Error: unknown extension: {extension}")
-            return
-        docs = loader.load()        
+        if value.get("content")!=None:               
+            if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
+                return
+            elif extension in [ ".txt", ".json", ".md" ]:
+                loader = TextLoader( file_path=file_path )
+                docs = loader.load()
+            elif extension in [ ".md", ".html", ".htm", ".pdf", ".doc", ".docx", ".ppt", ".pptx" ]:
+                # Get the full file in Markdown
+                loader = DoclingLoader(
+                    file_path=file_path,
+                    export_type=ExportType.MARKDOWN
+                )
+                docs = loader.load()
+                # Split the file via Docling to keep the page ids.
+                chunck_loader = DoclingLoader(
+                    file_path=file_path,
+                    export_type=ExportType.DOC_CHUNKS,
+                    chunker=HybridChunker()
+                )
+                value["chunck"] = chunck_loader.load()
 
-        value["content"] = ""
-        for d in docs:
-            value["content"] = value["content"] + d.page_content
+            # elif extension in [ ".pdf" ]:
+                # loader = PyPDFLoader(
+                #     file_path,
+                #     mode="page"
+                # )
+            else:
+                log(f"<insertDoc> Error: unknown extension: {extension}")
+                return
+            docs = loader.load()        
+
+            value["content"] = ""
+            for d in docs:
+                value["content"] = value["content"] + d.page_content
+
         value["source_type"] = "OBJECT_STORAGE"
 
         # Summary 
@@ -118,7 +121,7 @@ def insertTableDocs( value ):
     global dbConn
     cur = dbConn.cursor()
     log("<insertTableDocs>")
-    # pprint.pp(value)    
+    pprint.pp(value)    
     # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
     stmt = """
         INSERT INTO docs (
@@ -178,15 +181,16 @@ def insertTableDocsChunck(value, docs, extension):
 
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
 
-    if extension in [ ".md", ".html", ".htm" ]:
-        splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=[
-                ("#", "Header_1"),
-                ("##", "Header_2"),
-                ("###", "Header_3"),
-            ],
-        )
-        docs_chunck = [split for doc in docs for split in splitter.split_text(doc.page_content)]
+    if value.get("chunck"):
+        # splitter = MarkdownHeaderTextSplitter(
+        #     headers_to_split_on=[
+        #         ("#", "Header_1"),
+        #         ("##", "Header_2"),
+        #         ("###", "Header_3"),
+        #     ],
+        # )
+        # docs_chunck = [split for doc in docs for split in splitter.split_text(doc.page_content)]
+        docs_chunck = value["chunck"]
     else:
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
         docs_chunck = splitter.split_documents(docs)

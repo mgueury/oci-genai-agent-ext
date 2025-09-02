@@ -35,7 +35,7 @@ def log_in_file(prefix, value):
     if os.path.isdir(LOG_DIR) == False:
         os.mkdir(LOG_DIR)     
     filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
-    with open(filename, "w") as text_file:
+    with open(filename, "w", encoding="utf-8") as text_file:
         text_file.write(value)
     log("log file: " +filename )  
 
@@ -128,3 +128,262 @@ def embedText(c):
     j = json.loads(resp.content)   
     log( "</embedText>")
     return dictString(j,"embeddings")[0]     
+
+## -- generateText ----------------------------------------------------------
+
+def generateText(prompt):
+    global signer
+    log( "<generateText>")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/generateText'
+    body = {
+        "compartmentId": compartmentId,
+        "servingMode": {
+            "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
+            "servingType": "ON_DEMAND"
+        },
+        "inferenceRequest": {
+            "prompt": prompt,
+            "maxTokens": 600,
+            "temperature": 0,
+            "frequencyPenalty": 0,
+            "presencePenalty": 0,
+            "topP": 0.75,
+            "topK": 0,
+            "isStream": False,
+            "stopSequences": [],
+            "runtimeType": "COHERE"
+        }
+    }
+    resp = requests.post(endpoint, json=body, auth=signer)
+    resp.raise_for_status()
+    log(resp)    
+    # Binary string conversion to utf8
+    log_in_file("generateText_resp", resp.content.decode('utf-8'))
+    j = json.loads(resp.content)   
+    s = j["inferenceResponse"]["generatedTexts"][0]["text"]
+    log( "</generateText>")
+    return s
+
+## -- llama_chat2 -----------------------------------------------------------
+
+def llama_chat2(prompt):
+    global signer
+    log( "<llama_chat2>")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
+    body = { 
+        "compartmentId": compartmentId,
+        "servingMode": {
+            "modelId": "meta.llama-3.3-70b-instruct",
+            "servingType": "ON_DEMAND"
+        },
+        "chatRequest": {
+            "apiFormat": "GENERIC",
+            "maxTokens": 600,
+            "temperature": 0,
+            "preambleOverride": "",
+            "presencePenalty": 0,
+            "topP": 0.75,
+            "topK": 0,
+            "messages": [
+                {
+                    "role": "USER", 
+                    "content": [
+                        {
+                            "type": "TEXT",
+                            "text": prompt
+                        }
+                    ]
+                }  
+            ]
+        }
+    }
+    resp = requests.post(endpoint, json=body, auth=signer)
+    resp.raise_for_status()
+    log(resp)    
+    # Binary string conversion to utf8
+    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
+    j = json.loads(resp.content)   
+    s = j["chatResponse"]["text"]
+    if s.startswith('```json'):
+        start_index = s.find("{") 
+        end_index = s.rfind("}")+1
+        s = s[start_index:end_index]
+    log( "</llama_chat2>")
+    return s
+
+## -- llama_chat ------------------------------------------------------------
+
+def llama_chat(messages):
+    ## XXXX DOES NOT WORK XXXX ?
+    global signer
+    log( "<llama_chat>")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
+    #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
+    #         "modelId": shared.LLAMA_MODEL,
+    body = { 
+        "compartmentId": compartmentId,
+        "servingMode": {
+            "modelId": shared.LLAMA_MODEL,
+            "servingType": "ON_DEMAND"
+        },
+        "chatRequest": {
+            "maxTokens": 600,
+            "temperature": 0,
+            "frequencyPenalty": 0,
+            "presencePenalty": 0,
+            "topP": 0.75,
+            "topK": 0,
+            "isStream": False,
+            "messages": messages,
+            "apiFormat": "GENERIC"
+        }
+    }
+    resp = requests.post(endpoint, json=body, auth=signer)
+    resp.raise_for_status()
+    log(resp)    
+    # Binary string conversion to utf8
+    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
+    j = json.loads(resp.content)   
+    s = j["chatResponse"]["text"]
+    if s.startswith('```json'):
+        start_index = s.find("{") 
+        end_index = s.rfind("}")+1
+        s = s[start_index:end_index]
+    log( "</llama_chat>")
+    return s
+
+## -- cohere_chat -----------------------------------------------------------
+
+def cohere_chat(prompt, chatHistory, documents):
+    global signer
+    log( "<cohere_chat>")
+
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
+    #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
+    #         "modelId": shared.COHERE_MODEL,
+    body = { 
+        "compartmentId": compartmentId,
+        "servingMode": {
+            "modelId": shared.COHERE_MODEL,
+            "servingType": "ON_DEMAND"
+        },
+        "chatRequest": {
+            "maxTokens": 600,
+            "temperature": 0,
+            "preambleOverride": "",
+            "frequencyPenalty": 0,
+            "presencePenalty": 0,
+            "topP": 0.75,
+            "topK": 0,
+            "isStream": False,
+            "message": prompt,
+            "chatHistory": chatHistory,
+            "documents": documents,
+            "apiFormat": "COHERE"
+        }
+    }
+    log_in_file("cohere_chat_request", json.dumps(body)) 
+    resp = requests.post(endpoint, json=body, auth=signer)
+    resp.raise_for_status()
+    log(resp)    
+    # Binary string conversion to utf8
+    log_in_file("cohere_chat_resp", resp.content.decode('utf-8'))
+    j = json.loads(resp.content)   
+    s = j["chatResponse"]
+    log( "</cohere_chat>")
+    return s
+
+## -- appendChunk -----------------------------------------------------------
+
+def appendChunck(result, text, char_start, char_end ):
+    chunck = text[char_start:char_end]
+    result.append( { "chunck": chunck, "char_start": char_start, "char_end": char_end } )
+    log("chunck (" + str(char_start) + "-" + str(char_end-1) + ") - " + chunck)      
+
+## -- cutInChunks -----------------------------------------------------------
+
+def cutInChunks(text):
+    result = []
+    prev = ""
+    i = 0
+    last_good_separator = 0
+    last_medium_separator = 0
+    last_bad_separator = 0
+    MAXLEN = 250
+    char_start = 0
+    char_end = 0
+
+    i = 0
+    while i<len(text)-1:
+        i += 1
+        cur = text[i]
+        cur2 = prev + cur
+        prev = cur
+
+        if cur2 in [ ". ", ".[" , ".\n", "\n\n" ]:
+            last_good_separator = i
+        if cur in [ "\n" ]:          
+            last_medium_separator = i
+        if cur in [ " " ]:          
+            last_bad_separator = i
+        # log( 'cur=' + cur + ' / cur2=' + cur2 )
+        if i-char_start>MAXLEN:
+            char_end = i
+            if last_good_separator > 0:
+               char_end = last_good_separator
+            elif last_medium_separator > 0:
+               char_end = last_medium_separator
+            elif last_bad_separator > 0:
+               char_end = last_bad_separator
+            # XXXX
+            if text[char_end] in [ "[", "(" ]:
+                appendChunck( result, text, char_start, char_end )
+            else:     
+                appendChunck( result, text, char_start, char_end )
+            char_start=char_end 
+            last_good_separator = 0
+            last_medium_separator = 0
+            last_bad_separator = 0
+    # Last chunck
+    appendChunck( result, text, char_start, len(text) )
+
+    # Overlapping chuncks
+    if len(result)==1:
+        return result
+    else: 
+        result2 = []
+        chunck_count=0
+        chunck_start=0
+        for c in result:
+            chunck_count = chunck_count + 1
+            if chunck_count==4:
+                appendChunck( result2, text, chunck_start, c["char_end"] )
+                chunck_start = c["char_start"]
+                chunck_count = 0
+        if chunck_count>0:
+            appendChunck( result2, text, chunck_start, c["char_end"] )
+        return result2
+    
+## -- genai_agent_datasource_ingest -----------------------------------------
+
+def genai_agent_datasource_ingest():
+
+    log( "<genai_agent_datasource_ingest>")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
+    if datasourceId:
+        name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        log( "ingest_job="+name )
+        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
+        genai_agent_client.create_data_ingestion_job(
+            create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
+                data_source_id=datasourceId,
+                compartment_id=compartmentId,
+                display_name=name,
+                description=name
+            ))
+    log( "</genai_agent_datasource_ingest>")     

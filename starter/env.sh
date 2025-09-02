@@ -23,6 +23,7 @@ export TF_VAR_auth_token="__TO_FILL__"
 
 export TF_VAR_advanced="true"
 if [ "$TF_VAR_advanced" == "true" ]; then
+  echo "ADVANCED MODE"
   export TF_VAR_vault_ocid="__TO_FILL__"
   export TF_VAR_vault_key_ocid="__TO_FILL__"
 fi

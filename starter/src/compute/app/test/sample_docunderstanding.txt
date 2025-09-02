@@ -1,6 +1,6 @@
 POST RestDocumentUnderstandingStorage/document 
 input
-{ "compartmentId" : "ocid.compartment.xxxxx", "bucketName" : "opensearch-bucket", "namespaceName" : "frsxwtjslf35", "objectName" : "Belgian_ID.png" }
+{ "compartmentId" : "ocid.compartment.xxxxx", "bucketName" : "opensearch-bucket", "namespaceName" : "frsxwtjslf35", "objectName" : "convertOciVisionBelgianID_ID.png" }
 
 output
 
