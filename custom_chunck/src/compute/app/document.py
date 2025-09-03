@@ -81,8 +81,6 @@ def eventDocument(value):
         # No need to get the content for deleting
         shared_oci.convertUpload(value, "-")    
 
-
-    # Upload to the Agent Bucket
     log( "</eventDocument>")
 
 ## -- updateCount ------------------------------------------------------------------
@@ -96,8 +94,8 @@ def updateCount(count):
         countUpdate = countUpdate + count 
     elif countUpdate>0:
         try:
-            shared.genai_agent_datasource_ingest()
-            log( "<updateCount>GenAI agent datasource ingest job created")
+            # shared.genai_agent_datasource_ingest()
+            # log( "<updateCount>GenAI agent datasource ingest job created")
             countUpdate = 0
         except (Exception) as e:
-            log(f"<updateCount>ERROR: {e}")
+            log(f"\u26A0 <updateCount>ERROR: {e}")

@@ -97,7 +97,7 @@ def summarizeContent(value,content):
         log( "</summarizeContent>")
         return dictString(dictString(j,"chatResponse"),"text") 
     except requests.exceptions.HTTPError as err:
-        log("Exception: summarizeContent") 
+        log("\u26A0 Exception: summarizeContent") 
         log(err.response.status_code)
         log(err.response.text)
         return "-"   

@@ -17,6 +17,9 @@ echo "ARCH=$ARCH"
 sudo setenforce 0
 sudo sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
 
+# Set VI and NANO in utf8
+echo "export LC_CTYPE=en_US.UTF-8" >> $HOME/.bashrc
+
 # -- Shared Install function ------------------------------------------------
 
 install_java() {

@@ -24,6 +24,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+# DocLing
+from langchain_docling import DoclingLoader
+from langchain_docling.loader import ExportType
+
 # Shared
 from shared import log
 from shared import log_in_file
@@ -42,6 +46,7 @@ def find_executable_path(prefix):
                 if filename.startswith(prefix) and os.access(os.path.join(path, filename), os.X_OK) and os.path.isfile(os.path.join(path, filename)):
                    return os.path.join(path, filename)
         except:
+            log( f"\u26A0 <find_executable_path>Executable {prefix} not found" )
             continue
     return None
 
@@ -62,7 +67,7 @@ def delete_bucket_folder(namespace, bucketName, prefix):
             os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
             log( "<delete_bucket_folder> Deleted: " + f )
     except:
-        log("Exception: delete_bucket_folder") 
+        log("\u26A0 Exception: delete_bucket_folder") 
         log(traceback.format_exc())            
     log( "</delete_bucket_folder>" )
 
@@ -371,7 +376,7 @@ def chrome_download_url_as_pdf( driver, url, output_filename):
         element_present = EC.presence_of_element_located((By.TAG_NAME, 'body'))
         WebDriverWait(driver, 20).until(element_present) 
     except Exception as e:
-        print(f"Error waiting for element: {e}")    
+        log(f"\u26A0 Error waiting for element: {e}")    
 
     print_options = {
         "marginsType": 1,         # Set margins (0 = default, 1 = no margins, 2 = minimal margins)
@@ -452,7 +457,7 @@ def convertSitemapText(value):
     #                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
                         
                     except Exception as e:
-                        log("<convertSitemapText>Error parsing line: "+line+" in "+resourceName)
+                        log("\u26A0 <convertSitemapText>Error parsing line: "+line+" in "+resourceName)
                         log("<convertSitemapText>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the sitemap
@@ -467,9 +472,9 @@ def convertSitemapText(value):
                     log( "<convertSitemapText>Deleted: " + f )
 
         except FileNotFoundError as e:
-            log("<convertSitemapText>Error: File not found= "+file_name)
+            log("\u26A0 <convertSitemapText>Error: File not found= "+file_name)
         except Exception as e:
-            log("<convertSitemapText>An unexpected error occurred: " + str(e))
+            log("\u26A0 <convertSitemapText>An unexpected error occurred: " + str(e))
         if os.getenv("INSTALL_LIBREOFFICE")!="no":    
             driver.quit()            
     log( "</convertSitemapText>")
@@ -756,13 +761,13 @@ def run_crawler(url):
     try:
         # Run the command. The 'check=True' argument will raise an
         # exception if the command fails, which is good for error handling.
-        result = subprocess.run(crawler_command, check=True, capture_output=True, text=True)
+        # result = subprocess.check_output(crawler_command, check=True, capture_output=True, text=True)
+        result = subprocess.run(crawler_command, check=True, stdout=subprocess.PIPE).stdout
         print("\n--- Crawler finished successfully. ---")
         
     except subprocess.CalledProcessError as e:
         # Handle cases where the command fails.
-        print(f"\n--- Error: Crawler command failed with return code {e.returncode} ---")
-        print(f"Stdout:\n{e.stdout}")
+        print(f"\n\u26A0 Error: Crawler command failed with return code {e.returncode}")
         print(f"Stderr:\n{e.stderr}")
         raise
 
@@ -805,12 +810,12 @@ def convertCrawler(value):
                         # Check if the CSV file was created by the spider.
                         CRAWLER_DIR='/tmp/crawler'
                         csv_file_path=CRAWLER_DIR+'/links.csv'
-                        print(f"\n--- Reading data from '{csv_file_path}'... ---")
+                        log(f"\n--- Reading data from '{csv_file_path}'... ---")
                        
                         # Open and read the CSV file.
                         if not os.path.exists(csv_file_path):
-                            print(f"Error: The file '{csv_file_path}' was not created.")
-                            print("Please check the spider's output for any errors.")
+                            log(f"Error: The file '{csv_file_path}' was not created.")
+                            log("Please check the spider's output for any errors.")
                             return
 
                         with open(csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
@@ -822,15 +827,16 @@ def convertCrawler(value):
                                 filename = row.get('filename', 'N/A')
                                 title = row.get('title', 'N/A')
                                 filename = filename[len(CRAWLER_DIR)+1:]
-                                print(f"URL: {url} - Filename: {filename}")
+                                log(f"URL: {url} - Filename: {filename}")
                                 metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder } 
                                 value["data"]["resourceName"] = title   
                                 upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
                                 fileList.append(filename)
                         
                     except Exception as e:
-                        log("<convertCrawler>Error parsing line: "+line+" in "+resourceName)
-                        log("<convertCrawler>Exception:" + str(e))
+                        log("\u26A0 <convertCrawler>Error parsing line: "+line+" in "+resourceName)
+                        log(f"<convertCrawler>Exception: {e}")
+                        log(traceback.format_exc())
 
             # Check if there are file that are in the folder and not in the crawler
             response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
@@ -844,7 +850,48 @@ def convertCrawler(value):
                     log( "<crawconvertCrawlerler>Deleted: " + f )
 
         except FileNotFoundError as e:
-            log("<convertCrawler>Error: File not found= "+file_name)
+            log("\u26A0 <convertCrawler>Error: File not found= "+file_name)
         except Exception as e:
-            log("<convertCrawler>An unexpected error occurred: " + str(e))     
+            log("\u26A0 <convertCrawler>An unexpected error occurred: " + str(e))     
     log( "</convertCrawler>")
+
+## -- convertDocling ------------------------------------------------------------
+
+def convertDocling(value):
+    log("<convertDocling>")
+    eventType = value["eventType"]
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    resourceName = value["data"]["resourceName"]
+    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+    resourceId = value["data"]["resourceId"]
+    resourceGenAI = str(Path(resourceName).with_suffix('.md'))
+      
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        # Set the original URL source (GenAI Agent)
+        metadata = get_metadata_from_resource_id( resourceId )
+        orig_file = download_file( namespace, bucketName, resourceName)     
+        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"
+        loader = DoclingLoader(
+            file_path=orig_file,
+            export_type=ExportType.MARKDOWN
+        )
+        docs = loader.load()        
+        value["content"] = ""
+        for d in docs:
+            value["content"] = value["content"] + d.page_content
+        with open(dest_file, 'w', encoding='utf-8') as f_out:
+            f_out.write(value["content"])       
+        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=dest_file, content_type="text/markdown", metadata=metadata)
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        log( "<convertDocling> Delete")
+        try: 
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)   
+    log("</convertDocling>")
+
+
+

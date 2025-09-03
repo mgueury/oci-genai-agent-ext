@@ -82,7 +82,7 @@ class CrawlerSpider(scrapy.Spider):
                 with open(filename, 'wb') as f:
                     f.write(response.body)
             except Exception as e:
-                self.log(f'Error saving file {filename}: {e}', level=scrapy.log.ERROR)
+                self.log(f'\u26A0 Error saving file {filename}: {e}', level=scrapy.log.ERROR)
 
             # Create a new item to hold the data and yield it
             item = MyScraperItem()
@@ -99,4 +99,5 @@ class CrawlerSpider(scrapy.Spider):
             # This creates a new request for each link discovered on the page.
             # It's a simple way to crawl an entire site.
             for href in response.css('a::attr(href), area::attr(href), iframe::attr(src)'):
-                yield response.follow(href, self.parse)
+                if not href.startswith('mailto:'):
+                    yield response.follow(href, self.parse)

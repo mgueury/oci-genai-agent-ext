@@ -84,7 +84,6 @@ def insertDoc( value, file_path, object_name ):
                     chunker=HybridChunker()
                 )
                 value["chunck"] = chunck_loader.load()
-
             # elif extension in [ ".pdf" ]:
                 # loader = PyPDFLoader(
                 #     file_path,
@@ -99,7 +98,7 @@ def insertDoc( value, file_path, object_name ):
             for d in docs:
                 value["content"] = value["content"] + d.page_content
 
-            log("len(docs)="+len(docs))
+            log("len(docs)="+str(len(docs)))
             log("-- doc[0].metadata --------------------")
             pprint.pp(docs[0].metadata)
 
@@ -111,9 +110,16 @@ def insertDoc( value, file_path, object_name ):
         else:    
             value["summary"] = value["content"]            
         log("Summary="+value["summary"])
-        value["summaryEmbed"] = embeddings.embed_query(value["summary"])
-
+        
         deleteDoc( value ) 
+
+        if len(value["summary"])>0:
+            log("Summary="+value["summary"])
+            value["summaryEmbed"] = embeddings.embed_query(value["summary"])
+        else:
+            log(f"\u26A0 Summary is empty... Skipping {resourceName}")
+            return
+            
         insertTableDocs(value)
         insertTableDocsChunck(value, docs, extension)  
 
@@ -124,7 +130,7 @@ def insertTableDocs( value ):
     global dbConn
     cur = dbConn.cursor()
     log("<insertTableDocs>")
-    pprint.pp(value)    
+    # pprint.pp(value)    
     # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
     stmt = """
         INSERT INTO docs (
@@ -167,7 +173,7 @@ def insertTableDocs( value ):
         value["docId"] = id[0]
         log(f"<insertTableDocs> Successfully inserted {cur.rowcount} records.")
     except (Exception) as error:
-        log(f"<insertTableDocs> Error inserting records: {error}")
+        log(f"\u26A0 <insertTableDocs> Error inserting records: {error}")
     finally:
         # Close the cursor and connection
         if cur:

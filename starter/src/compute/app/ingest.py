@@ -40,8 +40,9 @@ def stream_loop(client, stream_id, initial_cursor):
         log("<stream_loop> Read {} messages".format(len(get_response.data)))
         updateCount += len(get_response.data)
         for message in get_response.data:
+            timeStart = time.time()
             try:
-                log("--------------------------------------------------------------" )
+                log("\n\n-- NEW MESSAGE -----------------------------------------------------------------------------------------" )
                 if message.key is None:
                     key = "Null"
                 else:
@@ -52,9 +53,13 @@ def stream_loop(client, stream_id, initial_cursor):
                 log_in_file("stream", json_value)
                 value = json.loads(json_value)
                 document.eventDocument(value)
+                log( f"\u2705 {value["data"]["resourceName"]}")                  
             except:
-                log("Exception: stream_loop") 
+                log( f"\u274C Exception: stream_loop") 
                 log(traceback.format_exc())
+            timeEnd = time.time()
+            log(f"Time: {timeEnd - timeStart} secs")                
+                
         log("<stream_loop> Processed {} messages".format(len(get_response.data)))        
             
         # get_messages is a throttled method; clients should retrieve sufficiently large message
@@ -79,7 +84,7 @@ while True:
             time.sleep(30)
     except:
         log("----------------------------------------------------------------------------")
-        log("<main>Exception in streamloop")
+        log("\u274C <main>Exception in streamloop")
         log(traceback.format_exc())
         # Resetting Stream - This is needed when you have the cursor that is too old. 
         # Error: 400 - The cursor is outside the retention period and is now invalid.
