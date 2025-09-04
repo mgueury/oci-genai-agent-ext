@@ -50,6 +50,9 @@ echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
 mkdir -p $TARGET_DIR/compute/.
 cp -r src/compute/* $TARGET_DIR/compute/.
 if [ -f $TARGET_DIR/compute/app/env.sh ]; then 
+  if [ "$TF_VAR_agent_datasource_ocid" == "" ]; then
+    export TF_VAR_agent_datasource_ocid="__NOT_USED__"
+  fi
   file_replace_variables $TARGET_DIR/compute/app/env.sh
 fi 
 scp -r -o StrictHostKeyChecking=no -i $TF_VAR_ssh_private_path $TARGET_DIR/compute/* opc@$BASTION_IP:/home/opc/.
