@@ -8,10 +8,10 @@ export FN_OCID="##FN_OCID##"
 export FN_INVOKE_ENDPOINT="##FN_INVOKE_ENDPOINT##"
 export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
 export TF_VAR_region="##TF_VAR_region##"
-export TF_VAR_agent_datasource_ocid="##AGENT_DATASOURCE_OCID##"
+export TF_VAR_agent_datasource_ocid="##TF_VAR_agent_datasource_ocid##"
 
 # Streamlit Tools
-export TF_VAR_agent_endpoint_ocid="##AGENT_ENDPOINT_OCID##"
+export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
 export TF_VAR_prefix="##TF_VAR_prefix##"
 export TF_VAR_namespace="##TF_VAR_namespace##"
 

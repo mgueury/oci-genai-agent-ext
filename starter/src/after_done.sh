@@ -15,8 +15,8 @@ get_attribute_from_tfstate "STREAM_BOOSTRAPSERVER" "starter_stream_pool" "kafka_
 get_attribute_from_tfstate "FN_OCID" "starter_fn_function" "id"
 get_attribute_from_tfstate "FN_INVOKE_ENDPOINT" "starter_fn_function" "invoke_endpoint"
 
-get_id_from_tfstate "AGENT_DATASOURCE_OCID" "starter_agent_ds" 
-get_id_from_tfstate "AGENT_ENDPOINT_OCID" "starter_agent_endpoint" 
+get_id_from_tfstate "TF_VAR_agent_datasource_ocid" "starter_agent_ds" 
+get_id_from_tfstate "TF_VAR_agent_endpoint_ocid" "starter_agent_endpoint" 
 
 get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
 get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
@@ -43,8 +43,8 @@ echo "-- FUNCTION CONNECTION ---------------------------"
 echo "FUNCTION_ENDPOINT=$FN_INVOKE_ENDPOINT/20181201/functions/$FN_OCID"
 echo
 echo "-- AGENT (OPTIONAL) ---------------------------"
-echo "AGENT_DATASOURCE_OCID=$AGENT_DATASOURCE_OCID"
-echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
+echo "TF_VAR_agent_datasource_ocid=$TF_VAR_agent_datasource_ocid"
+echo "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
 
 # Deploy compute simplified
 mkdir -p $TARGET_DIR/compute/.
