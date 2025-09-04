@@ -3,6 +3,7 @@ import json
 import requests
 from datetime import datetime
 import oci
+import pathlib
 
 # -- globals ----------------------------------------------------------------
 
@@ -97,7 +98,7 @@ def summarizeContent(value,content):
         log( "</summarizeContent>")
         return dictString(dictString(j,"chatResponse"),"text") 
     except requests.exceptions.HTTPError as err:
-        log("\u26A0 Exception: summarizeContent") 
+        log("\u270B Exception: summarizeContent") 
         log(err.response.status_code)
         log(err.response.text)
         return "-"   
@@ -387,3 +388,10 @@ def genai_agent_datasource_ingest():
                 description=name
             ))
     log( "</genai_agent_datasource_ingest>")     
+
+## -- getFileExtension ------------------------------------------------------
+
+def getFileExtension(resourceName):
+    lowerResourceName = resourceName.lower()
+    return pathlib.Path(lowerResourceName).suffix
+    

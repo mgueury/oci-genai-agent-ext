@@ -7,7 +7,7 @@ import traceback
 import shared
 from shared import log
 from shared import log_in_file
-import shared_db
+import rag_storage
 import document
 
 from datetime import datetime
@@ -33,7 +33,7 @@ def stream_loop(client, stream_id, initial_cursor):
         get_response = client.get_messages(stream_id, cursor, limit=10)
         # No messages to process. return.
         if not get_response.data:
-            document.updateCount( updateCount )
+            rag_storage.updateCount( updateCount )
             return
 
         # Process the messages
@@ -77,10 +77,10 @@ while True:
     stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared.signer)
     try:
         while True:
-            shared_db.initDbConn()
+            rag_storage.init()
             group_cursor = stream_cursor(stream_client, ociStreamOcid, "app-group", "app-instance-1")
             stream_loop(stream_client, ociStreamOcid, group_cursor)
-            shared_db.closeDbConn()
+            rag_storage.close()
             time.sleep(30)
     except:
         log("----------------------------------------------------------------------------")

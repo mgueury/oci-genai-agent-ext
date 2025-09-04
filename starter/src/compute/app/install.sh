@@ -17,7 +17,7 @@ sudo dnf install -y python3.12 python3.12-pip python3-devel wget
 sudo dnf install -y poppler-utils mesa-libGL
 
 sudo pip3.12 install pip --upgrade
-pip3.12 install -r requirements.txt
+pip3.12 install -r src/requirements.txt
 
 # PDFKIT
 wget -nv https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm

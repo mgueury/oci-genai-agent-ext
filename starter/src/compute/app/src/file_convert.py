@@ -9,12 +9,13 @@ from datetime import datetime
 from pathlib import Path
 from oci.object_storage.transfer.constants import MEBIBYTE
 import urllib.parse
+import traceback
 
 # Anonymization
 import anonym_pdf
 from PIL import Image
 import subprocess
-import shared_db
+import rag_storage
 
 # Sitemap
 import base64
@@ -46,7 +47,7 @@ def find_executable_path(prefix):
                 if filename.startswith(prefix) and os.access(os.path.join(path, filename), os.X_OK) and os.path.isfile(os.path.join(path, filename)):
                    return os.path.join(path, filename)
         except:
-            log( f"\u26A0 <find_executable_path>Executable {prefix} not found" )
+            log( f"\u270B <find_executable_path>Executable {prefix} not found" )
             continue
     return None
 
@@ -67,7 +68,7 @@ def delete_bucket_folder(namespace, bucketName, prefix):
             os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
             log( "<delete_bucket_folder> Deleted: " + f )
     except:
-        log("\u26A0 Exception: delete_bucket_folder") 
+        log("\u270B Exception: delete_bucket_folder") 
         log(traceback.format_exc())            
     log( "</delete_bucket_folder>" )
 
@@ -127,6 +128,9 @@ def convertOciFunctionTika(value):
 
    
 ## -- convertOciVision --------------------------------------------------------------
+# Use OCI Speech
+# This will create a .json file with the result in public bucket in the folder "resourceName.speech"
+# This .json file will be picked and indexed later
 
 def convertOciVision(value):
     log( "<convertOciVision>")
@@ -235,6 +239,10 @@ def convertOciVisionBelgianID(value):
     return result  
 
 ## -- convertOciSpeech ------------------------------------------------------
+# 
+# Use OCI Speech
+# This will create a .json file with the result in public bucket in the folder "resourceName.speech"
+# This .json file will be picked and indexed later
 
 def convertOciSpeech(value):
     log( "<convertOciSpeech>")
@@ -376,7 +384,7 @@ def chrome_download_url_as_pdf( driver, url, output_filename):
         element_present = EC.presence_of_element_located((By.TAG_NAME, 'body'))
         WebDriverWait(driver, 20).until(element_present) 
     except Exception as e:
-        log(f"\u26A0 Error waiting for element: {e}")    
+        log(f"\u270B Error waiting for element: {e}")    
 
     print_options = {
         "marginsType": 1,         # Set margins (0 = default, 1 = no margins, 2 = minimal margins)
@@ -390,13 +398,13 @@ def chrome_download_url_as_pdf( driver, url, output_filename):
         f.write(bytes(base64.b64decode(pdf_data)))
     log(f"<chrome_download_url_as_pdf> Saved {output_filename}")   
 
-## -- convertSitemapText ----------------------------------------------------
-def convertSitemapText(value):
+## -- convertChromeSelenium2Pdf ----------------------------------------------------
+def convertChromeSelenium2Pdf(value):
 
     # Read the SITEMAP file from the object storage
     # The format of the file expected is a txt file. Each line contains a full URI.
     # Transforms all the links in PDF and reupload them as PDF in the same object storage
-    log( "<convertSitemapText>")
+    log("<convertChromeSelenium2Pdf>")
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -441,7 +449,7 @@ def convertSitemapText(value):
 
                         pdf_path = pdf_path.replace('/', '___');
                         pdf_path = pdf_path+'.pdf'
-                        log("<convertSitemapText>"+full_uri)
+                        log("<convertChromeSelenium2Pdf>"+full_uri)
                         if os.getenv("INSTALL_LIBREOFFICE")!="no":
                             chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
                         else:
@@ -450,15 +458,12 @@ def convertSitemapText(value):
                         metadata=  {'customized_url_source': full_uri, 'gaas-metadata-filtering-field-folder': folder }    
 
                         # Upload to object storage as "site/"+pdf_path
-                        upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
+                        rag_storage.upload_file(value=value, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
                         fileList.append( prefix+"/"+pdf_path )
-
-    #                    with open(LOG_DIR+"/"+pdf_path, 'rb') as f2:
-    #                        obj = os_client.put_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+pdf_path, put_object_body=f2, metadata=metadata)
-                        
+                      
                     except Exception as e:
-                        log("\u26A0 <convertSitemapText>Error parsing line: "+line+" in "+resourceName)
-                        log("<convertSitemapText>Exception:" + str(e))
+                        log("\u270B <convertChromeSelenium2Pdf>Error parsing line: "+line+" in "+resourceName)
+                        log("<convertChromeSelenium2Pdf>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the sitemap
             response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
@@ -467,17 +472,15 @@ def convertSitemapText(value):
                 if f in fileList:
                     fileList.remove(f)
                 else: 
-                    log( "<convertSitemapText>Deleting: " + f )
-                    os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
-                    log( "<convertSitemapText>Deleted: " + f )
+                    rag_storage.delete_file( value=value, object_name=f )
 
         except FileNotFoundError as e:
-            log("\u26A0 <convertSitemapText>Error: File not found= "+file_name)
+            log("\u270B <convertChromeSelenium2Pdf>Error: File not found= "+file_name)
         except Exception as e:
-            log("\u26A0 <convertSitemapText>An unexpected error occurred: " + str(e))
+            log("\u270B <convertChromeSelenium2Pdf>An unexpected error occurred: " + str(e))
         if os.getenv("INSTALL_LIBREOFFICE")!="no":    
             driver.quit()            
-    log( "</convertSitemapText>")
+    log( "</convertChromeSelenium2Pdf>")
 
 
 ## -- convertJson ------------------------------------------------------------------
@@ -555,16 +558,6 @@ def convertJson(value):
     log( "</convertJson>")
     return result
 
-## -- upload_file -----------------------------------------------------------
-
-def upload_file( value, namespace_name, bucket_name, object_name, file_path, content_type, metadata ):
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-    upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-    upload_manager.upload_file(namespace_name=namespace_name, bucket_name=bucket_name, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
-    log( "Uploaded "+object_name + " - " + content_type )
-    value["customized_url_source"] = metadata.get("customized_url_source")
-    shared_db.insertDoc( value, file_path, object_name )
-
 ## -- convertUpload ---------------------------------------------------
 
 def convertUpload(value, content=None, path=None):
@@ -573,7 +566,6 @@ def convertUpload(value, content=None, path=None):
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceGenAI = resourceName
     
@@ -603,13 +595,9 @@ def convertUpload(value, content=None, path=None):
             with open(file_name, 'w') as f:
                 f.write(content)
 
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=file_name, content_type=contentType, metadata=metadata)
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=file_name, content_type=contentType, metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<convertUpload> Delete")
-        try: 
-            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-        except:
-           log("Exception: Delete failed: " + resourceGenAI)     
+        rag_storage.delete_file( value=value, object_name=resourceGenAI)
     log( "</convertUpload>")                                  
 
 ## -- convertLibreoffice2Pdf ------------------------------------------------------------
@@ -620,12 +608,9 @@ def convertLibreoffice2Pdf(value):
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceId = value["data"]["resourceId"]
     resourceGenAI = str(Path(resourceName).with_suffix('.pdf'))
       
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         office_file = download_file( namespace, bucketName, resourceName)
         log( f'libreoffice_exe={libreoffice_exe}' )
@@ -643,13 +628,9 @@ def convertLibreoffice2Pdf(value):
         log( "pdf_file=" + pdf_file )
         log( "metadata=" + str(metadata) )
         log( "resourceGenAI=" + resourceGenAI )
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<convertLibreoffice2Pdf> Delete")
-        try: 
-            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-        except:
-           log("Exception: Delete failed: " + resourceGenAI)   
+        rag_storage.delete_file( value=value, object_name=resourceGenAI )
     log( "</convertLibreoffice2Pdf>")
 
 ## -- download_file ---------------------------------------------------------
@@ -683,7 +664,6 @@ def convertImage2Pdf(value, content=None, path=None):
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceId = value["data"]["resourceId"]
     resourceGenAI = resourceName+".pdf"
@@ -699,23 +679,21 @@ def convertImage2Pdf(value, content=None, path=None):
         pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
         save_image_as_pdf( pdf_file, [image] )         
 
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<convertImage2Pdf> Delete")
-        try: 
-            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-        except:
-           log("Exception: Delete failed: " + resourceGenAI)   
+        rag_storage.delete_file( value=value, object_name=resourceGenAI )
     log( "</convertImage2Pdf>")
 
 ## -- convertWebp2Png -----------------------------------------------------
+#
+# Convert the Webp file and store the .png in the public bucket.
+# That .png will be picked later and indexed.
 
 def convertWebp2Png(value, content=None, path=None):
     log( "<convertWebp2Png>")
     eventType = value["eventType"]
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
     resourceId = value["data"]["resourceId"]
     resourceGenAI = resourceName+".png"
@@ -729,9 +707,9 @@ def convertWebp2Png(value, content=None, path=None):
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file).convert("RGB")
         png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
-        image.save(png_file, "png")        
-
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, content_type="image/png", metadata=metadata)
+        image.save(png_file, "png")   
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         log( "<convertWebp2Png> Delete")
         try: 
@@ -767,7 +745,7 @@ def run_crawler(url):
         
     except subprocess.CalledProcessError as e:
         # Handle cases where the command fails.
-        print(f"\n\u26A0 Error: Crawler command failed with return code {e.returncode}")
+        print(f"\n\u270B Error: Crawler command failed with return code {e.returncode}")
         print(f"Stderr:\n{e.stderr}")
         raise
 
@@ -830,11 +808,11 @@ def convertCrawler(value):
                                 log(f"URL: {url} - Filename: {filename}")
                                 metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder } 
                                 value["data"]["resourceName"] = title   
-                                upload_file(value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
+                                rag_storage.upload_file(value=value, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
                                 fileList.append(filename)
                         
                     except Exception as e:
-                        log("\u26A0 <convertCrawler>Error parsing line: "+line+" in "+resourceName)
+                        log("\u270B <convertCrawler>Error parsing line: "+line+" in "+resourceName)
                         log(f"<convertCrawler>Exception: {e}")
                         log(traceback.format_exc())
 
@@ -845,14 +823,12 @@ def convertCrawler(value):
                 if f in fileList:
                     fileList.remove(f)
                 else: 
-                    log( "<convertCrawler>Deleting: " + f )
-                    os_client.delete_object( namespace_name=namespace, bucket_name=bucketGenAI, object_name=f )
-                    log( "<crawconvertCrawlerler>Deleted: " + f )
+                    rag_storage.delete_file( value=value, object_name=f )                    
 
         except FileNotFoundError as e:
-            log("\u26A0 <convertCrawler>Error: File not found= "+file_name)
+            log("\u270B <convertCrawler>Error: File not found= "+file_name)
         except Exception as e:
-            log("\u26A0 <convertCrawler>An unexpected error occurred: " + str(e))     
+            log("\u270B <convertCrawler>An unexpected error occurred: " + str(e))     
     log( "</convertCrawler>")
 
 ## -- convertDocling ------------------------------------------------------------
@@ -863,12 +839,9 @@ def convertDocling(value):
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceId = value["data"]["resourceId"]
     resourceGenAI = str(Path(resourceName).with_suffix('.md'))
       
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
-
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
         metadata = get_metadata_from_resource_id( resourceId )
@@ -884,13 +857,9 @@ def convertDocling(value):
             value["content"] = value["content"] + d.page_content
         with open(dest_file, 'w', encoding='utf-8') as f_out:
             f_out.write(value["content"])       
-        upload_file( value=value, namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI, file_path=dest_file, content_type="text/markdown", metadata=metadata)
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=dest_file, content_type="text/markdown", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
-        log( "<convertDocling> Delete")
-        try: 
-            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=resourceGenAI)
-        except:
-           log("Exception: Delete failed: " + resourceGenAI)   
+        rag_storage.delete_file( value=value, object_name=resourceGenAI )
     log("</convertDocling>")
 
 

@@ -1,7 +1,7 @@
 import oci
 import os
 import shared
-import shared_oci
+import file_convert
 from pdf2image import convert_from_path
 from PIL import Image, ImageDraw 
 
@@ -15,7 +15,7 @@ def remove_entities(anonym_pdf_file, j):
         # images[idx] = images[idx].convert('RGB')
         draw_boxes(images[idx], pages_boxes[idx])
     pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
-    shared_oci.save_image_as_pdf( pdf_file, images )  
+    file_convert.save_image_as_pdf( pdf_file, images )  
     shared.log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file
 
@@ -88,7 +88,7 @@ def entities( images, j ):
             "text": text            
         }
         documents.append( doc )
-    ai_client = oci.ai_language.AIServiceLanguageClient(config = {}, signer=shared_oci.signer)  
+    ai_client = oci.ai_language.AIServiceLanguageClient(config = {}, signer=file_convert.signer)  
     details = {
         "documents": documents,
         "compartmentId": compartmentId
@@ -130,4 +130,4 @@ if __name__ == "__main__":
             (width/2, height/2, 10, 10)
         ]
         draw_boxes( image, boxes)
-    shared_oci.save_image_as_pdf( "anonymize/temp.pdf", images)
+    file_convert.save_image_as_pdf( "anonymize/temp.pdf", images)

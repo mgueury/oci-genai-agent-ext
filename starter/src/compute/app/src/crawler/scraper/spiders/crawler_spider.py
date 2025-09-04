@@ -1,6 +1,7 @@
 import scrapy
 import os, shutil
 import re
+from urllib.parse import urlparse
 from scraper.items import MyScraperItem
 
 class CrawlerSpider(scrapy.Spider):
@@ -41,10 +42,12 @@ class CrawlerSpider(scrapy.Spider):
         Parses the current page response, saves the HTML, and follows links.
         """
         content_type = response.headers.get("Content-Type", b"").decode("utf-8")
+        print( f"<parse>url={response.url}")
         print( f"<parse>content_type={content_type}" )
 
         # Case 1: XML Sitemap (sitemap index or urlset)
-        if "xml" in content_type or response.text.strip().startswith("<?xml"):
+        
+        if "xml" in content_type:
             # Detect sitemap index
             sitemap_locs = response.xpath( "//*[local-name()='sitemap']/*[local-name()='loc']/text()").getall()
             print( f"<parse>sitemap_locs={str(sitemap_locs)}" )            
@@ -61,7 +64,7 @@ class CrawlerSpider(scrapy.Spider):
             return
 
         # Case 2: HTML files
-        else:        
+        elif "text/html" in content_type:     
             # Ensure the output directory exists
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
@@ -82,7 +85,7 @@ class CrawlerSpider(scrapy.Spider):
                 with open(filename, 'wb') as f:
                     f.write(response.body)
             except Exception as e:
-                self.log(f'\u26A0 Error saving file {filename}: {e}', level=scrapy.log.ERROR)
+                self.log(f'\u270B Error saving file {filename}: {e}', level=scrapy.log.ERROR)
 
             # Create a new item to hold the data and yield it
             item = MyScraperItem()
@@ -98,6 +101,12 @@ class CrawlerSpider(scrapy.Spider):
             # Follow all links found on the page
             # This creates a new request for each link discovered on the page.
             # It's a simple way to crawl an entire site.
-            for href in response.css('a::attr(href), area::attr(href), iframe::attr(src)'):
-                if not href.startswith('mailto:'):
+            for href in response.css('a::attr(href), area::attr(href), iframe::attr(src)').getall():
+                url = response.urljoin(href)
+                scheme = urlparse(url).scheme
+                if scheme not in ["mailto", "mail", "javascript"]:  # filter protocols                
                     yield response.follow(href, self.parse)
+
+        else:
+            print( f"Skipped {content_type}" )
+            return

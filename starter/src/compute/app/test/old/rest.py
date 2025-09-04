@@ -2,9 +2,9 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 from flask_cors import CORS
-import shared_oci
-from shared_oci import log
-import shared_db
+import file_convert
+from file_convert import log
+import rag_storage
 import shared_langchain
 import json
 
@@ -27,11 +27,11 @@ def query():
         a = shared_langchain.queryDb( question )
     else:
         try:
-            shared_db.initDbConn()
+            rag_storage.init()
             embed = shared.embedText(question)
-            a = shared_db.queryDb( type, question, embed) 
+            a = rag_storage.queryDb( type, question, embed) 
         finally:
-            shared_db.closeDbConn()
+            rag_storage.close()
 
     response = jsonify(a)
     response.status_code = 200
@@ -63,9 +63,9 @@ def cohere_chat():
     documents = request.json.get('documents')
     documentPath = request.json.get('documentPath')
     if documentPath is not None:
-        shared_db.initDbConn()
-        content = shared_db.getDocByPath( documentPath )
-        shared_db.closeDbConn()
+        rag_storage.init()
+        content = rag_storage.getDocByPath( documentPath )
+        rag_storage.close()
         documents = [ { "path": documentPath, "snippet": content } ]    
     result = shared.cohere_chat( message, chatHistory, documents )  
     log("Result="+str(result))  

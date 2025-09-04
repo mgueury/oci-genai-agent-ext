@@ -7,7 +7,8 @@ import pathlib
 import shared
 from shared import log
 from shared import dictString
-from shared import dictInt
+from shared import signer
+import oci
 
 # Langchain
 from langchain_community.document_loaders import PyPDFLoader
@@ -27,7 +28,8 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 from typing import List, Tuple
 
-# Globals
+# -- Globals ----------------------------------------------------------------
+
 region = os.getenv("TF_VAR_region")
 embeddings = OCIGenAIEmbeddings(
     model_id="cohere.embed-multilingual-v3.0",
@@ -35,24 +37,84 @@ embeddings = OCIGenAIEmbeddings(
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )
+# db23ai or object_storage
+RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
 
 # Connection
 dbConn = None
 
-## -- initDbConn --------------------------------------------------------------
+## -- init ------------------------------------------------------------------
 
-def initDbConn():
-    global dbConn 
-    # Thick driver...
-    # oracledb.init_oracle_client()
-    dbConn = oracledb.connect( user=os.getenv('DB_USER'), password=os.getenv('DB_PASSWORD'), dsn=os.getenv('DB_URL'))
-    dbConn.autocommit = True
+def init():
+    if RAG_STORAGE=="db23ai":
+        global dbConn 
+        # Thick driver...
+        # oracledb.init_oracle_client()
+        dbConn = oracledb.connect( user=os.getenv('DB_USER'), password=os.getenv('DB_PASSWORD'), dsn=os.getenv('DB_URL'))
+        dbConn.autocommit = True
 
-## -- closeDbConn --------------------------------------------------------------
+## -- close -----------------------------------------------------------------
 
-def closeDbConn():
-    global dbConn 
-    dbConn.close()
+def close():
+    if RAG_STORAGE=="db23ai":
+        global dbConn 
+        dbConn.close()
+
+## -- updateCount ------------------------------------------------------------------
+
+countUpdate = 0
+
+def updateCount(count):
+    global countUpdate
+
+    ## RAG ObjectStorage - start Ingestion when no new messsage is arriving
+    if RAG_STORAGE=="db23ai":
+        pass
+    else:
+        if count>0:
+            countUpdate = countUpdate + count 
+        elif countUpdate>0:
+            try:
+                shared.genai_agent_datasource_ingest()
+                log( "<updateCount>GenAI agent datasource ingest job created")
+                countUpdate = 0
+            except (Exception) as e:
+                log(f"\u270B <updateCount>ERROR: {e}") 
+
+## -- upload_file -----------------------------------------------------------
+
+def upload_file( value, object_name, file_path, content_type, metadata ):  
+    log("<upload_file>")
+    if RAG_STORAGE=="db23ai":
+        value["customized_url_source"] = metadata.get("customized_url_source")
+        insertDoc( value, file_path, object_name )
+    else:
+        namespace = value["data"]["additionalDetails"]["namespace"]
+        bucketName = value["data"]["additionalDetails"]["bucketName"]
+        bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")        
+
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
+    log("<upload_file>Uploaded "+object_name + " - " + content_type )
+
+## -- delete_file -----------------------------------------------------------
+
+def delete_file( value, object_name ): 
+    log(f"<delete_file>{object_name}")     
+    if RAG_STORAGE=="db23ai":
+        # XXXXX
+        pass
+    else:
+        try: 
+            namespace = value["data"]["additionalDetails"]["namespace"]
+            bucketName = value["data"]["additionalDetails"]["bucketName"]
+            bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")               
+            os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
+            os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name)
+        except:
+           log("Exception: Delete failed: " + resourceGenAI)   
+    log("</delete_file>")     
 
 # -- insertDoc -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
@@ -61,46 +123,43 @@ def insertDoc( value, file_path, object_name ):
     if file_path:
         extension = pathlib.Path(object_name.lower()).suffix
         resourceName = value["data"]["resourceName"]
+          
+        if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
+            return
+        elif extension in [ ".txt", ".json" ]:
+            loader = TextLoader( file_path=file_path )
+            docs = loader.load()
+        elif extension in [ ".md", ".html", ".htm", ".pdf", ".doc", ".docx", ".ppt", ".pptx" ]:
+            # Get the full file in Markdown
+            loader = DoclingLoader(
+                file_path=file_path,
+                export_type=ExportType.MARKDOWN
+            )
+            docs = loader.load()
+            # Split the file via Docling to keep the page ids.
+            chunck_loader = DoclingLoader(
+                file_path=file_path,
+                export_type=ExportType.DOC_CHUNKS,
+                chunker=HybridChunker()
+            )
+            value["chunck"] = chunck_loader.load()
+        # elif extension in [ ".pdf" ]:
+            # loader = PyPDFLoader(
+            #     file_path,
+            #     mode="page"
+            # )
+        else:
+            log(f"\u270B <insertDoc> Error: unknown extension: {extension}")
+            return
+        docs = loader.load()        
 
-        if value.get("content"):
-            log( "value[content] exists")
-        else:               
-            if resourceName in ["_metadata_schema.json", "_all.metadata.json"]:
-                return
-            elif extension in [ ".txt", ".json", ".md" ]:
-                loader = TextLoader( file_path=file_path )
-                docs = loader.load()
-            elif extension in [ ".md", ".html", ".htm", ".pdf", ".doc", ".docx", ".ppt", ".pptx" ]:
-                # Get the full file in Markdown
-                loader = DoclingLoader(
-                    file_path=file_path,
-                    export_type=ExportType.MARKDOWN
-                )
-                docs = loader.load()
-                # Split the file via Docling to keep the page ids.
-                chunck_loader = DoclingLoader(
-                    file_path=file_path,
-                    export_type=ExportType.DOC_CHUNKS,
-                    chunker=HybridChunker()
-                )
-                value["chunck"] = chunck_loader.load()
-            # elif extension in [ ".pdf" ]:
-                # loader = PyPDFLoader(
-                #     file_path,
-                #     mode="page"
-                # )
-            else:
-                log(f"<insertDoc> Error: unknown extension: {extension}")
-                return
-            docs = loader.load()        
+        value["content"] = ""
+        for d in docs:
+            value["content"] = value["content"] + d.page_content
 
-            value["content"] = ""
-            for d in docs:
-                value["content"] = value["content"] + d.page_content
-
-            log("len(docs)="+str(len(docs)))
-            log("-- doc[0].metadata --------------------")
-            pprint.pp(docs[0].metadata)
+        log("len(docs)="+str(len(docs)))
+        log("-- doc[0].metadata --------------------")
+        pprint.pp(docs[0].metadata)
 
         value["source_type"] = "OBJECT_STORAGE"
 
@@ -117,7 +176,7 @@ def insertDoc( value, file_path, object_name ):
             log("Summary="+value["summary"])
             value["summaryEmbed"] = embeddings.embed_query(value["summary"])
         else:
-            log(f"\u26A0 Summary is empty... Skipping {resourceName}")
+            log(f"\u270B Summary is empty... Skipping {resourceName}")
             return
             
         insertTableDocs(value)
@@ -173,7 +232,7 @@ def insertTableDocs( value ):
         value["docId"] = id[0]
         log(f"<insertTableDocs> Successfully inserted {cur.rowcount} records.")
     except (Exception) as error:
-        log(f"\u26A0 <insertTableDocs> Error inserting records: {error}")
+        log(f"\u270B <insertTableDocs> Error inserting records: {error}")
     finally:
         # Close the cursor and connection
         if cur:

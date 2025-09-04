@@ -90,7 +90,7 @@ def chrome_download_url_as_pdf( driver, url, output_filename):
     log(f"<chrome_download_url_as_pdf> Saved {output_filename}")   
 
 ## -- sitemap ------------------------------------------------------------------
-def convertSitemapText(value):
+def convertChromeSelenium2Pdf(value):
 
     # Read the SITEMAP file from the object storage
     # The format of the file expected is a txt file. Each line contains a full URI.

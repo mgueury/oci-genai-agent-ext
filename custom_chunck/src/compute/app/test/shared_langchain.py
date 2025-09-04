@@ -1,9 +1,9 @@
 # Import
 import os
-import shared_db
-from shared_oci import log
-from shared_oci import dictString
-from shared_oci import dictInt
+import rag_storage
+from file_convert import log
+from file_convert import dictString
+from file_convert import dictInt
 
 from langchain_core.documents import Document
 from langchain_community.vectorstores.oraclevs import OracleVS
@@ -75,15 +75,15 @@ def deleteDoc(dbConn, path):
 # -- queryDb ----------------------------------------------------------------------
 
 def queryDb( question ):
-    shared_db.initDbConn()
+    rag_storage.init()
     vectorstore = OracleVS(
         embedding_function=embeddings,
-        client=shared_db.dbConn,
+        client=rag_storage.dbConn,
         table_name="docs_langchain",
         distance_strategy=DistanceStrategy.DOT_PRODUCT,        
     )
     docs_with_score: List[Tuple[Document, float]] = vectorstore.similarity_search_with_score(question, k=10)
-    shared_db.closeDbConn()
+    rag_storage.close()
 
     result = [] 
     for doc, score in docs_with_score:
