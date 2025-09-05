@@ -128,9 +128,6 @@ def convertOciFunctionTika(value):
 
    
 ## -- convertOciVision --------------------------------------------------------------
-# Use OCI Speech
-# This will create a .json file with the result in public bucket in the folder "resourceName.speech"
-# This .json file will be picked and indexed later
 
 def convertOciVision(value):
     log( "<convertOciVision>")
