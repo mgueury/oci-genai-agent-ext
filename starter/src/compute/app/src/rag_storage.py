@@ -114,7 +114,7 @@ def delete_file( value, object_name ):
             os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name)
         except:
-           log("Exception: Delete failed: " + resourceGenAI)   
+           log("Exception: Delete failed: " + object_name)   
     log("</delete_file>")     
 
 # -- insertDoc -----------------------------------------------------------------
