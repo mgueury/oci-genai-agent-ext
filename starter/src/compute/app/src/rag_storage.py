@@ -40,7 +40,7 @@ embeddings = OCIGenAIEmbeddings(
 )
 # db23ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
-DOCLING_HYBRID_CHUNK=False # True
+DOCLING_HYBRID_CHUNK=True #False
 
 # Connection
 dbConn = None

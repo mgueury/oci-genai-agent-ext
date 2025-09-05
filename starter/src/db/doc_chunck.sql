@@ -31,6 +31,19 @@ CREATE TABLE APEX_APP."DOCS_LANGCHAIN" (
 );
 create index APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 
+-- Helper view for debugging
+create view V_DOCS_LANGCHAIN as
+    select 
+        JSON_VALUE(metadata,'$.path') as URL,            
+        metadata,
+        JSON_VALUE(metadata,'$.doc_id') as DOCID, 
+        JSON_VALUE(metadata,'$.file_name') as TITLE, 
+        text as BODY, 
+        id as CHUNKID, 
+        TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) as PAGE_NUMBERS      
+    from docs_langchain;
+
+
 -- DROP TABLE docs_chunck;
 /*
 CREATE TABLE APEX_APP.docs_chunck (
