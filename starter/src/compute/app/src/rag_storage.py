@@ -9,6 +9,7 @@ from shared import log
 from shared import dictString
 from shared import signer
 import oci
+from oci.object_storage.transfer.constants import MEBIBYTE
 
 # Langchain
 from langchain_community.document_loaders import PyPDFLoader
