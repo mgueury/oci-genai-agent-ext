@@ -40,6 +40,7 @@ embeddings = OCIGenAIEmbeddings(
 )
 # db23ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
+DOCLING_HYBRID_CHUNK=False # True
 
 # Connection
 dbConn = None
@@ -137,13 +138,7 @@ def insertDoc( value, file_path, object_name ):
                 export_type=ExportType.MARKDOWN
             )
             docs = loader.load()
-            # Split the file via Docling to keep the page ids.
-            chunck_loader = DoclingLoader(
-                file_path=file_path,
-                export_type=ExportType.DOC_CHUNKS,
-                chunker=HybridChunker()
-            )
-            value["chunck"] = chunck_loader.load()
+            value["content_markdown"] = True
         # elif extension in [ ".pdf" ]:
             # loader = PyPDFLoader(
             #     file_path,
@@ -181,7 +176,7 @@ def insertDoc( value, file_path, object_name ):
             return
             
         insertTableDocs(value)
-        insertTableDocsChunck(value, docs, extension)  
+        insertTableDocsChunck(value, docs, file_path)  
 
 # -- insertTableDocs -----------------------------------------------------------------
 # Normal insert
@@ -241,7 +236,7 @@ def insertTableDocs( value ):
 
 # -- insertTableDocsChunck -----------------------------------------------------------------
 
-def insertTableDocsChunck(value, docs, extension):  
+def insertTableDocsChunck(value, docs, file_path):  
     
     global dbConn
     log("<langchain insertDocsChunck>")
@@ -250,16 +245,27 @@ def insertTableDocsChunck(value, docs, extension):
 
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
 
-    if value.get("chunck"):
-        # splitter = MarkdownHeaderTextSplitter(
-        #     headers_to_split_on=[
-        #         ("#", "Header_1"),
-        #         ("##", "Header_2"),
-        #         ("###", "Header_3"),
-        #     ],
-        # )
-        # docs_chunck = [split for doc in docs for split in splitter.split_text(doc.page_content)]
-        docs_chunck = value["chunck"]
+    if value.get("content_markdown"):
+        if DOCLING_HYBRID_CHUNK:
+            # Advantage: preseve the page numbers / read images PDF
+            # Disadvantage: slow
+            chunck_loader = DoclingLoader(
+                file_path=file_path,
+                export_type=ExportType.DOC_CHUNKS,
+                chunker=HybridChunker()
+            )
+            docs_chunck = chunck_loader.load()
+            # XXX the metadata should be reworked to have the same format for all documents. (page number)
+        else:
+            # Advantage: fast
+            splitter = MarkdownHeaderTextSplitter(
+                headers_to_split_on=[
+                    ("#", "Header_1"),
+                    ("##", "Header_2"),
+                    ("###", "Header_3"),
+                ],
+            )
+            docs_chunck = [split for doc in docs for split in splitter.split_text(doc.page_content)]
     else:
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
         docs_chunck = splitter.split_documents(docs)
