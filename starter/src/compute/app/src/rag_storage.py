@@ -255,7 +255,21 @@ def insertTableDocsChunck(value, docs, file_path):
                 chunker=HybridChunker()
             )
             docs_chunck = chunck_loader.load()
-            # XXX the metadata should be reworked to have the same format for all documents. (page number)
+            
+            # Convert the docling metadata format
+            for d in docs_chunck:
+                # Prov format to page_label
+                try:
+                    d.metadata["page_label"] = d.metadata["dl_meta"]["doc_items"][0]["prov"][0]["page_no"]
+                except (Exception) as e:
+                    log(f"Warning {e}")
+                # Headers to something like MarkdownHeaderTextSplitter
+                try:
+                    d.metadata["Header_1"] = d.metadata["dl_meta"]["headings"][0]
+                    d.metadata["Header_2"] = d.metadata["dl_meta"]["headings"][1]
+                    d.metadata["Header_3"] = d.metadata["dl_meta"]["headings"][2]
+                except (Exception) as e:
+                    log(f"Warning {e}")
         else:
             # Advantage: fast
             splitter = MarkdownHeaderTextSplitter(
@@ -270,6 +284,7 @@ def insertTableDocsChunck(value, docs, file_path):
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)      
         docs_chunck = splitter.split_documents(docs)
 
+    # There is no standard in Langchain chuncking on the metadata.
     for d in docs_chunck:
         d.metadata["doc_id"] = dictString(value,"docId")
         d.metadata["file_name"] = value["data"]["resourceName"]
