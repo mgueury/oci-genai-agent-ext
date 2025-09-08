@@ -30,6 +30,7 @@ from langchain_docling import DoclingLoader
 from langchain_docling.loader import ExportType
 
 # Shared
+import shared
 from shared import log
 from shared import log_in_file
 from shared import dictString
@@ -54,23 +55,7 @@ def find_executable_path(prefix):
 ## -- CONSTANTS -------------------------------------------------------------
 
 libreoffice_exe = find_executable_path("libreoffice")
-
-## -- delete_bucket_folder --------------------------------------------------
-
-def delete_bucket_folder(namespace, bucketName, prefix):
-    log( "<delete_bucket_folder> "+prefix)
-    try:
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
-        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-        for object_file in response.data.objects:
-            f = object_file.name
-            log( "<delete_bucket_folder> Deleting: " + f )
-            os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
-            log( "<delete_bucket_folder> Deleted: " + f )
-    except:
-        log("\u270B Exception: delete_bucket_folder") 
-        log(traceback.format_exc())            
-    log( "</delete_bucket_folder>" )
+CONVERT_PREFIX="rag_file_convert/"
 
 ## -- get_metadata_from_resource_id -----------------------------------------
 def get_metadata_from_resource_id( resourceId ):
@@ -248,11 +233,11 @@ def convertOciSpeech(value):
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     compartmentId = value["data"]["compartmentId"]
-    prefix = resourceName + ".speech"
+    prefix = CONVERT_PREFIX + resourceName + ".speech"
 
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
         # Delete previous speech conversion 
-        delete_bucket_folder( namespace, bucketName, prefix )
+        shared.delete_bucket_folder( namespace, bucketName, prefix )
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         job = {
@@ -302,11 +287,13 @@ def convertOciDocumentUnderstanding(value):
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     resourceName = value["data"]["resourceName"]
     compartmentId = value["data"]["compartmentId"]
-    prefix = resourceName +".docu"
+    prefix = CONVERT_PREFIX + resourceName +".docu"
 
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
-        # Delete previous speech conversion 
-        delete_bucket_folder( namespace, bucketName, prefix )
+        # Delete previous conversion 
+        shared.delete_bucket_folder( namespace, bucketName, prefix )
+        if eventType=="com.oraclecloud.objectstorage.deleteobject" and resourceName.endswith(".anonym.pdf"):
+            convertAnonymPDF( value, resourceName, None )
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         job = {
@@ -405,13 +392,11 @@ def convertChromeSelenium2Pdf(value):
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
-    prefix=resourceName+".download"
+    folder=resourceName+".download"
 
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
-        # Delete previous speech conversion 
-        delete_bucket_folder( namespace, bucketGenAI, prefix )
+        rag_storage.delete_folder( value, folder )
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
@@ -455,21 +440,21 @@ def convertChromeSelenium2Pdf(value):
                         metadata=  {'customized_url_source': full_uri, 'gaas-metadata-filtering-field-folder': folder }    
 
                         # Upload to object storage as "site/"+pdf_path
-                        rag_storage.upload_file(value=value, object_name=prefix+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
-                        fileList.append( prefix+"/"+pdf_path )
+                        rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
+                        fileList.append( folder+"/"+pdf_path )
                       
                     except Exception as e:
                         log("\u270B <convertChromeSelenium2Pdf>Error parsing line: "+line+" in "+resourceName)
                         log("<convertChromeSelenium2Pdf>Exception:" + str(e))
 
             # Check if there are file that are in the folder and not in the sitemap
-            response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-            for object_file in response.data.objects:
-                f = object_file.name
-                if f in fileList:
-                    fileList.remove(f)
-                else: 
-                    rag_storage.delete_file( value=value, object_name=f )
+            # response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=folder, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+            # for object_file in response.data.objects:
+            #     f = object_file.name
+            #     if f in fileList:
+            #         fileList.remove(f)
+            #     else: 
+            #         rag_storage.delete_file( value=value, object_name=f )
 
         except FileNotFoundError as e:
             log("\u270B <convertChromeSelenium2Pdf>Error: File not found= "+file_name)
@@ -478,6 +463,27 @@ def convertChromeSelenium2Pdf(value):
         if os.getenv("INSTALL_LIBREOFFICE")!="no":    
             driver.quit()            
     log( "</convertChromeSelenium2Pdf>")
+
+
+## -- convertAnonymPDF ------------------------------------------------------------------
+# Called by DocumentUnderstanding convertJson
+
+def convertAnonymPDF(value, resourceName, j):
+    log( "<convertAnonymPDF>")
+    eventType = value["eventType"]  
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    anonymPdf = CONVERT_PREFIX + resourceName.replace(".anonym.pdf", ".pdf") 
+
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:     
+        anonym_pdf_file = download_file( namespace, bucketName, resourceName)
+        pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
+        # Upload the anonymize file in the public bucket.
+        upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=anonymPdf, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf")
+    elif eventType in [ "com.oraclecloud.objectstorage.deleteobject" ]:
+        os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=anonymPdf)        
 
 
 ## -- convertJson ------------------------------------------------------------------
@@ -510,12 +516,7 @@ def convertJson(value):
         original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
         original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
         if original_resourcename.endswith(".anonym.pdf"):
-            anonym_pdf_file = download_file( namespace, bucketName, original_resourcename)
-            pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
-            # Upload the anonymize file in the public bucket.
-            resourceName = original_resourcename.replace(".anonym.pdf", ".pdf") 
-            upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-            upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf")
+            convertAnonymPDF( value, original_resourcename, j )
             return None  
         else: 
             concat_text = ""
@@ -732,18 +733,18 @@ def run_crawler(url):
     csv_filename = 'links.csv'
     csv_file_path = os.path.join(output_dir, csv_filename)
 
-    print("--- Starting Crawler. Please wait... ---")   
+    log("--- Starting Crawler. Please wait... ---")   
     try:
         # Run the command. The 'check=True' argument will raise an
         # exception if the command fails, which is good for error handling.
         # result = subprocess.check_output(crawler_command, check=True, capture_output=True, text=True)
         result = subprocess.run(crawler_command, check=True, stdout=subprocess.PIPE).stdout
-        print("\n--- Crawler finished successfully. ---")
+        log("\n--- Crawler finished successfully. ---")
         
     except subprocess.CalledProcessError as e:
         # Handle cases where the command fails.
-        print(f"\n\u270B Error: Crawler command failed with return code {e.returncode}")
-        print(f"Stderr:\n{e.stderr}")
+        log(f"\n\u270B Error: Crawler command failed with return code {e.returncode}")
+        log(f"Stderr:\n{e.stderr}")
         raise
 
 ## -- convertCrawler ------------------------------------------------------------------
@@ -752,13 +753,11 @@ def convertCrawler(value):
     eventType = value["eventType"]     
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
     resourceName = value["data"]["resourceName"]
-    prefix=resourceName+".download"
+    folder=resourceName+".download"
 
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
-        # Delete previous speech conversion 
-        delete_bucket_folder( namespace, bucketGenAI, prefix )
+        rag_storage.delete_folder( value, folder )
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
@@ -804,8 +803,9 @@ def convertCrawler(value):
                                 filename = filename[len(CRAWLER_DIR)+1:]
                                 log(f"URL: {url} - Filename: {filename}")
                                 metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder } 
-                                value["data"]["resourceName"] = title   
-                                rag_storage.upload_file(value=value, object_name=prefix+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
+                                # value["data"]["resourceName"] = title   
+                                value["title"] = title   
+                                rag_storage.upload_file(value=value, object_name=folder+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)
                                 fileList.append(filename)
                         
                     except Exception as e:
@@ -814,13 +814,13 @@ def convertCrawler(value):
                         log(traceback.format_exc())
 
             # Check if there are file that are in the folder and not in the crawler
-            response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=prefix, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
-            for object_file in response.data.objects:
-                f = object_file.name
-                if f in fileList:
-                    fileList.remove(f)
-                else: 
-                    rag_storage.delete_file( value=value, object_name=f )                    
+            # response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketGenAI, prefix=folder, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+            # for object_file in response.data.objects:
+            #     f = object_file.name
+            #     if f in fileList:
+            #         fileList.remove(f)
+            #     else: 
+            #         rag_storage.delete_file( value=value, object_name=f )                    
 
         except FileNotFoundError as e:
             log("\u270B <convertCrawler>Error: File not found= "+file_name)

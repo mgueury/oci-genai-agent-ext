@@ -1,5 +1,6 @@
 import oci
 import os
+from shared import log
 import shared
 import file_convert
 from pdf2image import convert_from_path
@@ -16,7 +17,7 @@ def remove_entities(anonym_pdf_file, j):
         draw_boxes(images[idx], pages_boxes[idx])
     pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
     file_convert.save_image_as_pdf( pdf_file, images )  
-    shared.log( "</remove_entities> pdf_file created: "+ pdf_file )
+    log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file
 
 # ---------------------------------------------------------------------------
@@ -40,7 +41,7 @@ def add_box( boxes, p, width, height, text, type ):
 
 # ---------------------------------------------------------------------------
 def get_box( p, width, height, text, type ):
-    shared.log( "<get_box>" + text)
+    log( "<get_box>" + text)
     if type=="PERSON":
         color = "#330"
     elif type=="DATETIME":
@@ -59,20 +60,20 @@ def get_box( p, width, height, text, type ):
         line_text = line.get("text")
         if text in line_text:
             if line.get("boxed"):
-                shared.log( "<get_box> WARNING: already boxed. Continuing to search." )         
+                log( "<get_box> WARNING: already boxed. Continuing to search." )         
             else:  
-               c = line.get("confidence")
-               v = line.get("boundingPolygon").get("normalizedVertices")
-               box= ( int(v[0].get("x")*width), int(v[0].get("y")*height), int(v[2].get("x")*width), int(v[3].get("y")*height), color )
-               shared.log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
-               line["boxed"] = True
-               return box
-    shared.log( "<get_box> ERROR: text not found: " + text )         
+                c = line.get("confidence")
+                v = line.get("boundingPolygon").get("normalizedVertices")
+                box= ( int(v[0].get("x")*width), int(v[0].get("y")*height), int(v[2].get("x")*width), int(v[3].get("y")*height), color )
+                log( "<get_box>text found: " + text + " / " + str(c) + " / " + str(box)   )                         
+                line["boxed"] = True
+                return box
+    log( "<get_box> ERROR: text not found: " + text )         
     return None         
 
 # ---------------------------------------------------------------------------
 def entities( images, j ):
-    shared.log( "<entities>")
+    log( "<entities>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     
     documents = []
@@ -94,24 +95,24 @@ def entities( images, j ):
         "compartmentId": compartmentId
     }
     response = ai_client.batch_detect_language_entities( details )
-    shared.log_in_file( "entities", str(response.data) )
+    log_in_file( "entities", str(response.data) )
 
     # Calculate the boxes
     pages_boxes = []
     
     for p in j.get("pages"):
         pageNumber = str(p.get("pageNumber"))
-        shared.log( "<entities> pageNumber " + pageNumber )
+        log( "<entities> pageNumber " + pageNumber )
         image = images [int(pageNumber)-1]
         width, height = image.size
         boxes = []
         for doc in response.data.documents:
-            shared.log( "<entities> doc.key " + doc.key )
+            log( "<entities> doc.key " + doc.key )
             if doc.key==pageNumber:
                 for entity in doc.entities:
                     add_box( boxes, p, width, height, entity.text, entity.type )  
         pages_boxes.append( boxes )    
-    shared.log( "</entities> ")
+    log( "</entities> ")
     return pages_boxes
 
 
@@ -123,8 +124,8 @@ if __name__ == "__main__":
   
     for image in images:
         width, height = image.size
-        print( type(Image) )
-        print( "Width="+ str(width) + " / Height="+ str(height) )
+        log( type(Image) )
+        log( "Width="+ str(width) + " / Height="+ str(height) )
         boxes = [
             (0, 0, 10, 10),
             (width/2, height/2, 10, 10)

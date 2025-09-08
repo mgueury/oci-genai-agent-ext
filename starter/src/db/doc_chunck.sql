@@ -5,7 +5,7 @@ CREATE TABLE APEX_APP.docs (
     summary CLOB,
     translation CLOB,
     summary_embed vector(1024),
-    filename varchar2(256),    
+    resource_name varchar2(1024), -- Parent file that caused the event to trigger.
     path varchar2(1024),    
     content_type varchar2(256),
     region varchar2(256),    
@@ -17,7 +17,7 @@ CREATE TABLE APEX_APP.docs (
     other2 varchar2(1024),    
     other3 varchar2(1024),    
     parsed_by varchar2(256),    
-    publisher varchar2(256),
+    title varchar2(1024),
     source_type varchar2(256)
 );
 alter table "APEX_APP"."DOCS" add constraint "DOCS_PK" primary key ( "ID" );
@@ -53,7 +53,7 @@ CREATE TABLE APEX_APP.docs_chunck (
     content CLOB,
     translation CLOB,
     embed vector(1024),
-    filename varchar2(256),    
+    resource_name varchar2(256),    
     path varchar2(1024),    
     content_type varchar2(256),
     region varchar2(256),    

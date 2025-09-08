@@ -11,7 +11,6 @@ def eventDocument(value):
     eventType = value["eventType"]
     # ex: /n/fr03kabcd/psql-public-bucket/o/country.pdf"
     resourceId = value["data"]["resourceId"]
-    log( "eventType=" + eventType + " - " + resourceId ) 
     # eventType == "com.oraclecloud.objectstorage.createobject":
     # eventType == "com.oraclecloud.objectstorage.updateobject":
     # eventType == "com.oraclecloud.objectstorage.deleteobject":
@@ -30,12 +29,13 @@ def eventDocument(value):
         file_convert.convertUpload(value)
         return   
     elif resourceExtension in [".docx", ".doc",".pptx", ".ppt"] and file_convert.libreoffice_exe!=None:
-        if rag_storage.RAG_STORAGE=="db23ai":
+        if rag_storage.RAG_STORAGE=="db23ai" and resourceExtension in [".pptx", ".ppt"]:
             # Convert to Markdown
             file_convert.convertUpload(value)
             return        
         else:
             # Convert to PDF            
+            # Even for DB23ai, first convert to PDF (to get page numbers). Then PDF to text. (See https://github.com/docling-project/docling/discussions/1012)
             file_convert.convertLibreoffice2Pdf(value)
             return
     # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:

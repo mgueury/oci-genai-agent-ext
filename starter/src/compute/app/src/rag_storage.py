@@ -105,8 +105,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
 def delete_file( value, object_name ): 
     log(f"<delete_file>{object_name}")     
     if RAG_STORAGE=="db23ai":
-        # XXXXX
-        pass
+        deleteDoc( value )
     else:
         try: 
             namespace = value["data"]["additionalDetails"]["namespace"]
@@ -117,6 +116,19 @@ def delete_file( value, object_name ):
         except:
            log("Exception: Delete failed: " + object_name)   
     log("</delete_file>")     
+
+## -- delete_folder ---------------------------------------------------------
+
+def delete_folder(value, folder):
+    log( "<delete_folder> "+folder)
+    if RAG_STORAGE=="db23ai":
+        deleteDoc( value )
+    else:
+        namespace = value["data"]["additionalDetails"]["namespace"]
+        bucketName = value["data"]["additionalDetails"]["bucketName"]
+        bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+        shared.delete_bucket_folder(namespace, bucketGenAI, folder)
+    log( "</delete_folder>" )    
 
 # -- insertDoc -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
@@ -155,7 +167,7 @@ def insertDoc( value, file_path, object_name ):
 
         log("len(docs)="+str(len(docs)))
         log("-- doc[0].metadata --------------------")
-        pprint.pp(docs[0].metadata)
+        log(pprint.pformat(docs[0].metadata))
 
         value["source_type"] = "OBJECT_STORAGE"
 
@@ -166,7 +178,7 @@ def insertDoc( value, file_path, object_name ):
             value["summary"] = value["content"]            
         log("Summary="+value["summary"])
         
-        deleteDoc( value ) 
+        deleteDocByPath(value) 
 
         if len(value["summary"])>0:
             log("Summary="+value["summary"])
@@ -185,18 +197,19 @@ def insertTableDocs( value ):
     global dbConn
     cur = dbConn.cursor()
     log("<insertTableDocs>")
-    # pprint.pp(value)    
+    # log(pprint.pformat(value))    
     # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
     stmt = """
         INSERT INTO docs (
             application_name, author, translation, content_type,
             creation_date, modified, other1, other2, other3, parsed_by,
-            filename, path, publisher, region, summary_embed, source_type,
+            resource_name, path, title, region, summary_embed, source_type,
             content, summary
         )
         VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18)
         RETURNING id INTO :19
     """
+    resourceName=value["data"]["resourceName"]
     id_var = cur.var(oracledb.NUMBER)
     data = (
             dictString(value,"applicationName"), 
@@ -210,9 +223,9 @@ def insertTableDocs( value ):
             dictString(value,"other2"),
             dictString(value,"other3"),
             dictString(value,"parsed_by"),
-            dictString(value,"resourceName"), # filename
+            resourceName,                              # resourceName that caused the event to be started (used for deletion) 
             dictString(value,"customized_url_source"), # path
-            dictString(value,"publisher"),
+            value.get("title", resourceName),          # provided title if not resourceName
             os.getenv("TF_VAR_region"),
             str(dictString(value,"summaryEmbed")),            
             dictString(value,"source_type"),
@@ -240,8 +253,8 @@ def insertTableDocsChunck(value, docs, file_path):
     
     global dbConn
     log("<langchain insertDocsChunck>")
-    print("-- docs --------------------")
-    pprint.pp(docs)
+    log("-- docs --------------------")
+    log(pprint.pformat(docs))
 
     vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
 
@@ -255,21 +268,23 @@ def insertTableDocsChunck(value, docs, file_path):
                 chunker=HybridChunker()
             )
             docs_chunck = chunck_loader.load()
-            
+
             # Convert the docling metadata format
             for d in docs_chunck:
                 # Prov format to page_label
                 try:
                     d.metadata["page_label"] = d.metadata["dl_meta"]["doc_items"][0]["prov"][0]["page_no"]
+                    # log(f"metadata page_label={d.metadata["page_label"]}")
                 except (Exception) as e:
-                    log(f"Warning {e}")
+                    log(f"metadata page_label - Warning {e}")
                 # Headers to something like MarkdownHeaderTextSplitter
                 try:
-                    d.metadata["Header_1"] = d.metadata["dl_meta"]["headings"][0]
-                    d.metadata["Header_2"] = d.metadata["dl_meta"]["headings"][1]
-                    d.metadata["Header_3"] = d.metadata["dl_meta"]["headings"][2]
+                    if d.metadata["dl_meta"].get("hedings"):
+                        for i, h in enumerate(d.metadata["dl_meta"]["headings"]):
+                            d.metadata[f"Header_{i+1}"]=h        
+                            # log(f"metadata Header_{i+1}={h}")
                 except (Exception) as e:
-                    log(f"Warning {e}")
+                    log(f"metadata header - Warning {e}")
         else:
             # Advantage: fast
             splitter = MarkdownHeaderTextSplitter(
@@ -287,12 +302,12 @@ def insertTableDocsChunck(value, docs, file_path):
     # There is no standard in Langchain chuncking on the metadata.
     for d in docs_chunck:
         d.metadata["doc_id"] = dictString(value,"docId")
-        d.metadata["file_name"] = value["data"]["resourceName"]
+        d.metadata["resource_name"] = value["data"]["resourceName"]
         d.metadata["path"] = value["customized_url_source"]
         d.metadata["content_type"] = dictString(value,"contentType")
 
-    print("-- docs_chunck --------------------")  
-    pprint.pp( docs_chunck )
+    log("-- docs_chunck --------------------")  
+    log(pprint.pformat( docs_chunck ))
     vectorstore.add_documents( docs_chunck )
     log("</langchain insertDocsChunck>")
 
@@ -301,15 +316,47 @@ def insertTableDocsChunck(value, docs, file_path):
 def deleteDoc( value ):  
     global dbConn
     cur = dbConn.cursor()
-    path = value["customized_url_source"]
-    log(f"<deleteDoc> path={path}")
+    resourceName = value["data"]["resourceName"]
+    log(f"<deleteDoc> resourceName={resourceName}")
 
     # Delete the document record
     try:
-        cur.execute("delete from docs where path=:1", (path,))
-        print(f"<deleteDoc> Successfully {cur.rowcount} docs deleted")
+        cur.execute("delete from docs where resource_name=:1", (resourceName,))
+        log(f"<deleteDoc> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
-        print(f"<deleteDoc> Error deleting: {error}")
+        log(f"<deleteDoc> docs: Error deleting: {error}")
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()
+
+    # Delete from the table directly..
+    cur = dbConn.cursor()
+    stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.resource_name')=:1"
+    try:
+        cur.execute(stmt, (resourceName,))
+        log(f"<deleteDoc> docs_langchain: Successfully {cur.rowcount} deleted")
+    except (Exception) as error:
+        log(f"<deleteDoc> docs_langchain: Error deleting: {error}")
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()    
+
+# -- deleteDocByPath --------------------------------------------------------
+
+def deleteDocByPath( value ):  
+    global dbConn
+    cur = dbConn.cursor()
+    path =  value["customized_url_source"]
+    log(f"<deleteDocByPath> resourceName={path}")
+
+    # Delete the document record
+    try:
+        cur.execute("delete from docs where resource_name=:1", (path,))
+        log(f"<deleteDocByPath> docs: Successfully {cur.rowcount} deleted")
+    except (Exception) as error:
+        log(f"<deleteDocByPath> docs: Error deleting: {error}")
     finally:
         # Close the cursor and connection
         if cur:
@@ -318,18 +365,17 @@ def deleteDoc( value ):
     # Delete from the table directly..
     cur = dbConn.cursor()
     stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.path')=:1"
-    log(f"<langchain deleteDoc> path={path}")
     try:
         cur.execute(stmt, (path,))
-        print(f"<deleteDoc> langchain: Successfully {cur.rowcount} deleted")
+        log(f"<deleteDocByPath> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
-        print(f"<deleteDoc> langchain: Error deleting: {error}")
+        log(f"<deleteDocByPath> docs_langchain: Error deleting: {error}")
     finally:
         # Close the cursor and connection
         if cur:
-            cur.close()    
+            cur.close() 
 
-# -- queryDb ----------------------------------------------------------------------
+# -- queryDb ----------------------------------------------------------------
 
 def queryDb( type, question, embed ):
     result = [] 
@@ -390,3 +436,4 @@ def getDocByPath( path ):
         return str(row[2])  
     log("<getDocByPath>Docs not found: " + path)
     return "-"  
+

@@ -11,6 +11,8 @@ import pathlib
 signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 config = {'region': signer.region, 'tenancy': signer.tenancy_id}
 
+# Log
+log_file_name = None
 
 # Create Log directory
 LOG_DIR = '/tmp/app_log'
@@ -22,13 +24,26 @@ UNIQUE_ID = "ID"
 COHERE_MODEL="cohere.command-a-03-2025"
 LLAMA_MODEL= "meta.llama-3.1-70b-instruct"
 
+## -- log_write_in_file -------------------------------------------------------------------
+# Write logs in a file also 
+
+def log_write_in_file( file_name ): 
+   global log_file_name               
+   log_file_name = file_name
+
 ## -- log -------------------------------------------------------------------
 
 def log(s):
+   global log_file_name
    dt = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-   print( "["+dt+"] "+ str(s), flush=True)
+   s2 = "["+dt+"] "+ str(s)
+   print( s2, flush=True)
+   if log_file_name:
+       with open(log_file_name, "a", encoding="utf-8") as log_file:
+           log_file.write(s2+'\n')       
 
 ## -- log_in_file -----------------------------------------------------------
+# Log a full file 
 
 def log_in_file(prefix, value):
     global UNIQUE_ID
@@ -38,25 +53,17 @@ def log_in_file(prefix, value):
     filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
     with open(filename, "w", encoding="utf-8") as text_file:
         text_file.write(value)
-    log("log file: " +filename )  
+    log("<log_in_file>" +filename )  
 
 ## -- dictString ------------------------------------------------------------
 
 def dictString(d,key):
-   value = d.get(key)
-   if value is None:
-       return "-"
-   else:
-       return value  
+   return d.get(key, "-")
    
 ## -- dictInt ------------------------------------------------------------
 
 def dictInt(d,key):
-   value = d.get(key)
-   if value is None:
-       return 0
-   else:
-       return int(float(value))     
+   return int(float(d.get(key, 0)))
    
 ## -- summarizeContent ------------------------------------------------------
 
@@ -394,4 +401,20 @@ def genai_agent_datasource_ingest():
 def getFileExtension(resourceName):
     lowerResourceName = resourceName.lower()
     return pathlib.Path(lowerResourceName).suffix
-    
+
+## -- delete_bucket_folder --------------------------------------------------
+
+def delete_bucket_folder(namespace, bucketName, folder):
+    log( "<delete_bucket_folder> "+folder)
+    try:
+        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+        response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=folder, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
+        for object_file in response.data.objects:
+            f = object_file.name
+            log( "<delete_bucket_folder> Deleting: " + f )
+            os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
+            log( "<delete_bucket_folder> Deleted: " + f )
+    except:
+        log("\u270B Exception: delete_bucket_folder") 
+        log(traceback.format_exc())            
+    log( "</delete_bucket_folder>" )    

@@ -7,7 +7,7 @@ rm starter/custom_chunck.sh
 
 sed -i '/export TF_VAR_agent_datasource_ocid=/d' starter/src/compute/app/env.sh
 
-echo "http://www.gueury.com" > sample_files/gueury.crawler
+# echo "http://www.gueury.com" > sample_files/gueury.crawler
 
 # sed -i 's/export AGENT_DATASOURCE_OCID/TF_VAR_prefix="db23ai"/' starter/env.sh
 # sed -i 's/TF_VAR_db_user="postgres"/TF_VAR_db_user="admin"/' starter/env.sh

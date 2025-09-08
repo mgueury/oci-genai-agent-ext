@@ -6,12 +6,19 @@ import time
 import traceback
 import shared
 from shared import log
+from shared import log_write_in_file
 from shared import log_in_file
+from shared import UNIQUE_ID
 import rag_storage
 import document
 
-from datetime import datetime
+from datetime import datetime, timezone
 from base64 import b64decode
+
+## -- Globals --------------------------------------------------------------
+
+updateList = {} # Dictionary of parsed files
+updateCount = 0
 
 ## -- stream_cursor --------------------------------------------------------
 
@@ -27,38 +34,69 @@ def stream_cursor(sc, sid, group_name, instance_name):
 ## -- stream_loop --------------------------------------------------------
 
 def stream_loop(client, stream_id, initial_cursor):
+    global UNIQUE_ID
+    global updateList
+    global updateCount        
     updateCount = 0
     cursor = initial_cursor
+
     while True:
         get_response = client.get_messages(stream_id, cursor, limit=10)
         # No messages to process. return.
         if not get_response.data:
+            updateList = {}
             rag_storage.updateCount( updateCount )
             return
-
         # Process the messages
         log("<stream_loop> Read {} messages".format(len(get_response.data)))
-        updateCount += len(get_response.data)
         for message in get_response.data:
             timeStart = time.time()
+            updateCount += 1
             try:
-                log("\n\n-- NEW MESSAGE -----------------------------------------------------------------------------------------" )
+                log_file_name = shared.LOG_DIR + f"/message_{updateCount}.log"
+                log_write_in_file(log_file_name)
+                log(f"\n\n-- STREAM LOOP - MESSAGE {updateCount} -----------------------------------------------------------------------------------------" )
                 if message.key is None:
                     key = "Null"
                 else:
                     key = b64decode(message.key.encode()).decode()
                 json_value = b64decode(message.value.encode()).decode(); 
                 log(json_value)
+
                 shared.UNIQUE_ID = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
                 log_in_file("stream", json_value)
                 value = json.loads(json_value)
+
+                # Check if that resourceName was parsed already once in this stream_loop (and if yes, if before or after the received event)
+                resourceName = value["data"]["resourceName"] 
+                eventTime = value["eventTime"] 
+                eventType = value["eventType"]
+                if eventType in ["com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject"]:
+                    parsed_datetime_naive = datetime.strptime(eventTime.rstrip('Z'), '%Y-%m-%dT%H:%M:%S')
+                    eventTime_utc = parsed_datetime_naive.replace(tzinfo=timezone.utc)
+                    if updateList.get(resourceName):
+                        if eventTime_utc<updateList.get(resourceName):
+                            log(f"\u2705 {resourceName} Skipped - Parsed at {updateList.get(resourceName)} after event {eventTime_utc}")
+                            continue
+                        else:
+                            log(f"<stream_loop>{resourceName} Modified after last parsing. {updateList.get(resourceName)} before event {eventTime_utc}")
+                    else:
+                        log(f"<stream_loop>{resourceName}")
+                    # Not parsed yet or update after the last parsing   
+                    updateList[resourceName]=datetime.now(timezone.utc)
+                
+                # DEBUG
+                # for k, v in updateList.items():
+                #    log(f"updateList - {k} - {v}")
+
                 document.eventDocument(value)
-                log( f"\u2705 {value["data"]["resourceName"]}")                  
+                log( f"\u2705 {resourceName}")                  
             except:
                 log( f"\u274C Exception: stream_loop") 
-                log(traceback.format_exc())
+                log( traceback.format_exc())
             timeEnd = time.time()
             log(f"Time: {timeEnd - timeStart} secs")                
+            log_write_in_file(None)                
                 
         log("<stream_loop> Processed {} messages".format(len(get_response.data)))        
             
@@ -73,8 +111,8 @@ def stream_loop(client, stream_id, initial_cursor):
 ociMessageEndpoint = os.getenv('STREAM_MESSAGE_ENDPOINT')
 ociStreamOcid = os.getenv('STREAM_OCID')
 
+stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared.signer)
 while True:
-    stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared.signer)
     try:
         while True:
             rag_storage.init()
@@ -89,7 +127,7 @@ while True:
         # Resetting Stream - This is needed when you have the cursor that is too old. 
         # Error: 400 - The cursor is outside the retention period and is now invalid.
         # Some message will be lost. Trim_horizon take the oldest one.
-        update_group_response = stream_client.update_group(
-            stream_id=ociStreamOcid,
-            group_name="app-group",
-            update_group_details=oci.streaming.models.UpdateGroupDetails(type="TRIM_HORIZON"))
+        # update_group_response = stream_client.update_group(
+        #     stream_id=ociStreamOcid,
+        #     group_name="app-group",
+        #     update_group_details=oci.streaming.models.UpdateGroupDetails(type="TRIM_HORIZON"))
