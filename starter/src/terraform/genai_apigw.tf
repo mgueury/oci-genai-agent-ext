@@ -1,4 +1,4 @@
-resource "oci_apigateway_deployment" "starter_apigw_deployment" {   
+resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {   
   count          = var.fn_image == "" ? 0 : 1   
   compartment_id = local.lz_web_cmp_ocid
   display_name   = "${var.prefix}-apigw-deployment"
