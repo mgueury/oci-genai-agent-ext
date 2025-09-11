@@ -1,3 +1,7 @@
+locals {
+  db_root_url = replace(data.oci_database_autonomous_database.starter_atp.connection_urls[0].apex_url, "/ords/apex", "" )
+}
+
 resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {   
   count          = var.fn_image == "" ? 0 : 1   
   compartment_id = local.lz_web_cmp_ocid
@@ -104,7 +108,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_ords" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "${local.db_root_url}/ords/$${request.path[pathname]}"
+        url    = "${local.local_db_root_url}/ords/$${request.path[pathname]}"
         connect_timeout_in_seconds = 60
         read_timeout_in_seconds = 120
         send_timeout_in_seconds = 120            
