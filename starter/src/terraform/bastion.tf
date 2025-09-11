@@ -26,7 +26,7 @@ resource "oci_core_instance" "starter_bastion" {
 
   source_details {
     source_type = "image"
-    boot_volume_size_in_gbs = "100" 
+    # boot_volume_size_in_gbs = "50" 
     source_id   = data.oci_core_images.oraclelinux.images.0.id
   }
 
@@ -39,9 +39,10 @@ resource "oci_core_instance" "starter_bastion" {
 
   lifecycle {
     ignore_changes = [
-      source_details[0].source_id
+      source_details[0].source_id,
+      shape
     ]
-  }  
+  }
 
   freeform_tags = local.freeform_tags   
 }
@@ -50,6 +51,10 @@ data "oci_core_instance" "starter_bastion" {
   instance_id = oci_core_instance.starter_bastion.id
 }
 
-output "bastion_public_ip" {
-  value = data.oci_core_instance.starter_bastion.public_ip
+locals {
+  local_bastion_ip = data.oci_core_instance.starter_bastion.public_ip
+}
+
+output "bastion_ip" {
+  value = local.local_bastion_ip
 }

@@ -6,7 +6,7 @@ resource "oci_database_autonomous_database" "starter_atp" {
   db_version                 = "23ai"  
   compute_model              = "ECPU"  
   compute_count              = "2"
-  data_storage_size_in_gb    = "64" 
+  data_storage_size_in_gb    = "128" 
 
   # Random name to have several OCI Starter ATP named (starteratpxxxx) on the same Tenancy (Ex: livelabs)
   db_name                  = "${var.prefix}atp${random_string.id.result}"
@@ -18,7 +18,7 @@ resource "oci_database_autonomous_database" "starter_atp" {
   license_model                                  = var.license_model
   is_preview_version_with_service_terms_accepted = "false"
   # XXXXX  
-  # whitelisted_ips                              = [ data.oci_core_vcn.starter_vcn.id ]
+  #  whitelisted_ips                             = [ data.oci_core_vcn.starter_vcn.id ]
   # whitelisted_ips                              = [ "0.0.0.0/0" ]
   subnet_id                                      = data.oci_core_subnet.starter_db_subnet.id
   is_mtls_connection_required                    = false
@@ -36,14 +36,10 @@ locals {
   list_profiles = [for v in data.oci_database_autonomous_database.starter_atp.connection_strings[0].profiles : format("%s/%s",v.protocol,v.consumer_group)]
   # Get index for 'name' equal to "Dan"
   index_profile = index(local.list_profiles, "TCPS/MEDIUM")
-  db_url = replace(data.oci_database_autonomous_database.starter_atp.connection_strings[0].profiles[local.index_profile].value, " ", "")
-  jdbc_url = format("jdbc:oracle:thin:@%s", local.db_url)
+  local_db_url = replace(data.oci_database_autonomous_database.starter_atp.connection_strings[0].profiles[local.index_profile].value, " ", "")
+  local_jdbc_url = format("jdbc:oracle:thin:@%s", local.local_db_url)
   # Create List of 'name' values from source objet list
-  ords_url = replace(data.oci_database_autonomous_database.starter_atp.connection_urls[0].apex_url, "ords/apex", "ords" )
-}
-
-output "ords_url" {
-  value = local.ords_url
+  local_ords_url = replace(data.oci_database_autonomous_database.starter_atp.connection_urls[0].apex_url, "ords/apex", "ords" )
 }
 
 // -- Resource Principals ---------------------------------------------------

@@ -45,7 +45,7 @@ build_ui() {
 }
 
 docker_login() {
-  oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${TF_VAR_ocir}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${TF_VAR_ocir}
+  oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${OCIR_HOST}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${OCIR_HOST}
   exit_on_error "Docker Login"
 }
 
@@ -338,7 +338,6 @@ get_ui_url() {
       fi
     fi  
   elif [ "$TF_VAR_deploy_type" == "instance_pool" ]; then
-    get_output_from_tfstate INSTANCE_POOL_LB_IP instance_pool_lb_ip 
     export UI_URL=http://${INSTANCE_POOL_LB_IP}
     if [ "$TF_VAR_tls" != "" ] && [ "$TF_VAR_certificate_ocid" != "" ]; then
       export UI_HTTP=$UI_URL
@@ -374,7 +373,7 @@ is_deploy_compute() {
 livelabs_green_button() {
   # Lot of tests to be sure we are in an Green Button LiveLabs
   # compartment_ocid still undefined ? 
-  if grep -q 'export TF_VAR_compartment_ocid="__TO_FILL__"' $PROJECT_DIR/env.sh; then
+  if grep -q 'compartment_ocid="__TO_FILL__"' $PROJECT_DIR/terraform.tfvars; then
     # vnc_ocid still undefined ? 
     if [ "$TF_VAR_vcn_ocid" != "__TO_FILL__" ]; then
       # Variables already set
@@ -407,24 +406,24 @@ livelabs_green_button() {
     echo TF_VAR_compartment_ocid=$TF_VAR_compartment_ocid
 
     if [ "$TF_VAR_compartment_ocid" != "" ]; then
-      sed -i "s&export TF_VAR_compartment_ocid=\"__TO_FILL__\"&export TF_VAR_compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/env.sh
-      echo "TF_VAR_compartment_ocid stored in env.sh"
+      sed -i "s&compartment_ocid=\"__TO_FILL__\"&compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/terraform.tfvars
+      echo "TF_VAR_compartment_ocid stored in terraform.tfvars"
     fi  
 
     export TF_VAR_vcn_ocid=`oci network vcn list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
     echo TF_VAR_vcn_ocid=$TF_VAR_vcn_ocid  
     if [ "$TF_VAR_vcn_ocid" != "" ]; then
-      sed -i "s&TF_VAR_vcn_ocid=\"__TO_FILL__\"&TF_VAR_vcn_ocid=\"$TF_VAR_vcn_ocid\"&" $PROJECT_DIR/env.sh
-      echo "TF_VAR_vcn_ocid stored in env.sh"
+      sed -i "s&vcn_ocid=\"__TO_FILL__\"&vcn_ocid=\"$TF_VAR_vcn_ocid\"&" $PROJECT_DIR/terraform.tfvars
+      echo "TF_VAR_vcn_ocid stored in terraform.tfvars"
     fi  
 
     export TF_VAR_subnet_ocid=`oci network subnet list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
     echo TF_VAR_subnet_ocid=$TF_VAR_subnet_ocid  
     if [ "$TF_VAR_subnet_ocid" != "" ]; then
-      sed -i "s&TF_VAR_web_subnet_ocid=\"__TO_FILL__\"&TF_VAR_web_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/env.sh
-      sed -i "s&TF_VAR_app_subnet_ocid=\"__TO_FILL__\"&TF_VAR_app_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/env.sh
-      sed -i "s&TF_VAR_db_subnet_ocid=\"__TO_FILL__\"&TF_VAR_db_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/env.sh
-      echo "TF_VAR_subnet_ocid stored in env.sh"
+      sed -i "s&web_subnet_ocid=\"__TO_FILL__\"&web_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+      sed -i "s&app_subnet_ocid=\"__TO_FILL__\"&app_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+      sed -i "s&db_subnet_ocid=\"__TO_FILL__\"&db_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+      echo "TF_VAR_subnet_ocid stored in terraform.tfvars"
       # Set the real variables such that the first "build" works too.
       export TF_VAR_web_subnet_ocid=$TF_VAR_subnet_ocid
       export TF_VAR_app_subnet_ocid=$TF_VAR_subnet_ocid
@@ -432,21 +431,22 @@ livelabs_green_button() {
     fi  
     
     # LiveLabs support only E4 Shapes
-    sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/env.sh
+    sed -i '/compartment_ocid=/a\instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/terraform.tfvars
     export TF_VAR_instance_shape=VM.Standard.E4.Flex
   fi
 }
 
 lunalab() {
-  if grep -q 'export TF_VAR_compartment_ocid="__TO_FILL__"' $PROJECT_DIR/env.sh; then    
-    if [ "$USER" == "luna.user" ]; then
+  if [ "$USER" == "luna.user" ]; then  
+     export SUPPRESS_LABEL_WARNING=True  
+     if grep -q 'compartment_ocid="__TO_FILL__"' $PROJECT_DIR/terraform.tfvars; then    
       echo "LunaLab - Luna User detected"
       export TF_VAR_compartment_ocid=$OCI_COMPARTMENT_OCID
-      sed -i "s&export TF_VAR_compartment_ocid=\"__TO_FILL__\"&export TF_VAR_compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/env.sh      
+      sed -i "s&compartment_ocid=\"__TO_FILL__\"&compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/terraform.tfvars     
       export TF_VAR_instance_shape="VM.Standard.E5.Flex"
-      sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_instance_shape="VM.Standard.E5.Flex"' $PROJECT_DIR/env.sh      
+      sed -i '/compartment_ocid=/a\instance_shape="VM.Standard.E5.Flex"' $PROJECT_DIR/terraform.tfvars     
       export TF_VAR_no_policy="true"      
-      sed -i '/export TF_VAR_compartment_ocid=/a\export TF_VAR_no_policy="true"' $PROJECT_DIR/env.sh      
+      sed -i '/compartment_ocid=/a\no_policy="true"' $PROJECT_DIR/terraform.tfvars
     fi    
   fi 
 }

@@ -135,7 +135,7 @@ def main(stdscr):
             elif key == 27: # ESC
                 break
     except:
-        print( "\u270B WARNING - screen too small", flush=True )
+        print( "WARNING - screen too small", flush=True )
         print( "-> HELP", flush=True )
         with open(f"{os.environ['TARGET_DIR']}/command.txt", "w") as f:
             f.write("./starter.sh help")
