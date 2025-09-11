@@ -73,7 +73,8 @@ resource "null_resource" "build_deploy" {
     oci_identity_policy.starter_fn_policy,
     oci_logging_log.export_starter_fn_application_invoke,
     oci_logging_log_group.starter_log_group,
-    oci_objectstorage_bucket.starter_bucket,    
+    oci_objectstorage_bucket.starter_bucket, 
+    oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint   
   ]
 
   triggers = {
