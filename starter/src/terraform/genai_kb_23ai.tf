@@ -90,17 +90,17 @@ data "oci_database_tools_database_tools_private_endpoints" "starter_database_too
   display_name    = oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint.display_name
 }
 
-output "private_endpoints_d" {
-  value = data.oci_database_tools_database_tools_private_endpoints.starter_database_tools_private_endpoints
-}
+# output "private_endpoints_d" {
+#   value = data.oci_database_tools_database_tools_private_endpoints.starter_database_tools_private_endpoints
+# }
 
 data "oci_database_tools_database_tools_private_endpoint" "starter_database_tools_private_endpoint" {
   database_tools_private_endpoint_id = data.oci_database_tools_database_tools_private_endpoints.starter_database_tools_private_endpoints.database_tools_private_endpoint_collection.0.items.0.id
 }
 
-output "private_endpoint_d" {
-  value = data.oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint
-}
+# output "private_endpoint_d" {
+#   value = data.oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint
+# }
 
 // -- Connection ------------------------------------------------------------
 
@@ -133,9 +133,9 @@ resource "oci_database_tools_database_tools_connection" "starter_dbtools_connect
   private_endpoint_id = oci_database_tools_database_tools_private_endpoint.starter_database_tools_private_endpoint.id
 }
 
-output "connection_r" {
-  value = oci_database_tools_database_tools_connection.starter_dbtools_connection
-}
+# output "connection_r" {
+#   value = oci_database_tools_database_tools_connection.starter_dbtools_connection
+# }
 
 # -- Connection - Data Sources-----------------------------------------------
 
@@ -145,9 +145,9 @@ data "oci_database_tools_database_tools_connections" "starter_database_tools_con
   state          = "ACTIVE"
 }
 
-output "connections_d" {
-  value = data.oci_database_tools_database_tools_connections.starter_database_tools_connections
-}
+# output "connections_d" {
+#   value = data.oci_database_tools_database_tools_connections.starter_database_tools_connections
+# }
 
 # -- Knowledge Base ---------------------------------------------------------
 

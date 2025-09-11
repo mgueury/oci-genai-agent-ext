@@ -1,3 +1,5 @@
+variable no_policy { default=null }
+
 resource "oci_identity_policy" "starter_search_policy" {
     count          = var.no_policy=="true" ? 0 : 1      
     provider       = oci.home    

@@ -29,7 +29,9 @@ CREATE TABLE APEX_APP."DOCS_LANGCHAIN" (
 	"EMBEDDING" VECTOR(1024), 
 	PRIMARY KEY ("ID")
 );
-create index APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
+CREATE INDEX APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
+
+CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 -- Helper view for debugging
 create view V_DOCS_LANGCHAIN as
@@ -42,6 +44,8 @@ create view V_DOCS_LANGCHAIN as
         id as CHUNKID, 
         TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) as PAGE_NUMBERS      
     from docs_langchain;
+
+
 
 
 -- DROP TABLE docs_chunck;
@@ -102,32 +106,40 @@ BEGIN
 END embedText; 
 /
 
-create or replace FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
+CREATE OR REPLACE FUNCTION RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
-    query_vec VECTOR;
+    cleaned_query varchar2(4096);
 BEGIN
-    query_vec := to_vector(embedText( p_query ));
+/*
+    -- Simple Vector query 
     OPEN v_results FOR
         select 
             JSON_VALUE(metadata,'$.doc_id') as DOCID, 
             text as BODY, 
-            vector_distance(embedding, query_vec) AS SCORE,
+            vector_distance(embedding, to_vector(embedText( p_query ))) AS SCORE,
             id as CHUNKID, 
             JSON_VALUE(metadata,'$.file_name') as TITLE, 
             JSON_VALUE(metadata,'$.path') as URL,
-            JSON_VALUE(metadata,'$.page_label') as page_numbers    
+            '[' || JSON_VALUE(metadata,'$.page_label') || ']' as PAGE_NUMBERS    
+            -- NUMBER_TT( TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) ) as PAGE_NUMBERS   
+            -- TO_NUMBER(1) as PAGE_NUMBERS   
         from docs_langchain
         -- where JSON_VALUE(metadata,'$.doc_id') in (select to_char(id) from docs order by vector_distance(summary_embed,  to_vector(embedText( 'what is jazz' ))) fetch first 3 rows only)
         order by score 
         fetch first top_k rows only;
-/*
+*/
+    -- Hybrid Search query (30 Lexical/ 70 Vector)
     -- Oracle Text score: 0 - 100.0 (higher is better)
-    -- Vector distance : 
-    -- 0 - 1.0 (closer is better)
+    -- Vector distance : 0 - 1.0 (closer is better)
+    
+    -- Clean up the query string to avoid issue with the CONTAINS(xxx), error like ORA-29902 ORA-30600 DRG-50901
+    cleaned_query := REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p_query, '!', ' '), '?', ' '), '#', ' '), '>', ' '), '<', ' ');
+    AI_AGENT.LOG( 'P_QUERY', p_query );
+
     OPEN v_results FOR
         WITH text_search AS (
             SELECT id, score(99)/100 as score FROM docs_langchain
-            WHERE CONTAINS(text, p_query, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+            WHERE CONTAINS(text, cleaned_query, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
         ),
         vector_search AS (
 
@@ -147,7 +159,7 @@ BEGIN
         JOIN vector_search vs ON o.id = vs.id
         ORDER BY score DESC
         FETCH FIRST 10 ROWS ONLY;
-*/
+
     RETURN v_results;
 end RETRIEVAL_FUNC;
 /
@@ -178,14 +190,14 @@ DECLARE
 BEGIN
   v_results := RETRIEVAL_FUNC(p_query, top_k);
  
-  DBMS_OUTPUT.PUT_LINE('DOCID   | SCORE  | URL');
-  DBMS_OUTPUT.PUT_LINE('--------|--------|--------');
+  DBMS_OUTPUT.PUT_LINE('DOCID   | SCORE  | URL     | page_numbers');
+  DBMS_OUTPUT.PUT_LINE('--------|--------|---------|------------------');
  
   LOOP
     FETCH v_results INTO v_docid, v_body, v_score, v_chunck_id, v_title, v_url, v_page_numbers;
     EXIT WHEN v_results%NOTFOUND;
  
-    DBMS_OUTPUT.PUT_LINE(v_docid || ' | ' || v_score || ' | ' || v_url);
+    DBMS_OUTPUT.PUT_LINE(v_docid || ' | ' || v_score || ' | ' || v_url || ' | ' || v_page_numbers);
   END LOOP;
  
   CLOSE v_results;
