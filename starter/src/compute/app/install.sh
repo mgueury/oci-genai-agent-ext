@@ -51,7 +51,6 @@ export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$AGENT_ENDPOINT_OCID' where key='agent_endpoint';
-  insert into APEX_APP.AI_AGENT_RAG_CONFIG(key, value) values ('region','$TF_VAR_region');  
   insert into APEX_APP.AI_AGENT_RAG_CONFIG(key, value) values ('compartment_ocid','$TF_VAR_compartment_ocid');  
   insert into APEX_APP.AI_AGENT_RAG_CONFIG(key, value) values ('embed_modelid','$TF_VAR_genai_cohere_embed');  
   commit;
