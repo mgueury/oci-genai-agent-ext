@@ -1,7 +1,7 @@
 import oci
 import os
 from shared import log
-import shared
+from shared import log_in_file
 import file_convert
 from pdf2image import convert_from_path
 from PIL import Image, ImageDraw 
