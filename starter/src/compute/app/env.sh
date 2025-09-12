@@ -16,7 +16,7 @@ export TF_VAR_prefix="##TF_VAR_prefix##"
 export TF_VAR_namespace="##TF_VAR_namespace##"
 
 # LibreOffice
-export INSTALL_LIBREOFFICE="##TF_VAR_install_libre_office##"
+export INSTALL_LIBREOFFICE="##TF_VAR_install_libreoffice##"
 
 # GenAI_MODEL
 export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
