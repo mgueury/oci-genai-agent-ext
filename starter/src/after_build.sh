@@ -71,7 +71,7 @@ echo
 # echo "(experimental) Cohere with Tools and GenAI Agent:"
 # echo "http://${BASTION_IP}:8081/"
 # echo "-----------------------------------------------------------------------"
-echo "AGENT_ENDPOINT_OCID=$AGENT_ENDPOINT_OCID"
+echo "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
 echo
 echo "-----------------------------------------------------------------------"
 echo "Streamlit:"
