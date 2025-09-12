@@ -11,6 +11,7 @@ def eventDocument(value):
     eventType = value["eventType"]
     # ex: /n/fr03kabcd/psql-public-bucket/o/country.pdf"
     resourceId = value["data"]["resourceId"]
+    log( "eventType=" + eventType + " - " + resourceId ) 
     # eventType == "com.oraclecloud.objectstorage.createobject":
     # eventType == "com.oraclecloud.objectstorage.updateobject":
     # eventType == "com.oraclecloud.objectstorage.deleteobject":
@@ -45,8 +46,8 @@ def eventDocument(value):
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         file_convert.convertOciSpeech(value)
         return
-    elif resourceExtension in [".sitemap"]:
-        # This will create a PDFs file in Object Storage with the content of each site (line) ".sitemap" 
+    elif resourceExtension in [".selenium"]:
+        # This will create a PDFs file in Object Storage with the content of each site (line) ".selenium" 
         file_convert.convertChromeSelenium2Pdf(value)
         return
     elif resourceExtension in [".crawler"]:
