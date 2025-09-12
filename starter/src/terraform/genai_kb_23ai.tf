@@ -120,7 +120,8 @@ resource "oci_database_tools_database_tools_connection" "starter_dbtools_connect
   display_name      = "${var.prefix}-dbtools-connection"
   type              = "ORACLE_DATABASE"
   connection_string = local.db_url_ip
-  user_name         = "apex_app"
+  # It can not be APEX_APP since APEX_APP does not exist at terrafom build time (Idea? Push it in part2 ?)
+  user_name         = "admin"
   user_password {
     value_type = "SECRETID"
     # The user password to use exists as a secret in an OCI Vault

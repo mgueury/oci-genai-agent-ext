@@ -34,7 +34,7 @@ CREATE INDEX APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) in
 CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 -- Helper view for debugging
-create view V_DOCS_LANGCHAIN as
+create view APEX_APP.V_DOCS_LANGCHAIN as
     select 
         JSON_VALUE(metadata,'$.path') as URL,            
         metadata,
@@ -43,10 +43,7 @@ create view V_DOCS_LANGCHAIN as
         text as BODY, 
         id as CHUNKID, 
         TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) as PAGE_NUMBERS      
-    from docs_langchain;
-
-
-
+    from APEX_APP.docs_langchain;
 
 -- DROP TABLE docs_chunck;
 /*
@@ -106,11 +103,10 @@ BEGIN
 END embedText; 
 /
 
-CREATE OR REPLACE FUNCTION RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
+CREATE OR REPLACE FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     cleaned_query varchar2(4096);
 BEGIN
-/*
     -- Simple Vector query 
     OPEN v_results FOR
         select 
@@ -127,11 +123,11 @@ BEGIN
         -- where JSON_VALUE(metadata,'$.doc_id') in (select to_char(id) from docs order by vector_distance(summary_embed,  to_vector(embedText( 'what is jazz' ))) fetch first 3 rows only)
         order by score 
         fetch first top_k rows only;
-*/
+
     -- Hybrid Search query (30 Lexical/ 70 Vector)
     -- Oracle Text score: 0 - 100.0 (higher is better)
     -- Vector distance : 0 - 1.0 (closer is better)
-    
+/*    
     -- Clean up the query string to avoid issue with the CONTAINS(xxx), error like ORA-29902 ORA-30600 DRG-50901
     cleaned_query := REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p_query, '!', ' '), '?', ' '), '#', ' '), '>', ' '), '<', ' ');
     AI_AGENT.LOG( 'P_QUERY', p_query );
@@ -139,7 +135,7 @@ BEGIN
     OPEN v_results FOR
         WITH text_search AS (
             SELECT id, score(99)/100 as score FROM docs_langchain
-            WHERE CONTAINS(text, cleaned_query, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+            WHERE CONTAINS(text, cleaned_query, 99)>0 order by score(99) DESC FETCH FIRST top_k ROWS ONLY
         ),
         vector_search AS (
 
@@ -158,10 +154,17 @@ BEGIN
         JOIN text_search ts ON o.id = ts.id
         JOIN vector_search vs ON o.id = vs.id
         ORDER BY score DESC
-        FETCH FIRST 10 ROWS ONLY;
-
+        FETCH FIRST top_k ROWS ONLY;
+*/
     RETURN v_results;
 end RETRIEVAL_FUNC;
+/
+
+-- Admin function 
+CREATE OR REPLACE FUNCTION RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
+begin
+    return APEX_APP.RETRIEVAL_FUNC( p_query, top_k);
+end;    
 /
 
 /*
