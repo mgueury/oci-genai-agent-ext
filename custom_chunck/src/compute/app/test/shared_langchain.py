@@ -1,6 +1,7 @@
 # Import
 import os
 import rag_storage
+import shared
 from file_convert import log
 from file_convert import dictString
 from file_convert import dictInt
@@ -17,7 +18,7 @@ from typing import List, Tuple
 embeddings = OCIGenAIEmbeddings(
     model_id="cohere.embed-multilingual-v3.0",
     service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
-    compartment_id=os.getenv("TF_VAR_compartment_ocid"),
+    compartment_ids=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )
 

@@ -124,7 +124,7 @@ while True:
         log("----------------------------------------------------------------------------")
         log("\u274C <main>Exception in streamloop")
         log(traceback.format_exc())
-        # Resetting Stream - This is needed when you have the cursor that is too old. 
+        # Resetting Stream - This is needed when you have the cursor that is too old (5 mins without using it) 
         # Error: 400 - The cursor is outside the retention period and is now invalid.
         # Some message will be lost. Trim_horizon take the oldest one.
         # update_group_response = stream_client.update_group(

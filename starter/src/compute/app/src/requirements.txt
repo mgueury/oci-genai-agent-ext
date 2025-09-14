@@ -42,3 +42,6 @@ xmltodict
 
 # Crawler
 scrapy
+
+# FastMCP
+fastmcp

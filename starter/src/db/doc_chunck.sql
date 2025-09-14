@@ -4,7 +4,7 @@ CREATE TABLE APEX_APP.docs (
     content CLOB,
     summary CLOB,
     translation CLOB,
-    summary_embed vector(1024),
+    summary_embed vector,
     resource_name varchar2(1024), -- Parent file that caused the event to trigger.
     path varchar2(1024),    
     content_type varchar2(256),
@@ -26,7 +26,7 @@ CREATE TABLE APEX_APP."DOCS_LANGCHAIN" (
     "ID" RAW(16) DEFAULT SYS_GUID(), 
 	"TEXT" CLOB, 
 	"METADATA" JSON, 
-	"EMBEDDING" VECTOR(1024), 
+	"EMBEDDING" VECTOR, 
 	PRIMARY KEY ("ID")
 );
 CREATE INDEX APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
@@ -68,7 +68,7 @@ alter table "APEX_APP"."DOCS_CHUNCK" add constraint "DOCS_FK" foreign key ( "DOC
 create index APEX_APP.docs_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 */
 
-create or replace FUNCTION APEX_APP.embedText( c VARCHAR2 ) 
+CREATE OR REPLACE FUNCTION APEX_APP.embedText( c VARCHAR2 ) 
 RETURN clob IS 
     resp DBMS_CLOUD_TYPES.resp; 
     b CLOB; 

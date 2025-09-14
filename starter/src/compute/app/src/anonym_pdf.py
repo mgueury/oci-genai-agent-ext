@@ -1,5 +1,6 @@
 import oci
 import os
+import shared
 from shared import log
 from shared import log_in_file
 import file_convert

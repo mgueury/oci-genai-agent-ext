@@ -14,6 +14,9 @@ config = {'region': signer.region, 'tenancy': signer.tenancy_id}
 # Log
 log_file_name = None
 
+# DB Env
+db_env = None
+
 # Create Log directory
 LOG_DIR = '/tmp/app_log'
 if os.path.isdir(LOG_DIR) == False:
@@ -117,7 +120,7 @@ def embedText(c):
     global signer
     log( "<embedText>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = os.getenv("TF_VAR_region")
+    region = getenv("TF_VAR_region")
     endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/embedText'
     body = {
         "inputs" : [ c ],
@@ -142,7 +145,7 @@ def embedText(c):
 def generateText(prompt):
     global signer
     log( "<generateText>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    compartmentId = getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/generateText'
     body = {
         "compartmentId": compartmentId,
@@ -178,7 +181,7 @@ def generateText(prompt):
 def llama_chat2(prompt):
     global signer
     log( "<llama_chat2>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    compartmentId = getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": compartmentId,
@@ -227,7 +230,7 @@ def llama_chat(messages):
     ## XXXX DOES NOT WORK XXXX ?
     global signer
     log( "<llama_chat>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    compartmentId = getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": shared.LLAMA_MODEL,
@@ -269,7 +272,7 @@ def cohere_chat(prompt, chatHistory, documents):
     global signer
     log( "<cohere_chat>")
 
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    compartmentId = getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": shared.COHERE_MODEL,
@@ -381,8 +384,8 @@ def cutInChunks(text):
 def genai_agent_datasource_ingest():
 
     log( "<genai_agent_datasource_ingest>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
+    compartmentId = getenv("TF_VAR_compartment_ocid")
+    datasourceId = getenv("TF_VAR_agent_datasource_ocid")
     if datasourceId:
         name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         log( "ingest_job="+name )
@@ -395,6 +398,57 @@ def genai_agent_datasource_ingest():
                 description=name
             ))
     log( "</genai_agent_datasource_ingest>")     
+
+
+## -- genai_agent_get_session -------------------------------------------
+
+def genai_agent_get_session():
+
+    log( "<genai_agent_get_session>")
+    agent_endpoint_ocid = getenv("TF_VAR_agent_endpoint_ocid")
+    genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
+        config = {}, 
+        signer=signer,
+        service_endpoint=agent_endpoint_ocid,
+        retry_strategy=oci.retry.NoneRetryStrategy(),
+        timeout=(10, 240)
+    )    
+    # Create session
+    create_session_details = oci.generative_ai_agent_runtime.models.CreateSessionDetails(
+        display_name="session", description="description"
+    )
+    create_session_response = genai_agent_runtime_client.create_session(create_session_details, agent_endpoint_id)
+
+    log( "</genai_agent_get_session>")  
+    return create_session_response.data.id
+
+## -- genai_agent_chat ------------------------------------------------------
+
+def genai_agent_chat( session_id, question ):
+
+    log( "<genai_agent_chat>")
+    agent_endpoint_ocid = getenv("TF_VAR_agent_endpoint_ocid")
+    genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
+        config = {}, 
+        signer=signer,
+        service_endpoint=agent_endpoint_ocid,
+        retry_strategy=oci.retry.NoneRetryStrategy(),
+        timeout=(10, 240)
+    )    
+
+    chat_details = oci.generative_ai_agent_runtime.models.ChatDetails(
+        user_message=str(question), should_stream=False, session_id=session_id # You can set this to True for streaming responses
+    )
+    execute_session_response = genai_agent_runtime_client.chat(agent_endpoint_ocid, chat_details)
+
+    if execute_session_response.status == 200:
+        if execute_session_response.data.message:
+            # response_content = execute_session_response.data.message.content
+            log(pprint.pformat( execute_session_response ))            
+            return execute_session_response.data
+            # Text -> response_content = execute_session_response.data.message.content.text
+   
+    return None
 
 ## -- getFileExtension ------------------------------------------------------
 
@@ -415,6 +469,6 @@ def delete_bucket_folder(namespace, bucketName, folder):
             os_client.delete_object( namespace_name=namespace, bucket_name=bucketName, object_name=f )
             log( "<delete_bucket_folder> Deleted: " + f )
     except:
-        log("\u270B Exception: delete_bucket_folder") 
+        log("\u270B <delete_bucket_folder> Exception: delete_bucket_folder") 
         log(traceback.format_exc())            
     log( "</delete_bucket_folder>" )    

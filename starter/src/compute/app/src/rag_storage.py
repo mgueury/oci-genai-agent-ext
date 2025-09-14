@@ -33,7 +33,7 @@ from typing import List, Tuple
 
 region = os.getenv("TF_VAR_region")
 embeddings = OCIGenAIEmbeddings(
-    model_id="cohere.embed-multilingual-v3.0",
+    model_id=os.getenv("TF_VAR_genai_embed_model"),
     service_endpoint="https://inference.generativeai."+region+".oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"

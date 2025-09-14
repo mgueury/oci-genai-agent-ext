@@ -28,9 +28,9 @@ echo $TF_VAR_genai_meta_model
 export TF_VAR_genai_cohere_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("CHAT")))|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
 echo $TF_VAR_genai_cohere_model
 
-export TF_VAR_genai_cohere_embed="cohere.embed-multilingual-v3.0"
-# export TF_VAR_genai_cohere_embed=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
-echo $TF_VAR_genai_cohere_embed
+export TF_VAR_genai_embed_model="cohere.embed-multilingual-v3.0"
+# export TF_VAR_genai_embed_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
+echo $TF_VAR_genai_embed_model
 
 # echo "TENANCY_NAME=$TENANCY_NAME"
 echo
@@ -56,6 +56,10 @@ if [ -f $TARGET_DIR/compute/app/env.sh ]; then
   if [ "$TF_VAR_install_libreoffice" == "" ]; then
     export TF_VAR_install_libreoffice="__NOT_USED__"
   fi
+  if [ "$TF_VAR_rag_storage" == "" ]; then
+    export TF_VAR_rag_storage="__NOT_USED__"
+  fi
+
   file_replace_variables $TARGET_DIR/compute/app/env.sh
   exit_on_error "after_build - file_replace_variables"
 fi 
