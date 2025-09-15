@@ -16,9 +16,9 @@ compartment_ocid="__TO_FILL__"
 auth_token="__TO_FILL__"
 
 # RAG Storage 23ai
-rag_storage="db23ai"
-vault_ocid="__TO_FILL__"
-vault_key_ocid="__TO_FILL__"
+# rag_storage="db23ai"
+# vault_ocid="__TO_FILL__"
+# vault_key_ocid="__TO_FILL__"
 
 # -- Fixed -------------------------------------------------
 db_type="autonomous"
