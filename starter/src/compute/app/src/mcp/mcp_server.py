@@ -1,4 +1,4 @@
-from mcp.server.fastmcp import FastMCP  # Import FastMCP, the quickstart server base
+from fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 
 mcp = FastMCP("Calculator Server")  # Initialize an MCP server instance with a descriptive name
 

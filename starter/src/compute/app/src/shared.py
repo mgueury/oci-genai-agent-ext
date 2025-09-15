@@ -4,6 +4,7 @@ import requests
 from datetime import datetime
 import oci
 import pathlib
+import pprint
 
 # -- globals ----------------------------------------------------------------
 
@@ -120,7 +121,7 @@ def embedText(c):
     global signer
     log( "<embedText>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = getenv("TF_VAR_region")
+    region = os.getenv("TF_VAR_region")
     endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/embedText'
     body = {
         "inputs" : [ c ],
@@ -145,7 +146,7 @@ def embedText(c):
 def generateText(prompt):
     global signer
     log( "<generateText>")
-    compartmentId = getenv("TF_VAR_compartment_ocid")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/generateText'
     body = {
         "compartmentId": compartmentId,
@@ -181,7 +182,7 @@ def generateText(prompt):
 def llama_chat2(prompt):
     global signer
     log( "<llama_chat2>")
-    compartmentId = getenv("TF_VAR_compartment_ocid")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": compartmentId,
@@ -230,7 +231,7 @@ def llama_chat(messages):
     ## XXXX DOES NOT WORK XXXX ?
     global signer
     log( "<llama_chat>")
-    compartmentId = getenv("TF_VAR_compartment_ocid")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": shared.LLAMA_MODEL,
@@ -272,7 +273,7 @@ def cohere_chat(prompt, chatHistory, documents):
     global signer
     log( "<cohere_chat>")
 
-    compartmentId = getenv("TF_VAR_compartment_ocid")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": shared.COHERE_MODEL,
@@ -384,8 +385,8 @@ def cutInChunks(text):
 def genai_agent_datasource_ingest():
 
     log( "<genai_agent_datasource_ingest>")
-    compartmentId = getenv("TF_VAR_compartment_ocid")
-    datasourceId = getenv("TF_VAR_agent_datasource_ocid")
+    compartmentId = os.getenv("TF_VAR_compartment_ocid")
+    datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
     if datasourceId:
         name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         log( "ingest_job="+name )
@@ -405,11 +406,12 @@ def genai_agent_datasource_ingest():
 def genai_agent_get_session():
 
     log( "<genai_agent_get_session>")
-    agent_endpoint_ocid = getenv("TF_VAR_agent_endpoint_ocid")
+    agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
+    region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
         config = {}, 
         signer=signer,
-        service_endpoint=agent_endpoint_ocid,
+        service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
     )    
@@ -417,7 +419,7 @@ def genai_agent_get_session():
     create_session_details = oci.generative_ai_agent_runtime.models.CreateSessionDetails(
         display_name="session", description="description"
     )
-    create_session_response = genai_agent_runtime_client.create_session(create_session_details, agent_endpoint_id)
+    create_session_response = genai_agent_runtime_client.create_session(create_session_details, agent_endpoint_ocid)
 
     log( "</genai_agent_get_session>")  
     return create_session_response.data.id
@@ -427,11 +429,12 @@ def genai_agent_get_session():
 def genai_agent_chat( session_id, question ):
 
     log( "<genai_agent_chat>")
-    agent_endpoint_ocid = getenv("TF_VAR_agent_endpoint_ocid")
+    agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
+    region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
         config = {}, 
         signer=signer,
-        service_endpoint=agent_endpoint_ocid,
+        service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
     )    

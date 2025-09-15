@@ -24,14 +24,18 @@ Warnings:
     This module is in development, may change in future versions.
 """
 
+import os
+
 DEBUG = False
 
 # type of auth
-AUTH = "API_KEY"
+AUTH = "INSTANCE_PRINCIPAL"
 
 # LLM
 # this is the default model
 LLM_MODEL_ID = os.getenv("TF_VAR_genai_meta_model")
+EMBED_MODEL_ID=os.getenv("TF_VAR_genai_embed_model")
+NVIDIA_EMBED_MODEL_URL="-"
 TEMPERATURE = 0.1
 MAX_TOKENS = 4000
 
