@@ -42,7 +42,13 @@ def default_jwt_supplier() -> str:
     """
     Get a valid JWT token to make the call to MCP server
     """
-    return None
+    if ENABLE_JWT_TOKEN:
+        # Always return a FRESH token; do not include "Bearer " (FastMCP adds it)
+        token, _, _ = OCIJWTClient(IAM_BASE_URL, SCOPE, SECRET_OCID).get_token()
+    else:
+        # JWT security disabled
+        token = None
+    return token
 
 
 class AgentWithMCP:

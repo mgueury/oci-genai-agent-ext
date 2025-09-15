@@ -127,7 +127,7 @@ def embedText(c):
         "inputs" : [ c ],
         "servingMode" : {
             "servingType" : "ON_DEMAND",
-            "modelId" : "cohere.embed-multilingual-v3.0"
+            "modelId" : os.getenv("TF_VAR_genai_embed_model")
         },
         "truncate" : "START",
         "compartmentId" : compartmentId
