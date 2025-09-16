@@ -18917,7 +18917,7 @@ wwv_flow_imp_page.create_page_item(
 ,p_name=>'P1_MESSAGE'
 ,p_item_sequence=>10
 ,p_item_plug_id=>wwv_flow_imp.id(58048519463384451)
-,p_prompt=>'Message'
+,p_prompt=>'Question'
 ,p_display_as=>'NATIVE_TEXTAREA'
 ,p_cSize=>30
 ,p_cHeight=>1
