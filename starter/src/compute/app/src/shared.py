@@ -72,7 +72,8 @@ def summarizeContent(value,content):
     log( "<summarizeContent>")
     global signer
     compartmentId = value["data"]["compartmentId"]
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
+    region = os.getenv("TF_VAR_region")    
+    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
     # Avoid Limit of 4096 Tokens
     if len(content) > 12000:
         log( "Truncating to 12000 characters")
@@ -144,7 +145,8 @@ def llama_chat(prompt):
     global signer
     log( "<llama_chat>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
+    region = os.getenv("TF_VAR_region")    
+    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
@@ -191,9 +193,9 @@ def llama_chat(prompt):
 def cohere_chat(prompt, chatHistory, documents):
     global signer
     log( "<cohere_chat>")
-
+    region = os.getenv("TF_VAR_region")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
+    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": os.getenv("TF_VAR_genai_cohere_model"),
     body = { 
