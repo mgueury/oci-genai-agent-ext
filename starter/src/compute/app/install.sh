@@ -21,8 +21,6 @@ uv venv myenv
 source myenv/bin/activate
 uv pip install -r src/requirements.txt
 
-uv pip install --system -r src/requirements.txt
-
 # PDFKIT
 download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
