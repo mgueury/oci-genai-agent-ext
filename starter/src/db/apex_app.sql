@@ -33,7 +33,7 @@ prompt APPLICATION 1001 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     1001
 --   Name:            AI_AGENT_RAG
---   Date and Time:   05:19 Tuesday September 16, 2025
+--   Date and Time:   05:30 Tuesday September 16, 2025
 --   Exported By:     APEX_APP
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -118,7 +118,7 @@ wwv_imp_workspace.create_flow(
 ,p_substitution_value_01=>'AI_AGENT_RAG'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>13
-,p_version_scn=>45515120623247
+,p_version_scn=>45515174820448
 ,p_print_server_type=>'NATIVE'
 ,p_file_storage=>'DB'
 ,p_is_pwa=>'Y'
@@ -18898,10 +18898,10 @@ wwv_flow_imp_page.create_page_item(
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(58048472677384450)
-,p_name=>'P1_AGENT_ENDPOINT_ID'
+,p_name=>'P1_AGENT_ENDPOINT_OCID'
 ,p_item_sequence=>30
 ,p_item_plug_id=>wwv_flow_imp.id(58048194622384447)
-,p_prompt=>'Agent Endpoint Id'
+,p_prompt=>'Agent Endpoint Ocid'
 ,p_display_as=>'NATIVE_TEXT_FIELD'
 ,p_cSize=>30
 ,p_field_template=>wwv_flow_imp.id(62704399206548228)
@@ -19012,7 +19012,7 @@ wwv_flow_imp_page.create_page_da_action(
 '  html clob;',
 'begin',
 '  -- Call Gen AI Agent',
-'  res := ai_agent.ai_agent_execute(:P1_AGENT_ENDPOINT_ID,:P1_SESSION_ID,:P1_MESSAGE2,:P1_RAG_FILTER_FOLDER);',
+'  res := ai_agent.ai_agent_execute(:P1_AGENT_ENDPOINT_OCID,:P1_SESSION_ID,:P1_MESSAGE2,:P1_RAG_FILTER_FOLDER);',
 '  :P1_RESPONSE := SUBSTR( res, 1, 20000);',
 '  -- Convert the message to HTML',
 '  html := ai_agent.agent2html( res, :P1_SESSION_ID );',
@@ -19128,8 +19128,8 @@ wwv_flow_imp_page.create_page_process(
 ,p_process_name=>'CREATE_SESSION'
 ,p_process_sql_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'begin',
-'    select value into :P1_AGENT_ENDPOINT_ID from ai_agent_rag_config where key=''agent_endpoint''; ',
-'    :P1_SESSION_ID := ai_agent.ai_agent_session( :P1_AGENT_ENDPOINT_ID ); ',
+'    select value into :P1_AGENT_ENDPOINT_OCID from ai_agent_rag_config where key=''agent_endpoint_ocid''; ',
+'    :P1_SESSION_ID := ai_agent.ai_agent_session( :P1_AGENT_ENDPOINT_OCID ); ',
 '    :P1_IN_PROGRESS := ''false'';',
 'end;'))
 ,p_process_clob_language=>'PLSQL'
@@ -19487,10 +19487,12 @@ wwv_flow_imp_shared.create_install_script(
 '   ) ;',
 '',
 '',
+'',
+'',
 'create or replace package "AI_AGENT" as',
 '  PROCEDURE LOG( a_context varchar2, a_clob CLOB );',
-'  FUNCTION ai_agent_session( agent_endpoint_id varchar2) return CLOB; ',
-'  FUNCTION ai_agent_execute( agent_endpoint_id varchar2, agent_session_id varchar2, message varchar2, filter_folder varchar2 default '''' ) return CLOB; ',
+'  FUNCTION ai_agent_session( agent_endpoint_ocid varchar2) return CLOB; ',
+'  FUNCTION ai_agent_execute( agent_endpoint_ocid varchar2, agent_session_id varchar2, message varchar2, filter_folder varchar2 default '''' ) return CLOB; ',
 '  FUNCTION create_pre_authenticated_request( url varchar2, page number) return varchar2; ',
 '  FUNCTION agent2html( res CLOB, session_id varchar2 ) return CLOB;',
 'end "AI_AGENT";',
@@ -19517,7 +19519,7 @@ wwv_flow_imp_shared.create_install_script(
 '',
 '-------------------------------------------------------------------------------',
 '',
-'FUNCTION ai_agent_session( agent_endpoint_id varchar2) return CLOB is ',
+'FUNCTION ai_agent_session( agent_endpoint_ocid varchar2) return CLOB is ',
 '    resp DBMS_CLOUD_TYPES.resp; ',
 '    json_response CLOB; ',
 '    s VARCHAR2(32767); ',
@@ -19533,7 +19535,7 @@ wwv_flow_imp_shared.create_install_script(
 '  log( ''<ai_agent_session> LENGTH'', ''LENGTH='' || LENGTH(jo.to_clob()));',
 '  resp := DBMS_CLOUD.send_request( ',
 '        credential_name => ''OCI$RESOURCE_PRINCIPAL'', ',
-'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions'',',
+'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_ocid||''/sessions'',',
 '        method => ''POST'', ',
 '        body => APEX_UTIL.CLOB_TO_BLOB(jo.to_clob)                                                                                         ',
 '    ); ',
@@ -19546,7 +19548,7 @@ wwv_flow_imp_shared.create_install_script(
 '',
 '-------------------------------------------------------------------------------',
 '',
-'FUNCTION ai_agent_execute( agent_endpoint_id varchar2, agent_session_id varchar2, message varchar2, filter_folder varchar2 ) return CLOB is ',
+'FUNCTION ai_agent_execute( agent_endpoint_ocid varchar2, agent_session_id varchar2, message varchar2, filter_folder varchar2 ) return CLOB is ',
 '    resp DBMS_CLOUD_TYPES.resp; ',
 '    json_response CLOB; ',
 '    s VARCHAR2(32767); ',
@@ -19601,14 +19603,14 @@ wwv_flow_imp_shared.create_install_script(
 '  log( ''<ai_agent_execute> LENGTH'', ''LENGTH='' || LENGTH(jo.to_clob()));',
 '  resp := DBMS_CLOUD.send_request( ',
 '        credential_name => ''OCI$RESOURCE_PRINCIPAL'', ',
-'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/actions/chat'',',
+'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_ocid||''/actions/chat'',',
 '        method => ''POST'', ',
 '        body => APEX_UTIL.CLOB_TO_BLOB(jo.to_clob)                                                                                         ',
 '    ); ',
 '  /*',
 '  resp := DBMS_CLOUD.send_request( ',
 '        credential_name => ''OCI$RESOURCE_PRINCIPAL'', ',
-'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_id||''/sessions/''||agent_session_id||''/actions/execute'',',
+'        uri =>''https://agent-runtime.generativeai.'' || g_region || ''.oci.oraclecloud.com/20240531/agentEndpoints/''||agent_endpoint_ocid||''/sessions/''||agent_session_id||''/actions/execute'',',
 '        method => ''POST'', ',
 '        body => APEX_UTIL.CLOB_TO_BLOB(jo.to_clob)                                                                                         ',
 '    ); ',
@@ -19855,12 +19857,10 @@ wwv_flow_imp_shared.create_install_script(
 '',
 'begin',
 '  -- ex: ''ocid1.genaiagentendpoint.oc1.us-chicago-1.xxxxx'' -> ''us-chicago-1''',
-'  select REGEXP_SUBSTR(value, ''[^.]+'', 1, 4) into g_region from AI_AGENT_RAG_CONFIG where key=''agent_endpoint'';',
+'  select REGEXP_SUBSTR(value, ''[^.]+'', 1, 4) into g_region from AI_AGENT_RAG_CONFIG where key=''agent_endpoint_ocid'';',
 '  select value into g_credential_name from AI_AGENT_RAG_CONFIG where key=''credential_name'';',
 'end "AI_AGENT";',
-'/',
-'',
-''))
+'/'))
 );
 wwv_flow_imp_shared.create_install_object(
  p_id=>wwv_flow_imp.id(62863238511372604)
