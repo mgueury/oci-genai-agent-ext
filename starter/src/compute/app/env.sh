@@ -26,7 +26,13 @@ export TF_VAR_genai_embed_model="##TF_VAR_genai_embed_model##"
 # RAG Storage
 export TF_VAR_rag_storage="##TF_VAR_rag_storage##"
 
-# -- After Initialisation - Use the env in the database as source of True
+# Python VirtualEnv
+if [ -d $HOME/app/myenv ]; then
+  source $HOME/app/myenv/bin/activate
+fi
+
+# During Initialisation - Store the env db in the database
+# After Initialisation  - Use the env stored in the database as source of True
 # Read Variables in database 
 if [ "$1" != "INSTALL" ]; then
   if [ "$DB_URL" != "" ]; then

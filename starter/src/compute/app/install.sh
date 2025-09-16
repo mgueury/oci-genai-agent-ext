@@ -17,6 +17,10 @@ sudo dnf install -y poppler-utils mesa-libGL
 sudo dnf install -y python3.12 python3.12-pip python3-devel wget
 sudo update-alternatives --set python /usr/bin/python3.12
 curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv myenv
+source myenv/bin/activate
+uv pip install -r src/requirements.txt
+
 uv pip install --system -r src/requirements.txt
 
 # PDFKIT
