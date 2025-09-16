@@ -38,21 +38,10 @@ def query():
     return response   
 
 # Replaced by cohere_chat
-@app.route('/generate', methods=['GET','POST'])
-def generate():
-    if request.method=='POST':
-        prompt = request.json.get('prompt')
-    else:
-        prompt = request.args.get('prompt')
-    result = shared.generateText( prompt )  
-    log("Result="+str(result))  
-    return str(result)   
-
-# Replaced by cohere_chat
 @app.route('/llama_chat', methods=['POST'])
 def llama_chat():
-    messages = request.json.get('messages')
-    result = shared.llama_chat( messages )  
+    messages = request.json.get('message')
+    result = shared.llama_chat( message )  
     log("Result="+str(result))  
     return json.dumps(result)  
 

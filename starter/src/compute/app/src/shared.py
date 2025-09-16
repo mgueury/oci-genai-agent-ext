@@ -25,9 +25,6 @@ if os.path.isdir(LOG_DIR) == False:
 
 UNIQUE_ID = "ID"
 
-COHERE_MODEL="cohere.command-a-03-2025"
-LLAMA_MODEL= "meta.llama-3.1-70b-instruct"
-
 ## -- log_write_in_file -------------------------------------------------------------------
 # Write logs in a file also 
 
@@ -84,7 +81,7 @@ def summarizeContent(value,content):
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": COHERE_MODEL,
+            "modelId": os.getenv("TF_VAR_genai_cohere_model"),
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
@@ -141,53 +138,17 @@ def embedText(c):
     log( "</embedText>")
     return dictString(j,"embeddings")[0]     
 
-## -- generateText ----------------------------------------------------------
+## -- llama_chat -----------------------------------------------------------
 
-def generateText(prompt):
+def llama_chat(prompt):
     global signer
-    log( "<generateText>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/generateText'
-    body = {
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-            "servingType": "ON_DEMAND"
-        },
-        "inferenceRequest": {
-            "prompt": prompt,
-            "maxTokens": 600,
-            "temperature": 0,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "stopSequences": [],
-            "runtimeType": "COHERE"
-        }
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("generateText_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["inferenceResponse"]["generatedTexts"][0]["text"]
-    log( "</generateText>")
-    return s
-
-## -- llama_chat2 -----------------------------------------------------------
-
-def llama_chat2(prompt):
-    global signer
-    log( "<llama_chat2>")
+    log( "<llama_chat>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.eu-frankfurt-1.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": "meta.llama-3.3-70b-instruct",
+            "modelId": os.getenv("TF_VAR_genai_meta_model"),
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
@@ -222,48 +183,6 @@ def llama_chat2(prompt):
         start_index = s.find("{") 
         end_index = s.rfind("}")+1
         s = s[start_index:end_index]
-    log( "</llama_chat2>")
-    return s
-
-## -- llama_chat ------------------------------------------------------------
-
-def llama_chat(messages):
-    ## XXXX DOES NOT WORK XXXX ?
-    global signer
-    log( "<llama_chat>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
-    #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": shared.LLAMA_MODEL,
-    body = { 
-        "compartmentId": compartmentId,
-        "servingMode": {
-            "modelId": shared.LLAMA_MODEL,
-            "servingType": "ON_DEMAND"
-        },
-        "chatRequest": {
-            "maxTokens": 600,
-            "temperature": 0,
-            "frequencyPenalty": 0,
-            "presencePenalty": 0,
-            "topP": 0.75,
-            "topK": 0,
-            "isStream": False,
-            "messages": messages,
-            "apiFormat": "GENERIC"
-        }
-    }
-    resp = requests.post(endpoint, json=body, auth=signer)
-    resp.raise_for_status()
-    log(resp)    
-    # Binary string conversion to utf8
-    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
-    j = json.loads(resp.content)   
-    s = j["chatResponse"]["text"]
-    if s.startswith('```json'):
-        start_index = s.find("{") 
-        end_index = s.rfind("}")+1
-        s = s[start_index:end_index]
     log( "</llama_chat>")
     return s
 
@@ -276,11 +195,11 @@ def cohere_chat(prompt, chatHistory, documents):
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
     endpoint = 'https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
-    #         "modelId": shared.COHERE_MODEL,
+    #         "modelId": os.getenv("TF_VAR_genai_cohere_model"),
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": shared.COHERE_MODEL,
+            "modelId": os.getenv("TF_VAR_genai_cohere_model"),
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
