@@ -1,22 +1,16 @@
-#!/bin/bash
+#!/usr/bin/env bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR/..
 
-if [ -z "$TF_VAR_deploy_type" ]; then
-  . starter.sh env -silent
-else
-  . starter.sh env -no-auto
-fi 
+. starter.sh env -silent
 
 get_ui_url
 
 echo 
 echo "Build done"
 
-if [ -f $PROJECT_DIR/src/after_done.sh ]; then
-  # Unset UI_URL in after_done to remove the standard output
-  . $PROJECT_DIR/src/after_done.sh
-elif [ ! -z "$UI_URL" ]; then
+# Do not show the Done URLs if after_build.sh exists 
+if [ ! -f $PROJECT_DIR/src/after_build.sh ] && [ "$UI_URL" != "" ]; then
   if [ "$TF_VAR_ui_type" != "api" ]; then
     echo - User Interface: $UI_URL/
   fi  
@@ -25,16 +19,18 @@ elif [ ! -z "$UI_URL" ]; then
   fi
   for APP_DIR in `app_dir_list`; do
     if [ -f  $PROJECT_DIR/src/$APP_DIR/openapi_spec.yaml ]; then
-      python3 $BIN_DIR/openapi_list.py $PROJECT_DIR/src/$APP_DIR/openapi_spec.yaml $UI_URL
+      # - does not work anymore - python3 $BIN_DIR/openapi_list.py $PROJECT_DIR/src/$APP_DIR/openapi_spec.yaml $UI_URL
+      # Show the list of paths in the openapi_spec.yaml 
+      grep "^[[:space:]]*/.*:" $PROJECT_DIR/src/$APP_DIR/openapi_spec.yaml | sed "s#[[:space:]]*##" | sed "s/://" | sed  "s#^#- Rest API: $UI_URL#"
     fi  
-    # echo - Rest DB API     : $UI_URL/$APP_DIR/dept
-    # echo - Rest Info API   : $UI_URL/$APP_DIR/info
+    # echo - Rest API: $UI_URL/$APP_DIR/dept
+    # echo - Rest API: $UI_URL/$APP_DIR/info
   done
   if [[ ("$TF_VAR_deploy_type" == "public_compute" || "$TF_VAR_deploy_type" == "private_compute") && "$TF_VAR_ui_type" == "api" ]]; then   
     export APIGW_URL=https://${APIGW_HOSTNAME}/${TF_VAR_prefix}  
     echo - API Gateway URL : $APIGW_URL/app/dept 
   fi
-  if [ "$TF_VAR_language" == "java" ] && [ "$TF_VAR_java_framework" == "springboot" ] && [ "$TF_VAR_ui_type" == "html" ] && [ "$TF_VAR_db_node_count" == "2" ]; then
+  if [ "$TF_VAR_language" == "java" ] && [ "$TF_VAR_java_framework" == "springboot" ] && [ "$TF_VAR_ui_type" == "html" ] && [ "$TF_VAR_db_subtype" == "rac" ]; then
     echo - RAC Page        : $UI_URL/rac.html
   fi
   if [ "$TF_VAR_language" == "apex" ]; then

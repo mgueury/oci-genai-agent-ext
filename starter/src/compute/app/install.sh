@@ -2,7 +2,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
-. ./env.sh
+. ./env.sh INSTALL
 
 function download()
 {
@@ -10,17 +10,19 @@ function download()
    wget -nv $1
 }
 
-# Python 
-sudo dnf install -y python39 python39-devel wget
-
 # Anonymize
 sudo dnf install -y poppler-utils mesa-libGL
 
-sudo pip3.9 install pip --upgrade
-pip3.9 install -r requirements.txt
+# Python 
+sudo dnf install -y python3.12 python3.12-pip python3-devel wget
+sudo update-alternatives --set python /usr/bin/python3.12
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv myenv
+source myenv/bin/activate
+uv pip install -r src/requirements.txt
 
 # PDFKIT
-wget -nv https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
+download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
 mv *.rpm /tmp
 
@@ -50,7 +52,10 @@ cd $SCRIPT_DIR
 export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$AGENT_ENDPOINT_OCID' where key='agent_endpoint';
+  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
+  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_region'              where key='region';
+  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_compartment_ocid'    where key='compartment_ocid';
+  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_genai_embed_model'   where key='genai_embed_model';
   commit;
 end;
 /

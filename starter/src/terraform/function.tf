@@ -4,6 +4,7 @@ resource "oci_functions_application" "starter_fn_application" {
   compartment_id = local.lz_app_cmp_ocid
   display_name   = "${var.prefix}-fn-application"
   subnet_ids     = [data.oci_core_subnet.starter_app_subnet.id]
+  shape          = startswith(var.instance_shape, "VM.Standard.A") ? "GENERIC_ARM" : "GENERIC_X86"
 
   image_policy_config {
     #Required
@@ -15,7 +16,7 @@ resource "oci_functions_application" "starter_fn_application" {
 
 resource oci_logging_log export_starter_fn_application_invoke {
   configuration {
-    compartment_id = local.lz_security_cmp_ocid
+    compartment_id = local.lz_serv_cmp_ocid
     source {
       category    = "invoke"
       resource    = local.fnapp_ocid
@@ -35,45 +36,13 @@ resource oci_logging_log export_starter_fn_application_invoke {
 locals {
   fnapp_ocid = oci_functions_application.starter_fn_application.id
 }
-variable "fn_image" { default = "" }
-variable "fn_db_url" { default = "" } 
-
-resource "oci_functions_function" "starter_fn_function" {
-  #Required
-  count          = var.fn_image == "" ? 0 : 1
-  application_id = local.fnapp_ocid
-  display_name   = "${var.prefix}-fn-function"
-  image          = var.fn_image
-  memory_in_mbs  = "2048"
-  config = { 
-    JDBC_URL      = var.fn_db_url,     
-    DB_USER     = var.db_user,
-    DB_PASSWORD = var.db_password,     
-  }
-  #Optional
-  timeout_in_seconds = "300"
-  trace_config {
-    is_enabled = true
-  }
-
-  freeform_tags = local.freeform_tags
-/*
-  # To start faster
-  provisioned_concurrency_config {
-    strategy = "CONSTANT"
-    count = 40
-  }
-*/    
-}
+variable "fn_image" { default = null } 
 
 output "fn_url" {
   value = join("", oci_apigateway_deployment.starter_apigw_deployment.*.endpoint)
 }
 
-variable no_policy { default=null }
-
 resource "oci_identity_policy" "starter_fn_policy" {
-  count          = var.no_policy=="true" ? 0 : 1  
   provider       = oci.home    
   name           = "${var.prefix}-fn-policy"
   description    = "APIGW access Function"

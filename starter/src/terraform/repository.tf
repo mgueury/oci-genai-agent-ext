@@ -14,6 +14,6 @@ resource "oci_artifacts_container_repository" "starter_repo_fn" {
   freeform_tags = local.freeform_tags    
 }
 
-output "container_prefix" {
-  value = random_string.container_prefix.result
+locals  {
+  local_container_prefix = random_string.container_prefix.result
 }

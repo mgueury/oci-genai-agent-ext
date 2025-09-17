@@ -4,4 +4,5 @@ cd $SCRIPT_DIR
 
 . ./env.sh
 
-python3.9 ingest.py 2>&1 | tee ingest.log
+cd src
+python ingest.py 2>&1 | tee ../ingest.log

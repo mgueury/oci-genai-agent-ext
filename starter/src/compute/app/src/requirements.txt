@@ -1,0 +1,47 @@
+# FLASK
+Flask
+flask-cors
+
+# FastAPI
+waitress
+uvicorn[standard]   
+fastapi
+
+#DB23ai
+oracledb
+
+# OCI
+oci
+
+# HTTP Client
+requests
+
+# Langchain
+langchain
+langchain_community
+langchain_chroma
+langchain_docling 
+
+# Sitemap
+pdfkit
+pypdf
+
+# Streamlit
+streamlit
+
+# Anonymize
+pdf2image
+Pillow
+opencv-python
+
+# Selenium 
+selenium
+
+# sitemap.xml
+xmltodict
+
+# Crawler
+scrapy
+
+# FastMCP
+fastmcp

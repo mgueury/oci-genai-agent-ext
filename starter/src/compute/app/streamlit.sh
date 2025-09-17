@@ -5,6 +5,8 @@ export PATH=~/.local/bin/:$PATH
 
 . ./env.sh
 
-streamlit run streamlit.py --server.port 8080 2>&1 | tee streamlit.log
+# User Interface with Streamlit
+cd src
+streamlit run streamlit/streamlit.py --server.port 8080 2>&1 | tee ../streamlit.log
 
 # Ex: curl "http://$BASTION_IP:8080/"

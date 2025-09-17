@@ -3,10 +3,22 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
 # Install SQLCL (Java program)
-wget https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
 rm -Rf sqlcl
 unzip sqlcl-latest.zip
 sudo dnf install -y java-17 
+
+# Install SQL*Plus
+if [[ `arch` == "aarch64" ]]; then
+  sudo dnf install -y oracle-release-el8 
+  sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus
+else
+  export INSTANT_VERSION=23.9.0.25.07-1
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
+  sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
+  mv *.rpm /tmp
+fi
 
 # Create the script to install the APEX Application
 cat > import_application.sql << EOF 
@@ -69,4 +81,4 @@ export TNS_ADMIN=$HOME/db
 sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @import_application.sql
 
 # Install Dept/Emp for SQL agent
-sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @dept_emp.sql
+sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @doc_chunck.sql

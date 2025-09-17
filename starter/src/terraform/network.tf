@@ -1,11 +1,22 @@
 # --- Network ---
-/*
-
+/* 
+# To use a existing Landing Zone, add these variables in env.sh
+#
+# Landing Zone
+# export TF_VAR_lz_app_cmp_ocid=$TF_VAR_compartment_ocid')
+# export TF_VAR_lz_db_cmp_ocid=$TF_VAR_compartment_ocid')
+# export TF_VAR_lz_network_cmp_ocid=$TF_VAR_compartment_ocid')
+# export TF_VAR_lz_security_cmp_ocid=$TF_VAR_compartment_ocid')
+# export TF_VAR_lz_vcn_ocid="XXXX"')
+# export TF_VAR_lz_web_subnet_ocid="XXXX"')
+# export TF_VAR_lz_app_subnet_ocid="XXXX"')
+# export TF_VAR_lz_db_subnet_ocid="XXXX"')
+#
 # Existing VCN and Subnets
-variable "vcn_ocid" {}
-variable "web_subnet_ocid" {}
-variable "app_subnet_ocid" {}
-variable "db_subnet_ocid" {}
+# variable "vcn_ocid" {}
+# variable "web_subnet_ocid" {}
+# variable "app_subnet_ocid" {}
+# variable "db_subnet_ocid" {}
 
 data "oci_core_vcn" "starter_vcn" {
   vcn_id = var.vcn_ocid
@@ -135,7 +146,7 @@ resource "oci_core_security_list" "starter_security_list" {
 
     tcp_options {
       min = 8080
-      max = 8081
+      max = 8080
     }
   }  
 

@@ -1,6 +1,129 @@
-title: "OCI Starter"
-stackDescription: "Your Project" 
-description: "Your Project" 
+title: "OCI Starter: From Resource Manager agext "
+stackDescription: "Resource Manager stack created by OCI Starter " 
+description: "Stack will deploy the component used in the OCI Starter project" 
 schemaVersion: 1.1.0
 version: "20221004"
 locale: "en"
+
+#################
+# Variable Groups
+#################
+variableGroups:
+
+- title: Starter Project
+  visible: true  
+  variables:  
+  - db_password  
+  - license_model  
+  - prefix
+
+- title: Static
+  visible: true  
+  variables:
+  - db_family
+  - db_family_type
+  - db_password
+  - db_type
+  - db_user
+  - deploy_type
+  - language
+  - license_model
+  - ui_type
+  - prefix
+  - tenancy_ocid
+  - region
+  - current_user_ocid
+
+#################
+# Output Groups
+#################
+
+######################
+# Variable Definitions
+######################
+
+variables:
+  db_family:
+    type: string
+    title: Database Family
+    description: ( db_family )
+    required: true
+    default: oracle
+  db_family_type:
+    type: string
+    title: Database Family Type
+    description: ( db_family_type )
+    required: true
+    default: sql
+  db_password:
+    type: string
+    title: Database Password
+    description: ( db_password )
+    required: true
+    default: __TO_FILL__
+  db_type:
+    type: string
+    title: Database Type
+    description: ( db_type )
+    required: true
+    default: autonomous
+  db_user:
+    type: string
+    title: Database User
+    description: ( db_user )
+    required: true
+    default: admin
+  deploy_type:
+    type: string
+    title: Deployment Type
+    description: ( deploy_type )
+    required: true
+    default: function
+  language:
+    type: string
+    title: Language
+    description: ( language )
+    required: true
+    default: java
+  license_model:
+    type: string
+    enum:
+      - BRING_YOUR_OWN_LICENSE
+      - LICENSE_INCLUDED
+    title: Licence Model
+    description: ( license_model )
+    required: true
+    default: LICENSE_INCLUDED
+  ui_type:
+    type: string
+    title: User Interface Type
+    description: ( ui_type )
+    required: true
+    default: html
+  prefix:
+    type: string
+    title: Prefix
+    description: ( prefix )
+    required: true
+    default: agext
+  tenancy_ocid:
+    type: string
+    title: Tenancy
+    description: ( tenancy_ocid )
+    required: true
+    default: 
+  region:
+    type: string
+    title: Region
+    description: ( region )
+    required: true
+    default: 
+  current_user_ocid:
+    type: string
+    title: User
+    description: ( current_user_ocid )
+    required: true
+    default: 
+
+
+
