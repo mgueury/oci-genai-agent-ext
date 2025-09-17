@@ -1,4 +1,13 @@
 # Releases notes
+- 2025-09-17:
+    - Change the OCI starter used to 4.0 (lot of small improvement. env.sh -> terraform.tfvars. Allow creation of the whole stack with Resource Manager)
+    - rag_storage mode db23ai 
+    - Added web site crawler 
+    - sitemap extension
+    - convertion to markdown
+    - cleanup of the whole structure
+    - use new python version and UV
+    - ....
 - 2025-03-21: 
     - Fix in the APEX app. When the response was bigger than 32K, the response was not shown. Ex: "what is Oracle Analytics failed".
     
