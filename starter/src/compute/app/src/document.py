@@ -39,9 +39,10 @@ def eventDocument(value):
             # Even for DB23ai, first convert to PDF (to get page numbers). Then PDF to text. (See https://github.com/docling-project/docling/discussions/1012)
             file_convert.convertLibreoffice2Pdf(value)
             return
-    # elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
+    elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
     #    file_convert.convertImage2Pdf(value)
-    #    return    
+         file_convert.convertGrokImage2Text(value)
+         return    
     elif resourceExtension in [".mp3", ".mp4", ".avi", ".wav", ".m4a"]:
         # This will create a SRT file in Object Storage that will create a second even with resourceExtension ".srt" 
         file_convert.convertOciSpeech(value)

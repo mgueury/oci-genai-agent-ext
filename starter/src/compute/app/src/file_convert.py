@@ -656,7 +656,41 @@ def save_image_as_pdf( file_name, images ):
         im = images.pop(0)
         im.save(file_name, save_all=True,append_images=images)
 
-# ---------------------------------------------------------------------------
+## -- convertGrokImage2Text --------------------------------------------------
+#
+# Convert the Image file to text using "xai.grok-4" in "us-chicago-1"
+
+def convertGrokImage2Text(value, content=None, path=None):
+    log( "<convertGrokImage2Text>")
+    eventType = value["eventType"]
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    resourceName = value["data"]["resourceName"]
+    resourceId = value["data"]["resourceId"]
+    resourceGenAI = resourceName+".txt"
+  
+    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+
+    if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
+        # Set the original URL source (GenAI Agent)
+        metadata = get_metadata_from_resource_id( resourceId )
+
+        image_file = download_file( namespace, bucketName, resourceName)     
+        text = shared.generic_chat("describe the image", image_path=image_file, a_model="xai.grok-4", a_region="us-chicago-1")
+
+        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"        
+        with open(dest_file, 'w', encoding='utf-8') as f_out:
+            f_out.write(text)   
+
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=dest_file, content_type="application/pdf", metadata=metadata)
+    elif eventType == "com.oraclecloud.objectstorage.deleteobject":
+        rag_storage.delete_file( value=value, object_name=resourceGenAI )
+    log( "</convertGrokImage2Text>")
+
+## -- convertImage2Pdf ------------------------------------------------------
+#
+# Convert the Image to PDF
+
 def convertImage2Pdf(value, content=None, path=None):
     log( "<convertImage2Pdf>")
     eventType = value["eventType"]
