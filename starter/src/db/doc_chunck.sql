@@ -77,18 +77,18 @@ RETURN clob IS
     stop_vector number;
     region varchar2(128);
     compartment_ocid varchar2(128);    
-    embed_modelid varchar2(128);    
+    genai_embed_model varchar2(128);    
 BEGIN 
     select value into region from AI_AGENT_RAG_CONFIG where key='region';
     select value into compartment_ocid from AI_AGENT_RAG_CONFIG where key='compartment_ocid';    
-    select value into embed_modelid from AI_AGENT_RAG_CONFIG where key='embed_modelid';    
+    select value into genai_embed_model from AI_AGENT_RAG_CONFIG where key='genai_embed_model';    
     resp := DBMS_CLOUD.send_request( 
         credential_name => 'OCI$RESOURCE_PRINCIPAL', 
         uri =>'https://inference.generativeai.'|| region || '.oci.oraclecloud.com/20231130/actions/embedText',
         method => 'POST', 
         body => UTL_RAW.cast_to_raw( JSON_OBJECT (
             'compartmentId' VALUE compartment_ocid,
-            'servingMode' VALUE JSON_OBJECT( 'modelId' VALUE embed_modelid, 
+            'servingMode' VALUE JSON_OBJECT( 'modelId' VALUE genai_embed_model, 
                                              'servingType' VALUE 'ON_DEMAND' ),   
             'inputs' VALUE JSON_ARRAY( c ),
             'truncate' VALUE 'START'
