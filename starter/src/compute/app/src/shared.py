@@ -161,7 +161,7 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
     global signer
     log( "<generic_chat>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = force_region or os.getenv("TF_VAR_region")  
+    region = a_region or os.getenv("TF_VAR_region")  
     model = a_model or os.getenv("TF_VAR_genai_meta_model")
     endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
