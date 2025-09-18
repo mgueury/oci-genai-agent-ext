@@ -174,8 +174,6 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
             "apiFormat": "GENERIC",
             "maxTokens": 600,
             "temperature": 0,
-            "preambleOverride": "",
-            "presencePenalty": 0,
             "topP": 0.75,
             "topK": 0,
             "messages": [
@@ -192,7 +190,7 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
         }
     }
     if image_path:
-        body["chatRequest"]["messages"]["content"].append(
+        body["chatRequest"]["messages"][0]["content"].append(
             {
                 "type": "IMAGE",
                 "imageUrl": {
@@ -207,7 +205,13 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
     # Binary string conversion to utf8
     log_in_file("generic_chat_resp", resp.content.decode('utf-8'))
     j = json.loads(resp.content)   
-    s = j["chatResponse"]["text"]
+    # Get the text
+    chatResponse = j["chatResponse"]
+    if chatResponse.get("text"):
+        s=chatResponse["text"]
+    else:
+        s=chatResponse["choices"][0]["message"]["content"][0]["text"]
+    # Remove JSON prefix if there    
     if s.startswith('```json'):
         start_index = s.find("{") 
         end_index = s.rfind("}")+1
