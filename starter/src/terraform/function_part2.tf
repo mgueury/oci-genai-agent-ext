@@ -10,7 +10,7 @@ resource "oci_functions_function" "starter_fn_function" {
   memory_in_mbs  = "2048"
   config = { 
     JDBC_URL      = local.local_jdbc_url,     
-    DB_USER     = var.db_user,
+    DB_USER     = var.db_user != null ? var.db_user : "admin",
     DB_PASSWORD = var.db_password,     
   }
   #Optional
@@ -58,7 +58,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment" {
       methods = [ "ANY" ]
       backend {
         type = "STOCK_RESPONSE_BACKEND"
-        body   = "Function ${var.language}"
+        body   = "Function java"
         status = 200
       }
     }    

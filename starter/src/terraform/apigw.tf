@@ -1,5 +1,6 @@
    
 variable "openapi_spec" {
+  description = "API Gateway - OpenAPI specification"     
   default = "openapi: 3.0.0\ninfo:\n  version: 1.0.0\n  title: Test API\n  license:\n    name: MIT\npaths:\n  /ping:\n    get:\n      responses:\n        '200':\n          description: OK"
 }
 
@@ -25,6 +26,7 @@ locals {
 
 // API Management - Tags
 variable git_url { 
+  description = "Git URL"  
   default = "" 
   nullable = false
 }
@@ -38,7 +40,7 @@ locals {
       group = local.group_name
       app_prefix = var.prefix
 
-      api_icon = var.language
+      api_icon = "java"
       api_git_url = var.git_url 
       api_git_spec_path = "src/app/openapi_spec.yaml"
       api_git_spec_type = "OpenAPI"

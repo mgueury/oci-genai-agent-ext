@@ -1,4 +1,4 @@
-title: "OCI Starter: From Resource Manager agext "
+title: "OCI Starter: From Resource Manager __TO_FILL__ "
 stackDescription: "Resource Manager stack created by OCI Starter " 
 description: "Stack will deploy the component used in the OCI Starter project" 
 schemaVersion: 1.1.0
@@ -12,27 +12,52 @@ variableGroups:
 
 - title: Starter Project
   visible: true  
-  variables:  
-  - db_password  
-  - license_model  
-  - prefix
-
-- title: Static
-  visible: true  
   variables:
-  - db_family
-  - db_family_type
+  - prefix
   - db_password
+  - license_model
+  - compartment_ocid
+  - show_optional
+
+- title: Fixed
+  visible: ${show_optional}
+  variables:
   - db_type
   - db_user
   - deploy_type
   - language
-  - license_model
   - ui_type
-  - prefix
-  - tenancy_ocid
+
+- title: Optional
+  visible: ${show_optional}  
+  variables:
+  - auth_token
+  - availability_domain_number
+  - build_src
+  - certificate_ocid
+  - fn_image
+  - git_url
+  - group_name
+  - home_region
+  - idcs_domain_name
+  - idcs_url
+  - infra_as_code
+  - instance_ocpus
+  - instance_shape
+  - instance_shape_config_memory_in_gbs
+  - log_group_ocid
+  - lz_app_cmp_ocid
+  - lz_db_cmp_ocid
+  - lz_network_cmp_ocid
+  - lz_security_cmp_ocid
+  - lz_serv_cmp_ocid
+  - lz_web_cmp_ocid
+  - namespace
+  - openapi_spec
   - region
-  - current_user_ocid
+  - ssh_private_key
+  - ssh_public_key
+  - tenancy_ocid
 
 #################
 # Output Groups
@@ -43,87 +68,152 @@ variableGroups:
 ######################
 
 variables:
-  db_family:
+# Env Params
+  auth_token:    
     type: string
-    title: Database Family
-    description: ( db_family )
-    required: true
-    default: oracle
-  db_family_type:
+    title: auth_token
+    description: "See doc: https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm"
+    required: false
+  availability_domain_number:    
     type: string
-    title: Database Family Type
-    description: ( db_family_type )
+    title: availability_domain_number
+    required: false
+  build_src:    
+    type: string
+    title: build_src
+    required: false
+  certificate_ocid:    
+    type: string
+    title: certificate_ocid
+    description: "OCID of the OCI Certificate"
+    required: false
+  compartment_ocid:
+    type: oci:identity:compartment:id
+    title: Compartment
+    description: "Compartment OCID"
     required: true
-    default: sql
   db_password:
-    type: string
+    type: password
+    confirmation: true
     title: Database Password
-    description: ( db_password )
+    description: "Min length 12 characters, 2 lowercase, 2 uppercase, 2 numbers, 2 special characters. Ex: LiveLab__12345"
     required: true
-    default: __TO_FILL__
-  db_type:
-    type: string
-    title: Database Type
-    description: ( db_type )
-    required: true
-    default: autonomous
-  db_user:
+  db_user:    
     type: string
     title: Database User
-    description: ( db_user )
-    required: true
-    default: admin
-  deploy_type:
+    required: false
+  fn_image:    
     type: string
-    title: Deployment Type
-    description: ( deploy_type )
-    required: true
-    default: function
-  language:
+    title: fn_image
+    required: false
+  git_url:    
     type: string
-    title: Language
-    description: ( language )
-    required: true
-    default: java
-  license_model:
+    title: git_url
+    required: false
+  group_name:    
     type: string
+    title: group_name
+    required: false
+  home_region:    
+    type: string
+    title: home_region
+    required: false
+  idcs_domain_name:    
+    type: string
+    title: idcs_domain_name
+    required: false
+  idcs_url:    
+    type: string
+    title: idcs_url
+    required: false
+  infra_as_code:
+    type: enum
     enum:
-      - BRING_YOUR_OWN_LICENSE
-      - LICENSE_INCLUDED
-    title: Licence Model
-    description: ( license_model )
-    required: true
-    default: LICENSE_INCLUDED
-  ui_type:
+      - terraform_local
+      - from_resource_manager
+      - terraform_object_storage
+      - resource_manager
+    title: infra_as_code
+    required: false
+  instance_ocpus:    
     type: string
-    title: User Interface Type
-    description: ( ui_type )
+    title: instance_ocpus
+    required: false
+  instance_shape:    
+    type: string
+    title: instance_shape
+    required: false
+  instance_shape_config_memory_in_gbs:    
+    type: string
+    title: instance_shape_config_memory_in_gbs
+    required: false
+  license_model:
+    type: enum
+    enum:
+      - LICENSE_INCLUDED
+      - BRING_YOUR_OWN_LICENSE
+    title: Licence Model
+    description: "BRING_YOUR_OWN_LICENSE or LICENSE_INCLUDED"
     required: true
-    default: html
-  prefix:
+  log_group_ocid:    
+    type: string
+    title: log_group_ocid
+    required: false
+  lz_app_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_app_cmp_ocid
+    required: false
+  lz_db_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_db_cmp_ocid
+    required: false
+  lz_network_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_network_cmp_ocid
+    required: false
+  lz_security_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_security_cmp_ocid
+    required: false
+  lz_serv_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_serv_cmp_ocid
+    required: false
+  lz_web_cmp_ocid:
+    type: oci:identity:compartment:id
+    title: lz_web_cmp_ocid
+    required: false
+  namespace:    
+    type: string
+    title: namespace
+    required: false
+  openapi_spec:    
+    type: string
+    title: openapi_spec
+    required: false
+  prefix:    
     type: string
     title: Prefix
-    description: ( prefix )
+    description: "Prefix to all resources created by terraform"
     required: true
-    default: agext
-  tenancy_ocid:
+  region:
+    type: oci:identity:region:name
+    title: Region
+    required: false
+  ssh_private_key:    
+    type: string
+    title: ssh_private_key
+    required: false
+  ssh_public_key:
+    type: oci:core:ssh:publickey
+    title: ssh_public_key
+    required: false
+  tenancy_ocid:    
     type: string
     title: Tenancy
-    description: ( tenancy_ocid )
-    required: true
-    default: 
-  region:
-    type: string
-    title: Region
-    description: ( region )
-    required: true
-    default: 
-  current_user_ocid:
-    type: string
-    title: User
-    description: ( current_user_ocid )
-    required: true
-    default: 
-
-
-
+    required: false
+  show_optional:
+    type: boolean
+    title: Advanced
+    description: Show Advanced Parameters
+    default: false
