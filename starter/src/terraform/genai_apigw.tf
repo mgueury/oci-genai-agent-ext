@@ -67,7 +67,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "STOCK_RESPONSE_BACKEND"
-        body   = "Function ${var.language}"
+        body   = "Function Java"
         status = 200
       }
     }    

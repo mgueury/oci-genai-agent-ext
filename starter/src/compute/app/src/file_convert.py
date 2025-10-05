@@ -760,7 +760,7 @@ def run_crawler(url):
     # Define the command to run the Spider.
     # The command assumes you are running this script from the
     # root directory of the project (where scrapy.cfg is located).
-    crawler_command = ['./crawler.sh', 'crawler_spider', url]
+    crawler_command = ['./crawler.sh', url]
     
     # Define the path to the output CSV file.
     output_dir = '/tmp/crawler'
