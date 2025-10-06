@@ -20,9 +20,10 @@ Help (Tutorial + How to customize): https://www.ocistarter.com/help
 ### Next Steps:
 - Edit the file terraform.tfvars. Some variables need to be filled:
 ```
+prefix="__TO_FILL__"
 db_password="__TO_FILL__"
 ```
 
 - Run:
-  cd agext
+  cd __TO_FILL__
   ./starter.sh

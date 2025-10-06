@@ -36,7 +36,10 @@ resource oci_logging_log export_starter_fn_application_invoke {
 locals {
   fnapp_ocid = oci_functions_application.starter_fn_application.id
 }
-variable "fn_image" { default = null } 
+variable "fn_image" { 
+  default = null 
+  description = "OCI Function Docker Image Name"
+}
 
 output "fn_url" {
   value = join("", oci_apigateway_deployment.starter_apigw_deployment.*.endpoint)
@@ -58,7 +61,9 @@ resource "oci_identity_policy" "starter_fn_policy" {
 #-- Object Storage ----------------------------------------------------------
 
 # Object Storage
-variable "namespace" {}
+variable "namespace" {
+  description = "OCI Object Storage Namespace"
+}
 
 resource "oci_objectstorage_bucket" "starter_bucket" {
   compartment_id = local.lz_serv_cmp_ocid

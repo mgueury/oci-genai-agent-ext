@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # - 2025-06_17 : added Tofu support for LunaLab
-set -e
 
 if command -v terraform  &> /dev/null; then
   export TERRAFORM_COMMAND=terraform
@@ -16,61 +15,65 @@ export TERRAFORM_DIR=$PROJECT_DIR/src/terraform
 
 infra_as_code_plan() {
   cd $TERRAFORM_DIR    
-  if [ "$TF_VAR_infra_as_code" == "resource_manager" ]; then
-     resource_manager_plan
-  else
-    if [ "$TF_VAR_infra_as_code" == "terraform_object_storage" ]; then
-      sed "s/XX_TERRAFORM_STATE_URL_XX/$TF_VAR_terraform_state_url/g" terraform.template.tf > terraform/terraform.tf
-    fi  
-    $TERRAFORM_COMMAND init -no-color -upgrade
-    $TERRAFORM_COMMAND plan
-  fi
+  if [ "$TF_VAR_infra_as_code" == "terraform_object_storage" ]; then
+    sed "s/XX_TERRAFORM_STATE_URL_XX/$TF_VAR_terraform_state_url/g" terraform.template.tf > terraform/terraform.tf
+  fi  
+  $TERRAFORM_COMMAND init -no-color -upgrade
+  $TERRAFORM_COMMAND plan
 }
 
 # Before to run the build check the some resource with unique name in the tenancy does not exists already
+# Run only once when the state file does not exist yet.
 infra_as_code_precheck() {
-  echo "-- Precheck"
+  title "Infra As Code - Precheck"
   cd $TERRAFORM_DIR
   $TERRAFORM_COMMAND init -no-color -upgrade  
-  #   XXXX BUG in terraform plan -json
-  #   XXXX If there is an error in the plan phase, the code exit fully returning a error code... XXXX
-  $TERRAFORM_COMMAND plan -json -out=$TARGET_DIR/tfplan.out # > /dev/null
+  $TERRAFORM_COMMAND plan -json -out=$TARGET_DIR/tfprecheck.plan > /dev/null 2>&1
   if [ "$?" != "0" ]; then
+    # If there is an error in the plan phase, json output is not readable. 
+    # Continue to apply to let apply fails and give a readable message
     echo "WARNING: infra_as_code_precheck: Terraform plan failed"
   else 
     # Buckets
-    LIST_BUCKETS=`$TERRAFORM_COMMAND show -json $TARGET_DIR/tfplan.out | jq -r '.resource_changes[] | select(.type == "oci_objectstorage_bucket") | .name'`
+    LIST_BUCKETS=`$TERRAFORM_COMMAND show -json $TARGET_DIR/tfprecheck.plan | jq -r '.resource_changes[] | select(.type == "oci_objectstorage_bucket") | .change.after.name'`
     for BUCKET_NAME in $LIST_BUCKETS; do
-        echo "Precheck if bucket $BUCKET_NAME exists"
-        BUCKET_CHECK=`oci os bucket get --bucket-name $BUCKET_NAME --namespace-name $TF_VAR_namespace 2> /dev/null | jq -r .data.name`
-        if [ "$BUCKET_NAME" == "$BUCKET_CHECK" ]; then
+      echo "Bucket $BUCKET_NAME"
+      BUCKET_CHECK=`oci os bucket get --bucket-name $BUCKET_NAME --namespace-name $TF_VAR_namespace 2> /dev/null | jq -r .data.name`
+      if [ "$BUCKET_NAME" == "$BUCKET_CHECK" ]; then
         echo "PRECHECK ERROR: Bucket $BUCKET_NAME exists already in this tenancy."
         echo
         echo "Solution: There is probably another installation on this tenancy with the same prefix."
         echo "If you want to create a new installation, "
-        echo "- edit the file env.sh"
-        echo "- put a unique prefix in TF_VAR_PREFIX. Ex:"
+        echo "- edit the file terraform.tfvars"
+        echo "- put a unique prefix in prefix. Ex:"
         echo  
-        echo "export TF_VAR_PREFIX=xxx123"
+        echo "prefix=xxx123"
         echo  
-        error_exit
-        fi
+        error_exit "infra_as_code_precheck"
+      fi
     done
   fi
+  cd -
 }
 
 infra_as_code_apply() {
-  echo "XXXXXXX <infra_as_code_apply> $CALLED_BY_TERRAFORM"  
+  title "Infra As Code - Apply" 
   cd $TERRAFORM_DIR  
   pwd
   if [ "$CALLED_BY_TERRAFORM" != "" ]; then 
     # Called from resource manager
-    echo "WARNING: infra_as_code_apply"
+    echo "WARNING: infra_as_code_apply (CALLED_BY_TERRAFORM=$CALLED_BY_TERRAFORM)"
     resource_manager_variables_json 
-  elif [ "$TF_VAR_infra_as_code" == "resource_manager" ]; then
+  elif [ "$TF_VAR_infra_as_code" == "build_resource_manager" ]; then
     resource_manager_create_or_update
     resource_manager_apply
-    exit_on_error "infra_as_code_apply - rm"
+    exit_on_error "infra_as_code_apply - build_resource_manager"
+  elif [ "$TF_VAR_infra_as_code" == "create_resource_manager" ]; then
+    resource_manager_create_or_update
+    exit_on_error "infra_as_code_apply - create_resource_manager"
+  elif [ "$TF_VAR_infra_as_code" == "distribute_resource_manager" ]; then
+    resource_manager_create_or_update "YES"
+    exit_on_error "infra_as_code_apply - distribute_resource_manager"    
   elif [ "$TF_VAR_infra_as_code" == "from_resource_manager" ]; then
     cd $PROJECT_DIR
     resource_manager_create_or_update
@@ -88,11 +91,14 @@ infra_as_code_apply() {
 
 infra_as_code_destroy() {
   cd $TERRAFORM_DIR    
-  if [ "$TF_VAR_infra_as_code" == "resource_manager" ] || [ "$TF_VAR_infra_as_code" == "from_resource_manager" ]; then
+  # If resource_manager_stackid -> destroy the Resource Manager Stack
+  # If from_resource_manager -> ask resource_manager to destroy its resources
+  if [ -f $TARGET_DIR/resource_manager_stackid ] || [ "$TF_VAR_infra_as_code" == "from_resource_manager" ]; then
     resource_manager_destroy
   else
     $TERRAFORM_COMMAND init -upgrade
     $TERRAFORM_COMMAND destroy $@
+    exit_on_error "infra_as_code_destroy"    
   fi
 }
 
@@ -101,7 +107,7 @@ resource_manager_get_stack() {
     rs_echo "Stack does not exists ( file target/resource_manager_stackid not found )"
     exit
   fi    
-  source $TARGET_DIR/resource_manager_stackid
+  export STACK_ID=`cat $TARGET_DIR/resource_manager_stackid`
 }
 
 rs_echo() {
@@ -123,10 +129,13 @@ resource_manager_variables_json () {
 
 # Used in both infra_as_code = resource_manager and from_resource_manager
 resource_manager_create_or_update() {   
+  DISTRIBUTE=$1
   rs_echo "Create Stack"
-  if [ -f $TARGET_DIR/resource_manager_stackid ]; then
+  if [ -f $ZIP_FILE_PATH ]; then
      echo "Stack exists already ( file target/resource_manager_stackid found )"
      mv $ZIP_FILE_PATH $ZIP_FILE_PATH.$DATE_POSTFIX
+  fi    
+  if [ -f $VAR_FILE_PATH ]; then
      mv $VAR_FILE_PATH $VAR_FILE_PATH.$DATE_POSTFIX
   fi    
 
@@ -148,20 +157,27 @@ resource_manager_create_or_update() {
     find . -path '*/target' -prune -o -exec cp -r --parents {} target/stack \;
   fi
   cd target/stack
-  # Add infra_as_code in terraform.tfvars
-  if grep -q '="resource_manager"' terraform.tfvars; then
-    sed -i 's/"resource_manager"/"from_resource_manager"/' terraform.tfvars
-  fi
-    # Move src/terraform to .
+  # Move src/terraform to .
   mv src/terraform/* .
   rm terraform_local.tf
   rm -Rf src/terraform/
+  if [ "$DISTRIBUTE" == "YES" ]; then
+    # Comment all lines before -- FIXED
+    sed -i '1,/-- Fixed/{/-- Fixed/!s/^[^#]/#&/}' terraform.tfvars
+  fi
+  # Add infra_as_code in terraform.tfvars
+  if ! grep -q '="from_resource_manager"' terraform.tfvars; then
+    echo >> terraform.tfvars
+    echo 'infra_as_code="from_resource_manager"' >> terraform.tfvars
+  fi
   # Create zip
   zip -r $ZIP_FILE_PATH * -x "target/*" -x "$TERRAFORM_DIR/.terraform/*"
   echo "Created Resource Manager Zip file - $ZIP_FILE_PATH"
   cd -
 
-  resource_manager_variables_json
+  if [ "$DISTRIBUTE" != "YES" ]; then
+    resource_manager_variables_json
+  fi
 
   if [ -f $TARGET_DIR/resource_manager_stackid ]; then
     if cmp -s $ZIP_FILE_PATH $ZIP_FILE_PATH.$DATE_POSTFIX; then
@@ -176,13 +192,26 @@ resource_manager_create_or_update() {
       rs_echo "Zip files are different"
     fi
     resource_manager_get_stack
-  	STACK_ID=$(oci resource-manager stack update --stack-id $STACK_ID --config-source $ZIP_FILE_PATH --variables file://$VAR_FILE_PATH --force --query 'data.id' --raw-output)
+    if [ "$DISTRIBUTE" == "YES" ]; then
+      STACK_ID=$(oci resource-manager stack update --stack-id $STACK_ID --config-source $ZIP_FILE_PATH --force --query 'data.id' --raw-output)
+    else 
+   	  STACK_ID=$(oci resource-manager stack update --stack-id $STACK_ID --config-source $ZIP_FILE_PATH --variables file://$VAR_FILE_PATH --force --query 'data.id' --raw-output)
+    fi
     rs_echo "Updated stack id: ${STACK_ID}"
   else 
-  	STACK_ID=$(oci resource-manager stack create --compartment-id $TF_VAR_compartment_ocid --config-source $ZIP_FILE_PATH --display-name $TF_VAR_prefix-resource-manager  --variables file://$VAR_FILE_PATH --query 'data.id' --raw-output)
+    if [ "$DISTRIBUTE" == "YES" ]; then
+      STACK_ID=$(oci resource-manager stack create --compartment-id $TF_VAR_compartment_ocid --config-source $ZIP_FILE_PATH --display-name $TF_VAR_prefix-resource-manager --query 'data.id' --raw-output)
+    else 
+      STACK_ID=$(oci resource-manager stack create --compartment-id $TF_VAR_compartment_ocid --config-source $ZIP_FILE_PATH --display-name $TF_VAR_prefix-resource-manager --variables file://$VAR_FILE_PATH --query 'data.id' --raw-output)
+    fi
+    echo "$STACK_ID" > $TARGET_DIR/resource_manager_stackid
     rs_echo "Created stack id: ${STACK_ID}"
-    echo "export STACK_ID=$STACK_ID" > $TARGET_DIR/resource_manager_stackid
-  fi  
+  fi
+  if [ "$DISTRIBUTE" == "YES" ]; then
+    # Add tenancy_ocid and region since they are not detected by OCI CLI
+    oci resource-manager stack update --stack-id $STACK_ID --variables "{\"tenancy_ocid\":\"$TF_VAR_tenancy_ocid\",\"compartment_ocid\":\"$TF_VAR_compartment_ocid\",\"current_user_ocid\":\"$TF_VAR_current_user_ocid\",\"region\":\"$TF_VAR_region\"}" --force
+  fi
+  rs_echo "URL: https://cloud.oracle.com/resourcemanager/stacks/${STACK_ID}?region=${TF_VAR_region}"
 }
 
 resource_manager_plan() {

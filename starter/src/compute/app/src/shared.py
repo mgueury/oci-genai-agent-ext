@@ -5,6 +5,8 @@ from datetime import datetime
 import oci
 import pathlib
 import pprint
+import base64
+import mimetypes
 
 # -- globals ----------------------------------------------------------------
 
@@ -65,7 +67,21 @@ def dictString(d,key):
 
 def dictInt(d,key):
    return int(float(d.get(key, 0)))
-   
+
+## -- image2DataUri ------------------------------------------------------------
+# Converts a JPEG image file to a Base64 data URI.
+
+def image2DataUri(image_path):
+    log( "<image2DataUri>")
+    mime_type, _ = mimetypes.guess_type(image_path)
+    if mime_type is None:
+        raise ValueError("Error: Could not determine the MIME type of the file.")
+        
+    with open(image_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')  
+    data_uri = f"data:{mime_type};base64,{encoded_string}"
+    return data_uri
+
 ## -- summarizeContent ------------------------------------------------------
 
 def summarizeContent(value,content):
@@ -139,26 +155,25 @@ def embedText(c):
     log( "</embedText>")
     return dictString(j,"embeddings")[0]     
 
-## -- llama_chat -----------------------------------------------------------
+## -- generic_chat -----------------------------------------------------------
 
-def llama_chat(prompt):
+def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
     global signer
-    log( "<llama_chat>")
+    log( "<generic_chat>")
     compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = os.getenv("TF_VAR_region")    
+    region = a_region or os.getenv("TF_VAR_region")  
+    model = a_model or os.getenv("TF_VAR_genai_meta_model")
     endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": compartmentId,
         "servingMode": {
-            "modelId": os.getenv("TF_VAR_genai_meta_model"),
+            "modelId": model,
             "servingType": "ON_DEMAND"
         },
         "chatRequest": {
             "apiFormat": "GENERIC",
             "maxTokens": 600,
             "temperature": 0,
-            "preambleOverride": "",
-            "presencePenalty": 0,
             "topP": 0.75,
             "topK": 0,
             "messages": [
@@ -174,18 +189,34 @@ def llama_chat(prompt):
             ]
         }
     }
+    if image_path:
+        body["chatRequest"]["messages"][0]["content"].append(
+            {
+                "type": "IMAGE",
+                "imageUrl": {
+                    "url": image2DataUri(image_path)
+                }
+            }
+        )
+
     resp = requests.post(endpoint, json=body, auth=signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
-    log_in_file("llama_chat_resp", resp.content.decode('utf-8'))
+    log_in_file("generic_chat_resp", resp.content.decode('utf-8'))
     j = json.loads(resp.content)   
-    s = j["chatResponse"]["text"]
+    # Get the text
+    chatResponse = j["chatResponse"]
+    if chatResponse.get("text"):
+        s=chatResponse["text"]
+    else:
+        s=chatResponse["choices"][0]["message"]["content"][0]["text"]
+    # Remove JSON prefix if there    
     if s.startswith('```json'):
         start_index = s.find("{") 
         end_index = s.rfind("}")+1
         s = s[start_index:end_index]
-    log( "</llama_chat>")
+    log( "</generic_chat>")
     return s
 
 ## -- cohere_chat -----------------------------------------------------------
