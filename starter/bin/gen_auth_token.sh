@@ -19,8 +19,10 @@ if grep -q 'auth_token="__TO_FILL__"' $PROJECT_DIR/terraform.tfvars; then
   STATUS="$?"
   cat auth_token.log
   if [ "$STATUS" != "0" ]; then
-     echo "Generation of the Auth Token failed"
-     echo "Please go this:"   
+     echo
+     echo "ERROR: Generation of the OCI Auth Token failed"
+     echo
+     echo "Please try this:"   
      echo "- Login in the OCI Console"
      echo "- Click on the User Icon on the top/right."
      echo "- Choose Profile/<your name>"
