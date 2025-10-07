@@ -75,26 +75,28 @@ echo
 # echo "(experimental) Cohere with Tools and GenAI Agent:"
 # echo "http://${BASTION_IP}:8081/"
 # echo "-----------------------------------------------------------------------"
-echo "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
-echo
-echo "-----------------------------------------------------------------------"
-echo "Streamlit:"
-echo "http://${BASTION_IP}:8080/"
-echo
-echo "-----------------------------------------------------------------------"
-echo "APEX login:"
-echo
-echo "APEX Workspace"
-echo "https://${APIGW_HOSTNAME}/ords/_/landing"
-echo "  Workspace: APEX_APP"
-echo "  User: APEX_APP"
-echo "  Password: $TF_VAR_db_password"
-echo
-echo "APEX APP"
-echo "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
-echo "  User: APEX_APP / $TF_VAR_db_password"
-echo 
-echo "-----------------------------------------------------------------------"
-echo "Oracle Digital Assistant (Web Channel)"
-echo "http://${BASTION_IP}"
-echo 
+
+echo "URLs" > $FILE_DONE
+append_done "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
+append_done
+append_done "-----------------------------------------------------------------------"
+append_done "Streamlit:"
+append_done "http://${BASTION_IP}:8080/"
+append_done
+append_done "-----------------------------------------------------------------------"
+append_done "APEX login:"
+append_done
+append_done "APEX Workspace"
+append_done "https://${APIGW_HOSTNAME}/ords/_/landing"
+append_done "  Workspace: APEX_APP"
+append_done "  User: APEX_APP"
+append_done "  Password: $TF_VAR_db_password"
+append_done
+append_done "APEX APP"
+append_done "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
+append_done "  User: APEX_APP / $TF_VAR_db_password"
+append_done 
+append_done "-----------------------------------------------------------------------"
+append_done "Oracle Digital Assistant (Web Channel)"
+append_done "http://${BASTION_IP}"
+append_done 
