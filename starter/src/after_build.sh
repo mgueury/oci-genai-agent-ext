@@ -20,7 +20,7 @@ append_done "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "Streamlit:"
-append_done "http://${BASTION_IP}:8080/"
+append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
@@ -37,5 +37,5 @@ append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
 append_done "Oracle Digital Assistant (Web Channel)"
-append_done "http://${BASTION_IP}"
+append_done "https://${APIGW_HOSTNAME}/"
 append_done 
