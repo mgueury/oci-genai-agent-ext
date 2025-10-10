@@ -1,9 +1,8 @@
 package docrepo;
 
-import com.fnproject.fn.api.InputBinding;
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import com.oracle.bmc.objectstorage.requests.GetObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.GetObjectResponse;
@@ -31,7 +30,6 @@ import com.oracle.bmc.streaming.responses.PutMessagesResponse;
 import com.oracle.bmc.util.internal.StringUtils;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.ObjectStorageClient;
-import com.fnproject.fn.api.RuntimeContext;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -58,28 +56,23 @@ import java.security.cert.*;
 
 public class TikaParser {
     private ObjectStorage objectStorageClient;
-    private ResourcePrincipalAuthenticationDetailsProvider provider;
+    private InstancePrincipalsAuthenticationDetailsProvider provider;
 
-    public TikaParser(RuntimeContext ctx) {
+    public TikaParser() {
         initOciClients();
-    }
-
-    private String reqEnv(RuntimeContext ctx, String key) {
-        return ctx.getConfigurationByKey(key).orElseThrow(() -> new RuntimeException("Missing required config " + key));
-
     }
 
     private void initOciClients() {
         System.out.println("Inside initOciClients");
         try {
-            provider = ResourcePrincipalAuthenticationDetailsProvider.builder().build();
-            System.err.println("ResourcePrincipalAuthenticationDetailsProvider setup");
+            provider = InstancePrincipalsAuthenticationDetailsProvider.builder().build();
+            System.err.println("InstancePrincipalsAuthenticationDetailsProvider setup");
             objectStorageClient = ObjectStorageClient.builder().build(provider);
             // objectStorageClient.setRegion(Region.EU_FRANKFURT_1);
             System.out.println("ObjectStorage client setup");
 
         } catch (Exception ex) {
-            System.err.println("Exception in FDK " + ex.getMessage());
+            System.err.println("Exception " + ex.getMessage());
             ex.printStackTrace();
             throw new RuntimeException("failed to init oci clients", ex);
         }
@@ -127,89 +120,24 @@ public class TikaParser {
         return jsonObject;
     }
 
-
-    public static class ObjectInfo {
-
-        private String bucketName;
-        private String resourceName;
-        private String namespace;
-
-        public ObjectInfo() {
+    static public String main(String [] args) {
+        if (args.length<3 ) {
+            return "Missing arguments: namespace, bucketName, resourceName";
         }
-
-        public String getBucketName() {
-            return bucketName;
-        }
-
-        public void setBucketName(String bucketName) {
-            this.bucketName = bucketName;
-        }
-
-        public String getResourceName() {
-            return resourceName;
-        }
-
-        public void setResourceName(String resourceName) {
-            this.resourceName = resourceName;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public void setNamespace(String namespace) {
-            this.namespace = namespace;
-        }
-    }
-
-    public String main(String [] args) {
-        ObjectInfo objectInfo = new ObjectInfo();
-        objectInfo.setNamespace( args [0] );
-        objectInfo.setBucketName( args [1] );
-        objectInfo.setResourceName( args [2] );
-        System.err.println("request: objectInfo=" + objectInfo.getResourceName());
+        String namespace = args[0];
+        String bucketName = args[1];
+        String resourceName = args[2];
+        System.err.println("resourceName=" + resourceName);
         try {
-            GetObjectResponse getObjectResponse = readObject(objectInfo.getNamespace(), objectInfo.getBucketName(), objectInfo.getResourceName());
-            JsonObject jsondoc = parseObject(getObjectResponse);
+            TikaParser parser = new TikaParser();
+            GetObjectResponse getObjectResponse = parser.readObject(namespace, bucketName, resourceName);
+            JsonObject jsondoc = parser.parseObject(getObjectResponse);
 
             return jsondoc.toString(); // "ok";
         } catch (Exception ex) {
-            System.err.println("Exception in FDK " + ex.getMessage());
+            System.err.println("Exception " + ex.getMessage());
             ex.printStackTrace();
             return "Exception in TikaObjectStorage: " + ex.getMessage();
         }
     }
-
-    static class ResponseHandler<IN, OUT> implements AsyncHandler<IN, OUT> {
-        private Throwable failed = null;
-        private CountDownLatch latch = new CountDownLatch(1);
-
-        private void waitForCompletion() throws Exception {
-            latch.await();
-            if (failed != null) {
-                if (failed instanceof Exception) {
-                    throw (Exception) failed;
-                }
-                throw (Error) failed;
-            }
-        }
-
-        @Override
-        public void onSuccess(IN request, OUT response) {
-            if (response instanceof PutObjectResponse) {
-                System.out.println(
-                        "New object md5: " + ((PutObjectResponse) response).getOpcContentMd5());
-            } else if (response instanceof GetObjectResponse) {
-                System.out.println("Object md5: " + ((GetObjectResponse) response).getContentMd5());
-            }
-            latch.countDown();
-        }
-
-        @Override
-        public void onError(IN request, Throwable error) {
-            failed = error;
-            latch.countDown();
-        }
-    }
-
 }
