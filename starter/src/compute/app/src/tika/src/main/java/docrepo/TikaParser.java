@@ -63,13 +63,13 @@ public class TikaParser {
     }
 
     private void initOciClients() {
-        System.out.println("Inside initOciClients");
+        System.err.println("Inside initOciClients");
         try {
             provider = InstancePrincipalsAuthenticationDetailsProvider.builder().build();
             System.err.println("InstancePrincipalsAuthenticationDetailsProvider setup");
             objectStorageClient = ObjectStorageClient.builder().build(provider);
             // objectStorageClient.setRegion(Region.EU_FRANKFURT_1);
-            System.out.println("ObjectStorage client setup");
+            System.err.println("ObjectStorage client setup");
 
         } catch (Exception ex) {
             System.err.println("Exception " + ex.getMessage());
