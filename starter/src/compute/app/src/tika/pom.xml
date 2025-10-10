@@ -69,7 +69,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>fully.qualified.MainClass</mainClass>
+                            <mainClass>docrepo.TikaParser</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

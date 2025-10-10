@@ -72,13 +72,13 @@ public class TikaParser {
     }
 
     private void initOciClients() {
-        System.out.println("Inside initOciClients");
+        System.err.println("Inside initOciClients");
         try {
             provider = ResourcePrincipalAuthenticationDetailsProvider.builder().build();
             System.err.println("ResourcePrincipalAuthenticationDetailsProvider setup");
             objectStorageClient = ObjectStorageClient.builder().build(provider);
             // objectStorageClient.setRegion(Region.EU_FRANKFURT_1);
-            System.out.println("ObjectStorage client setup");
+            System.err.println("ObjectStorage client setup");
 
         } catch (Exception ex) {
             System.err.println("Exception in FDK " + ex.getMessage());
