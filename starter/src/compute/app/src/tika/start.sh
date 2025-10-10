@@ -1,1 +1,0 @@
-java -classpath dependency/java-sdk-shaded-full-2.39.0.jar:. -jar docparser-1.0.0.jar

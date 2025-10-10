@@ -120,9 +120,10 @@ public class TikaParser {
         return jsonObject;
     }
 
-    static public String main(String [] args) {
+    public static void main(String[] args) {
         if (args.length<3 ) {
-            return "Missing arguments: namespace, bucketName, resourceName";
+            System.err.println( "Missing arguments: namespace, bucketName, resourceName" );
+            return;
         }
         String namespace = args[0];
         String bucketName = args[1];
@@ -132,12 +133,12 @@ public class TikaParser {
             TikaParser parser = new TikaParser();
             GetObjectResponse getObjectResponse = parser.readObject(namespace, bucketName, resourceName);
             JsonObject jsondoc = parser.parseObject(getObjectResponse);
-
-            return jsondoc.toString(); // "ok";
+            System.out.println( jsondoc.toString() ); // "ok";
         } catch (Exception ex) {
             System.err.println("Exception " + ex.getMessage());
             ex.printStackTrace();
-            return "Exception in TikaObjectStorage: " + ex.getMessage();
+            System.err.println( "Exception in TikaObjectStorage: " + ex.getMessage() );
+            return;
         }
     }
 }
