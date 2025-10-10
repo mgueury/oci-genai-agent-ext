@@ -42,8 +42,8 @@ resource "null_resource" "tf_env" {
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"
     echo_export "TF_VAR_db_user" "admin"
-    echo_export "TF_VAR_deploy_type" "function"
-    echo_export "TF_VAR_language" "java"
+    echo_export "TF_VAR_deploy_type" "private_compute"
+    echo_export "TF_VAR_language" "python"
     echo_export "TF_VAR_ui_type" "html" 
     echo_export "OCI_STARTER_CREATION_DATE" "2025-10-05-13-59-33-174669"
     echo_export "OCI_STARTER_VERSION" "4.1"
@@ -167,8 +167,6 @@ resource "null_resource" "after_build" {
         EOT
   }
   depends_on = [
-    oci_apigateway_deployment.starter_apigw_deployment,
-    oci_functions_function.starter_fn_function,      
     null_resource.build_deploy
   ]
 
