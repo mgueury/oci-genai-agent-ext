@@ -72,6 +72,7 @@ resource "oci_network_load_balancer_network_load_balancer" "starter_nlb" {
 resource "oci_network_load_balancer_network_load_balancers_backend_sets_unified" "starter_nlb_bes" {
   name                     = "${var.prefix}-nlb-bes"
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb.id
+  policy                   = "TWO_TUPLE"  
   health_checker {
     port                = "8080"
     protocol            = "TCP"
