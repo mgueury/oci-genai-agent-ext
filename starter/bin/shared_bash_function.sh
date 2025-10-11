@@ -701,7 +701,8 @@ function scp_via_bastion() {
   done
 }
 
-# Function to replace ##VARIABLES## in a file
+# Function to replace ##VARIABLE_NAME## in a file
+# Replace ##OPTIONAL/VARIABLE_NAME## by variables if it exists or __NOT_USED__
 file_replace_variables() {
   local file="$1"
   local temp_file=$(mktemp)
@@ -713,8 +714,8 @@ file_replace_variables() {
       echo "- variable: ${var_name}"
 
       if [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
-         var_name="${BASH_REMATCH[1]}"
-         var_value="${!var_name}"
+         var_name2="${BASH_REMATCH[1]}"
+         var_value="${!var_name2}"
          if [ "$var_value" == "" ]; then
             var_value="__NOT_USED__"
          fi
