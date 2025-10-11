@@ -30,10 +30,11 @@ if [ -d $HOME/app/myenv ]; then
 fi
 
 # TNS_ADMIN
-cat > $HOME/app/tnsnames.ora <<EOT
+mkdir $HOME/db
+cat > $HOME/db/tnsnames.ora <<EOT
 DB  = $DB_URL
 EOT
-export TNS_ADMIN=$HOME/app
+export TNS_ADMIN=$HOME/db
 
 # During Initialisation - Store the env db in the database
 # After Initialisation  - Use the env stored in the database as source of True

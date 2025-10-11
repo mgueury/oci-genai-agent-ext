@@ -60,12 +60,14 @@ mvn package
 cd -
 
 # Install SQLCL (Java program)
+cd $HOME/db
 wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
 rm -Rf sqlcl
 unzip sqlcl-latest.zip
+cd -
 
 # Store the config in APEX
-$HOME/app/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
+$HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_region'              where key='region';
@@ -77,39 +79,6 @@ end;
 exit;
 EOF
 
-# Get COMPARTMENT_OCID
-curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/ > /tmp/instance.json
-export TF_VAR_compartment_ocid=`cat /tmp/instance.json | jq -r .compartmentId`
-
-# Create services
-create_service () {
-    APP_DIR=$1
-    COMMAND=$2
-    # Create an db service
-    cat > /tmp/$COMMAND.service << EOT
-[Unit]
-Description=$COMMAND
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/home/opc/$APP_DIR/${COMMAND}.sh
-TimeoutStartSec=0
-User=opc
-
-[Install]
-WantedBy=default.target
-EOT
-    sudo cp /tmp/$COMMAND.service /etc/systemd/system
-    sudo chmod 664 /etc/systemd/system/$COMMAND.service
-    sudo systemctl daemon-reload
-    sudo systemctl enable $COMMAND.service
-    sudo systemctl restart $COMMAND.service
-}
-
-create_service app ingest
-create_service app streamlit
-create_service app tools
-
+# MCP Firewall (optional)
 sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
 
