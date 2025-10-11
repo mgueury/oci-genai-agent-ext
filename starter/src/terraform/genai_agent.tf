@@ -1,3 +1,8 @@
+# Object Storage
+variable "namespace" {
+  description = "OCI Object Storage Namespace"
+}
+
 # -- Object Storage ---------------------------------------------------------
 
 resource "oci_objectstorage_bucket" "starter_agent_bucket" {
