@@ -59,8 +59,13 @@ cd src/tika
 mvn package
 cd -
 
+# Install SQLCL (Java program)
+wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+rm -Rf sqlcl
+unzip sqlcl-latest.zip
+
 # Store the config in APEX
-$HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
+$HOME/app/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_region'              where key='region';
