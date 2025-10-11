@@ -30,7 +30,7 @@ if [ -d $HOME/app/myenv ]; then
 fi
 
 # TNS_ADMIN
-mkdir $HOME/db
+mkdir -p $HOME/db
 cat > $HOME/db/tnsnames.ora <<EOT
 DB  = $DB_URL
 EOT
