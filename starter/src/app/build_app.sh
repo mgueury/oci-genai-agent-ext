@@ -20,9 +20,6 @@ get_attribute_from_tfstate "STREAM_MESSAGE_ENDPOINT" "starter_stream" "messages_
 get_attribute_from_tfstate "STREAM_POOL_OCID" "starter_stream_pool" "id"
 get_attribute_from_tfstate "STREAM_BOOSTRAPSERVER" "starter_stream_pool" "kafka_settings[0].bootstrap_servers"
 
-get_attribute_from_tfstate "FN_OCID" "starter_fn_function" "id"
-get_attribute_from_tfstate "FN_INVOKE_ENDPOINT" "starter_fn_function" "invoke_endpoint"
-
 get_id_from_tfstate "TF_VAR_agent_datasource_ocid" "starter_agent_ds" 
 get_id_from_tfstate "TF_VAR_agent_endpoint_ocid" "starter_agent_endpoint" 
 
@@ -45,9 +42,6 @@ echo "-- STREAMING CONNECTION --------------------------"
 echo "STREAM_MESSAGE_ENDPOINT=$STREAM_MESSAGE_ENDPOINT"
 echo "STREAM_OCID=$STREAM_OCID"
 echo "STREAM_USERNAME=$TENANCY_NAME/$TF_VAR_username/$STREAM_OCID"
-echo
-echo "-- FUNCTION CONNECTION ---------------------------"
-echo "FUNCTION_ENDPOINT=$FN_INVOKE_ENDPOINT/20181201/functions/$FN_OCID"
 echo
 echo "-- AGENT (OPTIONAL) ---------------------------"
 echo "TF_VAR_agent_datasource_ocid=$TF_VAR_agent_datasource_ocid"

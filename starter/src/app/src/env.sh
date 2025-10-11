@@ -4,8 +4,6 @@ export DB_URL="##DB_URL##"
 
 export STREAM_OCID="##STREAM_OCID##"
 export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
-export FN_OCID="##FN_OCID##"
-export FN_INVOKE_ENDPOINT="##FN_INVOKE_ENDPOINT##"
 export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
 export TF_VAR_region="##TF_VAR_region##"
 export TF_VAR_agent_datasource_ocid="##TF_VAR_agent_datasource_ocid##"
