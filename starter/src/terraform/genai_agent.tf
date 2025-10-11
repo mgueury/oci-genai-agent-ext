@@ -60,3 +60,31 @@ resource "oci_generative_ai_agent_agent_endpoint" "starter_agent_endpoint" {
   }
   freeform_tags = local.freeform_tags  
 }
+
+# -- StreamLit / NLB ---------------------------------------------------------
+
+resource "oci_network_load_balancer_network_load_balancer" "starter_nlb" {
+  compartment_id = var.lz_app_cmp_ocid
+  subnet_id = data.oci_core_subnet.starter_web_subnet.id
+  display_name = "${var.prefix}-nlb"
+}
+
+resource "oci_network_load_balancer_network_load_balancers_backend_sets_unified" "starter_nlb_bes" {
+  name                     = "${var.prefix}-nlb-bes"
+  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb.id
+  health_checker {
+    port                = "8080"
+    protocol            = "TCP"
+    timeout_in_millis   = 10000
+    interval_in_millis  = 10000
+    retries             = 3
+  }
+  backends {
+    ip_address               = local.local_compute_ip
+    port                     = 8080
+    is_backup                = false
+    is_drain                 = false
+    is_offline               = false
+    weight                   = 1
+  }
+}

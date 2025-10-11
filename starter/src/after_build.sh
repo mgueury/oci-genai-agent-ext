@@ -4,6 +4,8 @@ export ROOT_DIR=${SRC_DIR%/*}
 cd $ROOT_DIR
 
 . ./starter.sh env
+get_attribute_from_tfstate "NLB_IP" "starter_stream" "id"
+echo "NLB_IP=$NLB_IP"
 
 # Upload Sample Files
 sleep 5
@@ -18,7 +20,7 @@ echo
 echo "URLs" > $FILE_DONE
 append_done "-----------------------------------------------------------------------"
 append_done "Streamlit:"
-append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"
+append_done "http://${NLB_IP}/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
@@ -35,5 +37,5 @@ append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
 append_done "Oracle Digital Assistant (Web Channel)"
-append_done "https://${APIGW_HOSTNAME}/"
+append_done "https://${APIGW_HOSTNAME}//${TF_VAR_prefix}/"
 append_done 
