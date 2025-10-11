@@ -18,6 +18,6 @@ else
   . $BIN_DIR/shared_bash_function.sh
 fi 
 
-if [ -f $PROJECT_DIR/before_build.sh ]; then
-  . $PROJECT_DIR/before_build.sh
+if [ -f $PROJECT_DIR/src/before_build_app.sh ]; then
+  . $PROJECT_DIR/src/before_build_app.sh
 fi 
