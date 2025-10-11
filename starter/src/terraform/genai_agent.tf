@@ -73,20 +73,27 @@ resource "oci_network_load_balancer_network_load_balancer" "starter_nlb" {
 resource "oci_network_load_balancer_network_load_balancers_backend_sets_unified" "starter_nlb_bes" {
   name                     = "${var.prefix}-nlb-bes"
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb.id
-  policy                   = "TWO_TUPLE"  
+  policy                   = "FIVE_TUPLE"  
   health_checker {
-    port                = "8080"
-    protocol            = "TCP"
-    timeout_in_millis   = 10000
-    interval_in_millis  = 10000
-    retries             = 3
+    port                   = "8080"
+    protocol               = "TCP"
+    timeout_in_millis      = 10000
+    interval_in_millis     = 10000
+    retries                = 3
   }
-  backends {
-    ip_address               = local.local_compute_ip
-    port                     = 8080
-    is_backup                = false
-    is_drain                 = false
-    is_offline               = false
-    weight                   = 1
-  }
+}
+
+resource "oci_network_load_balancer_backend" "starter_nlb_be" {
+    #Required
+    backend_set_name = "${var.prefix}-nlb-bes"
+    network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb_bes.id
+    port = 8080
+
+    #Optional
+    is_backup = false
+    is_drain = false
+    is_offline = false
+    name = "${var.prefix}-nlb-be"
+    target_id = oci_core_instance.starter_compute.id
+    weight = 1
 }

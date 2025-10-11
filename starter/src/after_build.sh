@@ -5,7 +5,7 @@ cd $ROOT_DIR
 
 . ./starter.sh env
 # try(oci_apigateway_gateway.starter_apigw.ip_addresses[0].ip_address,"")
-get_attribute_from_tfstate "NLB_IP" "starter_stream" "id"
+export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
 echo "NLB_IP=$NLB_IP"
 
 # Upload Sample Files

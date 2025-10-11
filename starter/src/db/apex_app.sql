@@ -19923,6 +19923,7 @@ wwv_flow_imp_shared.create_install_script(
 ,p_script_type=>'INSTALL'
 ,p_script_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'begin',
+'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''region'', ''##YOUR_REGION##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''agent_endpoint_ocid'', ''##YOUR_AGENT_ENDPOINT##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI\$RESOURCE_PRINCIPAL'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''compartment_ocid'', ''##COMPATMENT##'');',
