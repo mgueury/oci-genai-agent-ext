@@ -4,6 +4,7 @@ export ROOT_DIR=${SRC_DIR%/*}
 cd $ROOT_DIR
 
 . ./starter.sh env
+# try(oci_apigateway_gateway.starter_apigw.ip_addresses[0].ip_address,"")
 get_attribute_from_tfstate "NLB_IP" "starter_stream" "id"
 echo "NLB_IP=$NLB_IP"
 
@@ -37,5 +38,5 @@ append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
 append_done "Oracle Digital Assistant (Web Channel)"
-append_done "https://${APIGW_HOSTNAME}//${TF_VAR_prefix}/"
+append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/"
 append_done 
