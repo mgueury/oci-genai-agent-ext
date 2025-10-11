@@ -29,12 +29,17 @@ if [ -d $HOME/app/myenv ]; then
   source $HOME/app/myenv/bin/activate
 fi
 
+# TNS_ADMIN
+cat > $HOME/app/tnsnames.ora <<EOT
+DB  = $DB_URL
+EOT
+export TNS_ADMIN=$HOME/app
+
 # During Initialisation - Store the env db in the database
 # After Initialisation  - Use the env stored in the database as source of True
 # Read Variables in database 
 if [ "$1" != "INSTALL" ]; then
   if [ "$DB_URL" != "" ]; then
-    export TNS_ADMIN=$HOME/db
     $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
       set linesize 1000
       set heading off

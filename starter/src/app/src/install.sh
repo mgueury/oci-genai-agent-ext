@@ -60,7 +60,6 @@ mvn package
 cd -
 
 # Store the config in APEX
-export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
   update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
