@@ -711,13 +711,20 @@ file_replace_variables() {
     while [[ $line =~ (.*)##(.*)##(.*) ]]; do
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
-      local var_value="${!var_name}"
 
-      if [[ -z "$var_value" ]]; then
-        echo "ERROR: Environment variable '${var_name}' is not defined."
-        error_exit
+      if [ ${var_name} =~ OPTIONAL/(.*) ]; then
+         var_name="${BASH_REMATCH[1]}"
+         local var_value="${!var_name}"
+         if [ "$var_value" == "" ]; then
+            local var_value="__NOT_USED__"
+         fi
+      else
+        local var_value="${!var_name}"       
+        if [ "$var_value" == "" ]; then
+            echo "ERROR: Environment variable '${var_name}' is not defined."
+            error_exit
+        fi
       fi
-
       line=${line/"##${var_name}##"/${var_value}}
     done
 

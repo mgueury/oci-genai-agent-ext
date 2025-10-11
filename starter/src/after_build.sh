@@ -16,8 +16,6 @@ echo
 # echo "-----------------------------------------------------------------------"
 
 echo "URLs" > $FILE_DONE
-append_done "TF_VAR_agent_endpoint_ocid=$TF_VAR_agent_endpoint_ocid"
-append_done
 append_done "-----------------------------------------------------------------------"
 append_done "Streamlit:"
 append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"

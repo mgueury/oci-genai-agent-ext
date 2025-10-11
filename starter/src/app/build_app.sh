@@ -16,9 +16,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 get_attribute_from_tfstate "STREAM_OCID" "starter_stream" "id"
 get_attribute_from_tfstate "TENANCY_NAME" "tenant_details" "name"
 get_attribute_from_tfstate "STREAM_MESSAGE_ENDPOINT" "starter_stream" "messages_endpoint"
-# Not used anymore ?
-get_attribute_from_tfstate "STREAM_POOL_OCID" "starter_stream_pool" "id"
-get_attribute_from_tfstate "STREAM_BOOSTRAPSERVER" "starter_stream_pool" "kafka_settings[0].bootstrap_servers"
 
 get_id_from_tfstate "TF_VAR_agent_datasource_ocid" "starter_agent_ds" 
 get_id_from_tfstate "TF_VAR_agent_endpoint_ocid" "starter_agent_endpoint" 
@@ -53,15 +50,6 @@ if is_deploy_compute; then
   # Replace the user and password in the start file
   replace_db_user_password_in_file ../../target/compute/$APP_DIR/start.sh
   if [ -f $TARGET_DIR/compute/$APP_DIR/env.sh ]; then 
-    if [ "$TF_VAR_agent_datasource_ocid" == "" ]; then
-      export TF_VAR_agent_datasource_ocid="__NOT_USED__"
-    fi
-    if [ "$TF_VAR_install_libreoffice" == "" ]; then
-      export TF_VAR_install_libreoffice="__NOT_USED__"
-    fi
-    if [ "$TF_VAR_rag_storage" == "" ]; then
-      export TF_VAR_rag_storage="__NOT_USED__"
-    fi
     file_replace_variables $TARGET_DIR/compute/$APP_DIR/env.sh
     exit_on_error "file_replace_variables"
   fi 

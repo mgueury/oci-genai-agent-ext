@@ -2,14 +2,14 @@ Useful commands
 ----------------
 - Restart the service
   sudo systemctl restart ingest
-  sudo systemctl restart rest
+  sudo systemctl restart streamlit
 - Status 
   sudo systemctl status ingest
-  sudo systemctl restart rest
-- view log
+  sudo systemctl restart streamlit
+- View log
   vi ingest.log
-  vi rest.log
-- follow log
+  vi streamlit.log
+- Follow log
   tail -f ingest.log
-  tail -f rest.log
+  tail -f streamlit.log
 

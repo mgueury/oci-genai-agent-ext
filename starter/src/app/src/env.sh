@@ -15,14 +15,14 @@ export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
 
 # OCI GenAI Agent
 export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
-export TF_VAR_agent_datasource_ocid="##TF_VAR_agent_datasource_ocid##"
+export TF_VAR_agent_datasource_ocid="##OPTIONAL/TF_VAR_agent_datasource_ocid##"
 export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
 export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
 export TF_VAR_genai_embed_model="##TF_VAR_genai_embed_model##"
-export TF_VAR_rag_storage="##TF_VAR_rag_storage##"
+export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 
 # LibreOffice
-export INSTALL_LIBREOFFICE="##TF_VAR_install_libreoffice##"
+export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
 
 # Python VirtualEnv
 if [ -d $HOME/app/myenv ]; then

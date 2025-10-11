@@ -28,7 +28,6 @@ locals {
   bucket_url = "https://objectstorage.${var.region}.oraclecloud.com/n/${var.namespace}/b/${var.prefix}-public-bucket/o"
 }  
 
-
 # -- Agent ------------------------------------------------------------------
 
 resource "oci_generative_ai_agent_agent" "starter_agent" {
