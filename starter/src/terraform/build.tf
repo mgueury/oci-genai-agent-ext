@@ -120,7 +120,6 @@ resource "null_resource" "build_deploy" {
     oci_logging_log_group.starter_log_group,
     oci_objectstorage_bucket.starter_bucket,
     tls_private_key.ssh_key,  
-    oci_generative_ai_agent_data_source.starter_agent_ds,
     oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint,
     null_resource.tf_env  
   ]
