@@ -64,7 +64,7 @@ resource "oci_generative_ai_agent_agent_endpoint" "starter_agent_endpoint" {
 # -- StreamLit / NLB ---------------------------------------------------------
 
 resource "oci_network_load_balancer_network_load_balancer" "starter_nlb" {
-  compartment_id = var.lz_app_cmp_ocid
+  compartment_id = local.lz_app_cmp_ocid
   subnet_id = data.oci_core_subnet.starter_web_subnet.id
   display_name = "${var.prefix}-nlb"
 }
