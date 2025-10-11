@@ -9,7 +9,6 @@ resource "oci_identity_policy" "starter_search_policy" {
 
     statements = [
         "allow any-user to manage objects in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${join("", oci_functions_function.starter_fn_function.*.id)}'",
-        "allow any-user to manage objects in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_functions_application.starter_fn_application.id}'",        
         "allow any-user to manage all-resources in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_bastion.id}'",
         "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_bastion.id}'",
         "allow any-user to manage stream-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_bastion.id}'",
