@@ -41,7 +41,7 @@ export TNS_ADMIN=$HOME/db
 # Read Variables in database 
 if [ "$1" != "INSTALL" ]; then
   if [ "$DB_URL" != "" ]; then
-    $HOME/app/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
+    $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
       set linesize 1000
       set heading off
       set feedback off

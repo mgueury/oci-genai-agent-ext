@@ -690,10 +690,10 @@ function scp_via_bastion() {
       scp -r -o StrictHostKeyChecking=no -oProxyCommand="$BASTION_PROXY_COMMAND" $1 $2
     fi  
     if [ $? -eq 0 ]; then
-      echo "-- done"
+      echo "Success - scp_via_bastion"
       break;
     elif [ "$i" == "5" ]; then
-      echo "scp_via_bastion: Maximum number of scp retries, ending."
+      echo "ERROR: scp_via_bastion: Maximum number of scp retries (5). Ending."
       error_exit
     fi
   sleep 5

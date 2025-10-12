@@ -103,6 +103,19 @@ BEGIN
 END embedText; 
 /
 
+-- UPDATE AI_CONFIG
+CREATE OR REPLACE PROCEDURE APEX_APP.AI_CONFIG_UPDATE( p_key IN VARCHAR2,p_value IN VARCHAR2)  IS
+    n number;
+begin
+    select count(*) into n from AI_AGENT_RAG_CONFIG where key=p_key;
+    IF n=0 THEN
+      insert into APEX_APP.AI_AGENT_RAG_CONFIG( key, value ) values( p_key, p_value );
+    else 
+      update APEX_APP.AI_AGENT_RAG_CONFIG set value=p_value where key=p_key;
+    end if;
+end;    
+/
+
 CREATE OR REPLACE FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     cleaned_query varchar2(4096);
