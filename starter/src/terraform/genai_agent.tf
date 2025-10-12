@@ -83,6 +83,18 @@ resource "oci_network_load_balancer_network_load_balancers_backend_sets_unified"
   }
 }
 
+resource "oci_network_load_balancer_listener" "starter_listener" {
+    #Required
+    name = "${var.prefix}-nlb-listener"
+    network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb.id
+    default_backend_set_name = "${var.prefix}-nlb-bes"
+    port = 8080
+    protocol = "TCP"
+    depends_on = [
+        oci_network_load_balancer_network_load_balancers_backend_sets_unified.starter_nlb_bes 
+    ]    
+}
+
 resource "oci_network_load_balancer_backend" "starter_nlb_be" {
     #Required
     backend_set_name = "${var.prefix}-nlb-bes"
