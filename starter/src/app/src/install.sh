@@ -69,10 +69,10 @@ cd -
 # Store the config in APEX
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_region'              where key='region';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_compartment_ocid'    where key='compartment_ocid';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_genai_embed_model'   where key='genai_embed_model';
+  APEX_APP.AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
+  APEX_APP.AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
+  APEX_APP.AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
+  APEX_APP.AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
   commit;
 end;
 /

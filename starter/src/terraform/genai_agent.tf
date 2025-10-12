@@ -86,7 +86,7 @@ resource "oci_network_load_balancer_network_load_balancers_backend_sets_unified"
 resource "oci_network_load_balancer_backend" "starter_nlb_be" {
     #Required
     backend_set_name = "${var.prefix}-nlb-bes"
-    network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb_bes.id
+    network_load_balancer_id = oci_network_load_balancer_network_load_balancer.starter_nlb.id
     port = 8080
 
     #Optional
