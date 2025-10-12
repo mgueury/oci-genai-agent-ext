@@ -96,4 +96,8 @@ resource "oci_network_load_balancer_backend" "starter_nlb_be" {
     name = "${var.prefix}-nlb-be"
     target_id = oci_core_instance.starter_compute.id
     weight = 1
+
+    depends_on = [
+        oci_network_load_balancer_network_load_balancers_backend_sets_unified.starter_nlb_bes 
+    ]
 }
