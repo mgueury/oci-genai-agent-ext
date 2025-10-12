@@ -21,7 +21,7 @@ echo
 echo "URLs" > $FILE_DONE
 append_done "-----------------------------------------------------------------------"
 append_done "Streamlit:"
-append_done "http://${NLB_IP}/"
+append_done "http://${NLB_IP}:8080/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
