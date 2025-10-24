@@ -690,10 +690,10 @@ function scp_via_bastion() {
       scp -r -o StrictHostKeyChecking=no -oProxyCommand="$BASTION_PROXY_COMMAND" $1 $2
     fi  
     if [ $? -eq 0 ]; then
-      echo "-- done"
+      echo "Success - scp_via_bastion"
       break;
     elif [ "$i" == "5" ]; then
-      echo "scp_via_bastion: Maximum number of scp retries, ending."
+      echo "ERROR: scp_via_bastion: Maximum number of scp retries (5). Ending."
       error_exit
     fi
   sleep 5
@@ -701,7 +701,8 @@ function scp_via_bastion() {
   done
 }
 
-# Function to replace ##VARIABLES## in a file
+# Function to replace ##VARIABLE_NAME## in a file
+# Replace ##OPTIONAL/VARIABLE_NAME## by variables if it exists or __NOT_USED__
 file_replace_variables() {
   local file="$1"
   local temp_file=$(mktemp)
@@ -711,13 +712,20 @@ file_replace_variables() {
     while [[ $line =~ (.*)##(.*)##(.*) ]]; do
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
-      local var_value="${!var_name}"
 
-      if [[ -z "$var_value" ]]; then
-        echo "ERROR: Environment variable '${var_name}' is not defined."
-        error_exit
+      if [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
+         var_name2="${BASH_REMATCH[1]}"
+         var_value="${!var_name2}"
+         if [ "$var_value" == "" ]; then
+            var_value="__NOT_USED__"
+         fi
+      else
+        var_value="${!var_name}"       
+        if [ "$var_value" == "" ]; then
+            echo "ERROR: Environment variable '${var_name}' is not defined."
+            error_exit
+        fi
       fi
-
       line=${line/"##${var_name}##"/${var_value}}
     done
 

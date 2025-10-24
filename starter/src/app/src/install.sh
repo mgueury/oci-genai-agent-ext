@@ -48,53 +48,37 @@ if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
 fi 
 cd $SCRIPT_DIR
 
+# Java
+sudo dnf install -y graalvm-25-jdk maven
+sudo update-alternatives --set java /usr/lib64/graalvm/graalvm-java25/bin/java
+echo "export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25" >> $HOME/.bashrc
+
+# Build Tika
+export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25
+cd src/tika
+mvn package
+cd -
+
+# Install SQLCL (Java program)
+cd $HOME/db
+wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+rm -Rf sqlcl
+unzip sqlcl-latest.zip
+cd -
+
 # Store the config in APEX
-export TNS_ADMIN=$HOME/db
 $HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
 begin
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_agent_endpoint_ocid' where key='agent_endpoint_ocid';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_region'              where key='region';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_compartment_ocid'    where key='compartment_ocid';
-  update APEX_APP.AI_AGENT_RAG_CONFIG set value='$TF_VAR_genai_embed_model'   where key='genai_embed_model';
+  APEX_APP.AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
+  APEX_APP.AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
+  APEX_APP.AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
+  APEX_APP.AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
   commit;
 end;
 /
 exit;
 EOF
 
-# Get COMPARTMENT_OCID
-curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/ > /tmp/instance.json
-export TF_VAR_compartment_ocid=`cat /tmp/instance.json | jq -r .compartmentId`
-
-# Create services
-create_service () {
-    APP_DIR=$1
-    COMMAND=$2
-    # Create an db service
-    cat > /tmp/$COMMAND.service << EOT
-[Unit]
-Description=$COMMAND
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/home/opc/$APP_DIR/${COMMAND}.sh
-TimeoutStartSec=0
-User=opc
-
-[Install]
-WantedBy=default.target
-EOT
-    sudo cp /tmp/$COMMAND.service /etc/systemd/system
-    sudo chmod 664 /etc/systemd/system/$COMMAND.service
-    sudo systemctl daemon-reload
-    sudo systemctl enable $COMMAND.service
-    sudo systemctl restart $COMMAND.service
-}
-
-create_service app ingest
-create_service app streamlit
-create_service app tools
-
+# MCP Firewall (optional)
 sudo firewall-cmd --zone=public --add-port=8081/tcp --permanent
 

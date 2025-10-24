@@ -3,11 +3,10 @@ locals {
 }
 
 resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {   
-  count          = var.fn_image == "" ? 0 : 1   
   compartment_id = local.lz_web_cmp_ocid
   display_name   = "${var.prefix}-apigw-deployment"
   gateway_id     = local.apigw_ocid
-  path_prefix    = "/app"
+  path_prefix    = "/app2"
   specification {
     logging_policies {
       access_log {
@@ -23,7 +22,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}/app/query"
+        url    = "http://${local.local_compute_ip}/app/query"
         connect_timeout_in_seconds = 10
         read_timeout_in_seconds = 30
         send_timeout_in_seconds = 30        
@@ -34,7 +33,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}:8080/generate"
+        url    = "http://${local.local_compute_ip}:8080/generate"
         connect_timeout_in_seconds = 10
         read_timeout_in_seconds = 30
         send_timeout_in_seconds = 30        
@@ -45,7 +44,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}:8080/cohere_chat"
+        url    = "http://${local.local_compute_ip}:8080/cohere_chat"
         connect_timeout_in_seconds = 10
         read_timeout_in_seconds = 30
         send_timeout_in_seconds = 30        
@@ -56,7 +55,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}:8080/generic_chat"
+        url    = "http://${local.local_compute_ip}:8080/generic_chat"
         connect_timeout_in_seconds = 10
         read_timeout_in_seconds = 30
         send_timeout_in_seconds = 30        
@@ -76,7 +75,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}/"
+        url    = "http://${local.local_compute_ip}/"
         connect_timeout_in_seconds = 10
         read_timeout_in_seconds = 30
         send_timeout_in_seconds = 30
@@ -87,7 +86,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "http://${data.oci_core_instance.starter_bastion.public_ip}/$${request.path[pathname]}"
+        url    = "http://${local.local_compute_ip}/$${request.path[pathname]}"
       }
     }
   }

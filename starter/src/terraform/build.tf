@@ -33,6 +33,7 @@ resource "null_resource" "tf_env" {
     echo_export "TF_VAR_compartment_ocid" "${coalesce(var.compartment_ocid,"-")}"  
     echo "# Terraform Locals" >> $ENV_FILE
     echo_export "BASTION_IP" "${local.local_bastion_ip}"
+    echo_export "COMPUTE_IP" "${local.local_compute_ip}"    
     echo_export "CONTAINER_PREFIX" "${local.local_container_prefix}"
     echo_export "DB_URL" "${local.local_db_url}"
     echo_export "IDCS_URL" "${local.local_idcs_url}"
@@ -42,12 +43,12 @@ resource "null_resource" "tf_env" {
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"
     echo_export "TF_VAR_db_user" "admin"
-    echo_export "TF_VAR_deploy_type" "function"
-    echo_export "TF_VAR_language" "java"
+    echo_export "TF_VAR_deploy_type" "private_compute"
+    echo_export "TF_VAR_language" "python"
     echo_export "TF_VAR_ui_type" "html" 
-    echo_export "OCI_STARTER_CREATION_DATE" "2025-10-05-13-59-33-174669"
-    echo_export "OCI_STARTER_VERSION" "4.1"
-    echo_export "OCI_STARTER_PARAMS" "prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,security,deploy_type,language"
+    # echo_export "OCI_STARTER_CREATION_DATE" "2025-10-05-13-59-33-174669"
+    # echo_export "OCI_STARTER_VERSION" "4.1"
+    # echo_export "OCI_STARTER_PARAMS" "prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,security,deploy_type,language"
     chmod 755 $ENV_FILE
     EOT
   }
@@ -115,14 +116,11 @@ resource "null_resource" "build_deploy" {
     oci_apigateway_gateway.starter_apigw,
     oci_artifacts_container_repository.starter_repo_fn,
     oci_core_instance.starter_bastion,
+    oci_core_instance.starter_compute,
     oci_database_autonomous_database.starter_atp,
-    oci_functions_application.starter_fn_application,
-    oci_identity_policy.starter_fn_policy,
-    oci_logging_log.export_starter_fn_application_invoke,
     oci_logging_log_group.starter_log_group,
     oci_objectstorage_bucket.starter_bucket,
     tls_private_key.ssh_key,  
-    oci_generative_ai_agent_data_source.starter_agent_ds,
     oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint,
     null_resource.tf_env  
   ]
@@ -167,8 +165,6 @@ resource "null_resource" "after_build" {
         EOT
   }
   depends_on = [
-    oci_apigateway_deployment.starter_apigw_deployment,
-    oci_functions_function.starter_fn_function,      
     null_resource.build_deploy
   ]
 

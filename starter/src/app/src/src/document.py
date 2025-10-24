@@ -73,7 +73,7 @@ def eventDocument(value):
         elif resourceExtension in [".png", ".jpg", ".jpeg", ".gif"]:
             result = file_convert.convertOciVision(value)
         else:
-            result = file_convert.convertOciFunctionTika(value)
+            result = file_convert.convertTika(value)
 
         if result:
             log_in_file("content", result["content"])

@@ -12,9 +12,6 @@ license_model="__TO_FILL__"
 # Compartment
 compartment_ocid="__TO_FILL__"
 
-# OCI Auth Token
-auth_token="__TO_FILL__"
-
 # RAG Storage 23ai
 # rag_storage="db23ai"
 # vault_ocid="__TO_FILL__"

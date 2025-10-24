@@ -111,6 +111,41 @@ def convertOciFunctionTika(value):
     log( "</convertOciFunctionTika>")
     return result
 
+## -- convertTika ------------------------------------------------
+# Run Tika via subprocess
+
+def convertTika(value):
+    log( "<convertTika>")
+    namespace = value["data"]["additionalDetails"]["namespace"]
+    bucketName = value["data"]["additionalDetails"]["bucketName"]
+    resourceName = value["data"]["resourceName"]
+    resourceId = value["data"]["resourceId"]
+    
+    command = ['./tika.sh', namespace, bucketName, resourceName ]
+    try:
+        text = subprocess.run(command, check=True, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        log("\n--- Tika finished successfully. ---")     
+    except subprocess.CalledProcessError as e:
+        log(f"\n\u270B Error: Tika command failed with return code {e.returncode}")
+        log(f"Stderr:\n{e.stderr}")
+        raise
+    log_in_file("tika_resp", text) 
+    j = json.loads(text)
+    result = {
+        "filename": resourceName,
+        "date": UNIQUE_ID,
+        "applicationName": "Tika Parser",
+        "modified": UNIQUE_ID,
+        "contentType": dictString(j,"Content-Type"),
+        "parsedBy": dictString(j,"X-Parsed-By"),
+        "creationDate": UNIQUE_ID,
+        "author": dictString(j,"Author"),
+        "publisher": dictString(j,"publisher"),
+        "content": j["content"],
+        "path": resourceId
+    }
+    log( "</convertTika>")
+    return result
    
 ## -- convertOciVision --------------------------------------------------------------
 
