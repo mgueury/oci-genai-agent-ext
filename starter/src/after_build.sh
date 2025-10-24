@@ -38,5 +38,5 @@ append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
 append_done "Oracle Digital Assistant (Web Channel)"
-append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/"
+append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html"
 append_done 
