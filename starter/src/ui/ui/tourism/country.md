@@ -13,8 +13,11 @@ Thailand - Famous for its beautiful beaches, delicious cuisine, and bustling cit
 United Kingdom - Attracts visitors with its historical landmarks, cultural institutions, and iconic cities like London.
 These countries are among the most visited due to their unique blend of natural beauty, cultural richness, and modern attractions.
 
+----
 
-Write an HTML page about tourism in the country United Kingdom (H1 header). There is a H2 Header with the top 5 cities (each a H3) . And another header with the top 5 things to see (H3) in that country. Give 2/3 lines of explanation by H3 tag.
+Write an HTML page about tourism in a imaginary country Music (H1 header). There is a H2 Header with the top 5 cities (each a H3) . And another header with the top 5 things to see (H3) in that country. Give 2/3 lines of explanation by H3 tag.
+
+----
 
 Create a HTML home page with titles about the following countries. The page is called Tourism.
 Each tiles contains 1 image and an description of the countries.
@@ -36,3 +39,5 @@ Germany - Known for its historical significance, cultural festivals, and modern 
 Thailand - Famous for its beautiful beaches, delicious cuisine, and bustling cities.
 United Kingdom - Attracts visitors with its historical landmarks, cultural institutions, and iconic cities like London.
 These countries are among the most visited due to their unique blend of natural beauty, cultural richness, and modern attractions.
+
+----
