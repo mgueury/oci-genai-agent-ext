@@ -10,6 +10,7 @@ echo "NLB_IP=$NLB_IP"
 
 # Upload Sample Files
 sleep 5
+echo "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html" > ../sample_files/website.crawler
 oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-bucket --src-dir ../sample_files --overwrite --content-type auto
 
 title "INSTALLATION DONE"
@@ -38,5 +39,5 @@ append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
 append_done "Oracle Digital Assistant (Web Channel)"
-append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html"
+append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/oda.html"
 append_done 
