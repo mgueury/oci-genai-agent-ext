@@ -96,7 +96,7 @@ def convertOciFunctionTika(value):
     log_in_file("tika_resp", text) 
     j = json.loads(text)
     result = {
-        "filename": resourceName,
+        "originalResourceName": resourceName,
         "date": UNIQUE_ID,
         "applicationName": "Tika Parser",
         "modified": UNIQUE_ID,
@@ -132,7 +132,7 @@ def convertTika(value):
     log_in_file("tika_resp", text) 
     j = json.loads(text)
     result = {
-        "filename": resourceName,
+        "originalResourceName": resourceName,
         "date": UNIQUE_ID,
         "applicationName": "Tika Parser",
         "modified": UNIQUE_ID,
@@ -190,7 +190,7 @@ def convertOciVision(value):
     log("concat_labels: " +concat_labels )
 
     result = {
-        "filename": resourceName,
+        "originalResourceName": resourceName,
         "date": UNIQUE_ID,
         "modified": UNIQUE_ID,
         "contentType": "Image",
@@ -240,7 +240,7 @@ def convertOciVisionBelgianID(value):
     birthdate = resp.data.image_text.lines[22]
 
     result = {
-        "filename": resourceName,
+        "originalResourceName": resourceName,
         "date": UNIQUE_ID,
         "modified": UNIQUE_ID,
         "contentType": "convertOciVisionBelgianID ID",
@@ -545,10 +545,10 @@ def convertJson(value):
 
     if ".docu/" in resourceName:
         # DocUnderstanding
-        original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
-        original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
-        if original_resourcename.endswith(".anonym.pdf"):
-            convertAnonymPDF( value, original_resourcename, j )
+        originalResourceName = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
+        originalResourceId = "/n/" + namespace + "/b/" + bucketName + "/o/" + originalResourceName
+        if originalResourceName.endswith(".anonym.pdf"):
+            convertAnonymPDF( value, originalResourceName, j )
             return None  
         else: 
             concat_text = ""
@@ -559,9 +559,9 @@ def convertJson(value):
                 for l in p.get("lines"):
                     page += l.get("text") + "\n"
                 pages[str(pageNumber)] = page
-                concat_text += page + " "    
+                concat_text += page + " "         
             result = {
-                "filename": original_resourcename,
+                "originalResourceName": originalResourceName,
                 "date": UNIQUE_ID,
                 "applicationName": "OCI Document Understanding",
                 "modified": UNIQUE_ID,
@@ -569,28 +569,28 @@ def convertJson(value):
                 "creationDate": UNIQUE_ID,
                 "content": concat_text,
                 "pages": pages,
-                "path": original_resourceid
+                "path": originalResourceId
             }            
     else:
         # Speech
-        original_resourcename = resourceName[:resourceName.index(".json")][resourceName.index("bucket_")+7:]
-        original_resourceid = "/n/" + namespace + "/b/" + bucketName + "/o/" + original_resourcename
+        originalResourceName = resourceName[:resourceName.index(".json")][resourceName.index("bucket_")+7:]
+        originalResourceId = "/n/" + namespace + "/b/" + bucketName + "/o/" + originalResourceName
         result = {
-            "filename": original_resourcename,
+            "originalResourceName": originalResourceName,
             "date": UNIQUE_ID,
             "applicationName": "OCI Speech",
             "modified": UNIQUE_ID,
             "contentType": j["audioFormatDetails"]["format"],
             "creationDate": UNIQUE_ID,
             "content": j["transcriptions"][0]["transcription"],
-            "path": original_resourceid
+            "path": originalResourceId
         }
     log( "</convertJson>")
     return result
 
 ## -- convertUpload ---------------------------------------------------
 
-def convertUpload(value, content=None, path=None):
+def convertUpload(value, content=None, path=None, originalResourceName=None):
 
     log( "<convertUpload>")
     eventType = value["eventType"]
@@ -600,7 +600,7 @@ def convertUpload(value, content=None, path=None):
     resourceGenAI = resourceName
     
     if content:
-        resourceGenAI = resourceGenAI + ".convert.txt"
+        resourceGenAI = resourceGenAI + ".convert.txt"   
 
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
 
@@ -612,6 +612,8 @@ def convertUpload(value, content=None, path=None):
         customized_url_source = "https://objectstorage."+region+".oraclecloud.com" + path
         log( "customized_url_source="+customized_url_source )
         metadata = get_upload_metadata( customized_url_source )
+        if originalResourceName:
+            metadata["originalResourceName"] = originalResourceName 
 
         file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
         if not content:

@@ -79,7 +79,7 @@ def eventDocument(value):
             log_in_file("content", result["content"])
             if len(result["content"])==0:
                 return 
-            file_convert.convertUpload(value, result["content"], result["path"])    
+            file_convert.convertUpload(value, result["content"], result["path"], result["originalResourceName"])    
 
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         # No need to get the content for deleting

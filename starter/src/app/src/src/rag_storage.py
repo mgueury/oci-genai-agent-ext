@@ -89,6 +89,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
     log("<upload_file>")
     if RAG_STORAGE=="db23ai":
         value["customized_url_source"] = metadata.get("customized_url_source")
+        value["originalResourceName"] = metadata.get("originalResourceName")
         insertDoc( value, file_path, object_name )
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
@@ -210,6 +211,11 @@ def insertTableDocs( value ):
         RETURNING id INTO :19
     """
     resourceName=value["data"]["resourceName"]
+
+    # Original Resource Name (ex: Speech and Document Understanding that create a second file)
+    if value.get("originalResourceName"):
+        resourceName=get("originalResourceName")
+    
     parts = resourceName.split('/')
     category1 = ""
     category2 = ""
@@ -221,6 +227,7 @@ def insertTableDocs( value ):
     if len(parts)>3:
         category3 = parts[2]
     id_var = cur.var(oracledb.NUMBER)
+
     data = (
             dictString(value,"applicationName"), 
             dictString(value,"author"),
