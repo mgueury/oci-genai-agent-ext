@@ -202,7 +202,7 @@ def insertTableDocs( value ):
     stmt = """
         INSERT INTO docs (
             application_name, author, translation, content_type,
-            creation_date, modified, other1, other2, other3, parsed_by,
+            creation_date, modified, category1, category2, category3, parsed_by,
             resource_name, path, title, region, summary_embed, source_type,
             content, summary
         )
@@ -210,6 +210,16 @@ def insertTableDocs( value ):
         RETURNING id INTO :19
     """
     resourceName=value["data"]["resourceName"]
+    parts = resourceName.split('/')
+    category1 = ""
+    category2 = ""
+    category3 = ""
+    if len(parts)>1:
+        category1 = parts[0]
+    if len(parts)>2:
+        category2 = parts[1]
+    if len(parts)>3:
+        category3 = parts[2]
     id_var = cur.var(oracledb.NUMBER)
     data = (
             dictString(value,"applicationName"), 
@@ -219,9 +229,9 @@ def insertTableDocs( value ):
             dictString(value,"contentType"),
             dictString(value,"creationDate"),
             dictString(value,"modified"),
-            dictString(value,"other1"),
-            dictString(value,"other2"),
-            dictString(value,"other3"),
+            category1,
+            category2,
+            category3,
             dictString(value,"parsed_by"),
             resourceName,                              # resourceName that caused the event to be started (used for deletion) 
             dictString(value,"customized_url_source"), # path

@@ -197,8 +197,7 @@ def convertOciVision(value):
         "parsedBy": "OCI Vision",
         "creationDate": UNIQUE_ID,
         "content": concat_imageText + " " + concat_labels,
-        "path": resourceId,
-        "other1": concat_labels
+        "path": resourceId
     }
     log( "</convertOciVision>")
     return result    
@@ -247,10 +246,8 @@ def convertOciVisionBelgianID(value):
         "contentType": "convertOciVisionBelgianID ID",
         "parsedBy": "OCI Vision",
         "creationDate": UNIQUE_ID,
-        "content": "convertOciVisionBelgianID identity card. Name="+name,
-        "path": resourceId,
-        "other1": id,
-        "other2": birthdate,
+        "content": f"BelgianID: Name={name} / Id={id} / Birthdate={birthdate}",
+        "path": resourceId
     }
     log( "</convertOciVisionBelgianID>")
     return result  

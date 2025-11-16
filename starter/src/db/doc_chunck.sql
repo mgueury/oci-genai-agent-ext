@@ -13,9 +13,9 @@ CREATE TABLE APEX_APP.docs (
     author varchar2(256),
     creation_date varchar2(256),    
     modified varchar2(256),    
-    other1 varchar2(1024),    
-    other2 varchar2(1024),    
-    other3 varchar2(1024),    
+    category1 varchar2(1024),    
+    category2 varchar2(1024),    
+    category3 varchar2(1024),    
     parsed_by varchar2(256),    
     title varchar2(1024),
     source_type varchar2(256)

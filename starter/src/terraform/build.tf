@@ -129,17 +129,6 @@ resource "null_resource" "build_deploy" {
     always_run = "${timestamp()}"
   }      
 }
-# PART2
-#
-# In case like instance_pool, oke, function, container_instance, ...
-# More terraform resources need to be created after build_deploy.
-# Reread the env variables
-data "external" "env_part2" {
-  program = ["cat", "${local.project_dir}/target/resource_manager_variables.json"]
-  depends_on = [
-    null_resource.build_deploy
-  ]
-}
 
 ## AFTER_BUILD
 # Last action at the end of the build
