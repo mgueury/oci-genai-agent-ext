@@ -5,7 +5,8 @@ CREATE TABLE APEX_APP.docs (
     summary CLOB,
     translation CLOB,
     summary_embed vector,
-    resource_name varchar2(1024), -- Parent file that caused the event to trigger.
+    resource_name varchar2(1024), -- File that caused the event to trigger.
+    original_resource_name varchar2(1024), -- Original file that caused the event to trigger.
     path varchar2(1024),    
     content_type varchar2(256),
     region varchar2(256),    

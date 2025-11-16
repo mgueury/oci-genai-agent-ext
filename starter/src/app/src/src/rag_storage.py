@@ -204,7 +204,7 @@ def insertTableDocs( value ):
         INSERT INTO docs (
             application_name, author, translation, content_type,
             creation_date, modified, category1, category2, category3, parsed_by,
-            resource_name, path, title, region, summary_embed, source_type,
+            resource_name, original_resource_name, path, title, region, summary_embed, source_type,
             content, summary
         )
         VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18)
@@ -213,10 +213,13 @@ def insertTableDocs( value ):
     resourceName=value["data"]["resourceName"]
 
     # Original Resource Name (ex: Speech and Document Understanding that create a second file)
+
     if value.get("originalResourceName"):
-        resourceName=get("originalResourceName")
+        originalResourceName = value.get("originalResourceName")
+    else:
+        originalResourceName = resourceName
     
-    parts = resourceName.split('/')
+    parts = originalResourceName.split('/')
     category1 = ""
     category2 = ""
     category3 = ""
@@ -241,6 +244,7 @@ def insertTableDocs( value ):
             category3,
             dictString(value,"parsed_by"),
             resourceName,                              # resourceName that caused the event to be started (used for deletion) 
+            originalResourceName,                      # originalResourceName (ex: mp3 filename for speech)
             dictString(value,"customized_url_source"), # path
             value.get("title", resourceName),          # provided title if not resourceName
             os.getenv("TF_VAR_region"),
