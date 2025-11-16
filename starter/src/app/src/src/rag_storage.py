@@ -359,11 +359,11 @@ def deleteDocByPath( value ):
     global dbConn
     cur = dbConn.cursor()
     path =  value["customized_url_source"]
-    log(f"<deleteDocByPath> resourceName={path}")
+    log(f"<deleteDocByPath> path={path}")
 
     # Delete the document record
     try:
-        cur.execute("delete from docs where resource_name=:1", (path,))
+        cur.execute("delete from docs where path=:1", (path,))
         log(f"<deleteDocByPath> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByPath> docs: Error deleting: {error}")
