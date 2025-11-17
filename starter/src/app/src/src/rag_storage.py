@@ -224,7 +224,8 @@ def insertTableDocs( value ):
         RETURNING id INTO :20
     """
     resourceName=value["data"]["resourceName"]
-
+    metadata = value["metadata"]
+  
     # Original Resource Name (ex: Speech and Document Understanding that create a second file)
     id_var = cur.var(oracledb.NUMBER)
 
