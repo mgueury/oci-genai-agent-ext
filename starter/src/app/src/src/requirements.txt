@@ -21,6 +21,7 @@ langchain
 langchain_community
 langchain_chroma
 langchain_docling 
+langchain_text_splitters
 
 # Sitemap
 pdfkit
