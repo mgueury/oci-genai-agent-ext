@@ -320,9 +320,9 @@ def insertTableDocsChunck(value, docs, file_path):
 
     # There is no standard in Langchain chuncking on the metadata.
     for d in docs_chunck:
-        d.metadata["docId"] = dictString(value,"docId")
-        d.metadata["resourceName"] = value["data"]["resourceName"]
-        d.metadata["contentType"] = dictString(value,"contentType")
+        d.metadata["doc_id"] = dictString(value,"docId")
+        d.metadata["resource_name"] = value["data"]["resourceName"]
+        d.metadata["content_type"] = dictString(value,"contentType")
         d.metadata["path"] = value["metadata"]["customized_url_source"]
         # Copy OCI Agent Filters key
         for key, value in value["metadata"].items():
