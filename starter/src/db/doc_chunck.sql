@@ -117,12 +117,15 @@ begin
 end;    
 /
 
-CREATE OR REPLACE FUNCTION APEX_APP.RETRIEVAL_FUNC (p_query IN VARCHAR2,top_k IN NUMBER) RETURN SYS_REFCURSOR IS
+create or replace function retrieval_func( p_query IN VARCHAR2,top_k IN NUMBER, p_filter_category1 in VARCHAR2 default null ) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     cleaned_query varchar2(4096);
-BEGIN
+    g_rag_search_type varchar2(256);
+begin
     -- Simple Vector query 
-    OPEN v_results FOR
+    select value into g_rag_search_type from AI_AGENT_RAG_CONFIG where key='rag_search_type'; 
+    if g_rag_search_type='vector' then 
+      OPEN v_results FOR
         select 
             JSON_VALUE(metadata,'$.doc_id') as DOCID, 
             text as BODY, 
@@ -135,18 +138,19 @@ BEGIN
             -- TO_NUMBER(1) as PAGE_NUMBERS   
         from docs_langchain
         -- where JSON_VALUE(metadata,'$.doc_id') in (select to_char(id) from docs order by vector_distance(summary_embed,  to_vector(embedText( 'what is jazz' ))) fetch first 3 rows only)
+        where p_filter_category1 is null 
+           or p_filter_category1 = JSON_VALUE(metadata,'$."gaas-metadata-filtering-field-category1"')
         order by score 
         fetch first top_k rows only;
+    else 
+      -- Hybrid Search query (30 Lexical/ 70 Vector)
+      -- Oracle Text score: 0 - 100.0 (higher is better)
+      -- Vector distance : 0 - 1.0 (closer is better)
+      -- Clean up the query string to avoid issue with the CONTAINS(xxx), error like ORA-29902 ORA-30600 DRG-50901
+      cleaned_query := REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p_query, '!', ' '), '?', ' '), '#', ' '), '>', ' '), '<', ' ');
+      AI_AGENT.LOG( 'P_QUERY', p_query );
 
-    -- Hybrid Search query (30 Lexical/ 70 Vector)
-    -- Oracle Text score: 0 - 100.0 (higher is better)
-    -- Vector distance : 0 - 1.0 (closer is better)
-/*    
-    -- Clean up the query string to avoid issue with the CONTAINS(xxx), error like ORA-29902 ORA-30600 DRG-50901
-    cleaned_query := REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(p_query, '!', ' '), '?', ' '), '#', ' '), '>', ' '), '<', ' ');
-    AI_AGENT.LOG( 'P_QUERY', p_query );
-
-    OPEN v_results FOR
+      OPEN v_results FOR
         WITH text_search AS (
             SELECT id, score(99)/100 as score FROM docs_langchain
             WHERE CONTAINS(text, cleaned_query, 99)>0 order by score(99) DESC FETCH FIRST top_k ROWS ONLY
@@ -167,11 +171,13 @@ BEGIN
         FROM docs_langchain o
         JOIN text_search ts ON o.id = ts.id
         JOIN vector_search vs ON o.id = vs.id
+        where p_filter_category1 is null 
+           or p_filter_category1 = JSON_VALUE(metadata,'$."gaas-metadata-filtering-field-category1"')        
         ORDER BY score DESC
         FETCH FIRST top_k ROWS ONLY;
-*/
+    end if;
     RETURN v_results;
-end RETRIEVAL_FUNC;
+end retrieval_func;
 /
 
 -- Admin function 

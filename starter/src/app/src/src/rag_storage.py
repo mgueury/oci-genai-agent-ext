@@ -18,7 +18,7 @@ from langchain_core.documents import Document
 from langchain_community.vectorstores.oraclevs import OracleVS
 from langchain_community.embeddings import OCIGenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import DistanceStrategy
 
 # Docling
