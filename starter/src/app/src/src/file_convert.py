@@ -69,11 +69,7 @@ def get_upload_metadata( customized_url_source ):
     log( "customized_url_source="+customized_url_source )
     customized_url_source = urllib.parse.quote(customized_url_source, safe=':/', encoding=None, errors=None)
     log( "After encoding="+customized_url_source )
-    folder = os.path.dirname( '/' + customized_url_source.split("/o/",1)[1] )
-    log( "folder="+folder )
-    # Add folder metadata
-    # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
-    return {'customized_url_source': customized_url_source, 'gaas-metadata-filtering-field-folder': folder}
+    return {'customized_url_source': customized_url_source }
 
 ## -- convertOciFunctionTika ------------------------------------------------
 
@@ -469,7 +465,7 @@ def convertChromeSelenium2Pdf(value):
                         else:
                             pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
     
-                        metadata=  {'customized_url_source': full_uri, 'gaas-metadata-filtering-field-folder': folder }    
+                        metadata=  {'customized_url_source': full_uri }    
 
                         # Upload to object storage as "site/"+pdf_path
                         rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
@@ -870,7 +866,7 @@ def convertCrawler(value):
                                 title = row.get('title', 'N/A')
                                 filename = filename[len(CRAWLER_DIR)+1:]
                                 log(f"URL: {url} - Filename: {filename}")
-                                metadata=  {'customized_url_source': url, 'gaas-metadata-filtering-field-folder': folder } 
+                                metadata=  {'customized_url_source': url } 
                                 # value["data"]["resourceName"] = title   
                                 value["title"] = title   
                                 rag_storage.upload_file(value=value, object_name=folder+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)

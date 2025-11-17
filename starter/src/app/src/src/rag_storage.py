@@ -87,9 +87,22 @@ def updateCount(count):
 
 def upload_file( value, object_name, file_path, content_type, metadata ):  
     log("<upload_file>")
+
+    # Enrich metadata (based on folder name category1/category2/category3/file.txt)
+    # See https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/RAG-tool-object-storage-guidelines.htm
+    originalResourceName = metadata.get("originalResourceName", value["data"]["resourceName"])
+    metadata['gaas-metadata-filtering-field-originalResourceName'] = originalResourceName
+
+    parts = originalResourceName.split('/')
+    if len(parts)>1:
+        metadata['gaas-metadata-filtering-field-category1'] = parts[0]
+    if len(parts)>2:
+        metadata['gaas-metadata-filtering-field-category2'] = parts[1]
+    if len(parts)>3:
+        metadata['gaas-metadata-filtering-field-category3'] = parts[2]
+
     if RAG_STORAGE=="db23ai":
-        value["customized_url_source"] = metadata.get("customized_url_source")
-        value["originalResourceName"] = metadata.get("originalResourceName")
+        value["metadata"] = metadata
         insertDoc( value, file_path, object_name )
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
@@ -134,7 +147,7 @@ def delete_folder(value, folder):
 # -- insertDoc -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
 
-def insertDoc( value, file_path, object_name ):
+def insertDoc( value, file_path, object_name, metadata ):
     if file_path:
         extension = pathlib.Path(object_name.lower()).suffix
         resourceName = value["data"]["resourceName"]
@@ -213,22 +226,6 @@ def insertTableDocs( value ):
     resourceName=value["data"]["resourceName"]
 
     # Original Resource Name (ex: Speech and Document Understanding that create a second file)
-
-    if value.get("originalResourceName"):
-        originalResourceName = value.get("originalResourceName")
-    else:
-        originalResourceName = resourceName
-    
-    parts = originalResourceName.split('/')
-    category1 = ""
-    category2 = ""
-    category3 = ""
-    if len(parts)>1:
-        category1 = parts[0]
-    if len(parts)>2:
-        category2 = parts[1]
-    if len(parts)>3:
-        category3 = parts[2]
     id_var = cur.var(oracledb.NUMBER)
 
     data = (
@@ -239,14 +236,14 @@ def insertTableDocs( value ):
             dictString(value,"contentType"),
             dictString(value,"creationDate"),
             dictString(value,"modified"),
-            category1,
-            category2,
-            category3,
+            dictString(metadata, "gaas-metadata-filtering-field-category1"),
+            dictString(metadata, "gaas-metadata-filtering-field-category2"),
+            dictString(metadata, "gaas-metadata-filtering-field-category3"),
             dictString(value,"parsed_by"),
-            resourceName,                              # resourceName that caused the event to be started (used for deletion) 
-            originalResourceName,                      # originalResourceName (ex: mp3 filename for speech)
-            dictString(value,"customized_url_source"), # path
-            value.get("title", resourceName),          # provided title if not resourceName
+            resourceName,                               # resourceName that caused the event to be started (used for deletion, ex: mp3.json for speech) 
+            dictString(metadata, "gaas-metadata-filtering-field-originalResourceName"), # originalResourceName (ex: mp3 filename for speech)
+            value["metadata"]["customized_url_source"], # path
+            value.get("title", resourceName),           # provided title if not resourceName
             os.getenv("TF_VAR_region"),
             str(dictString(value,"summaryEmbed")),            
             dictString(value,"source_type"),
@@ -324,7 +321,7 @@ def insertTableDocsChunck(value, docs, file_path):
     for d in docs_chunck:
         d.metadata["doc_id"] = dictString(value,"docId")
         d.metadata["resource_name"] = value["data"]["resourceName"]
-        d.metadata["path"] = value["customized_url_source"]
+        d.metadata["path"] = value["metadata"]["customized_url_source"]
         d.metadata["content_type"] = dictString(value,"contentType")
 
     log("-- docs_chunck --------------------")  
@@ -369,7 +366,7 @@ def deleteDoc( value ):
 def deleteDocByPath( value ):  
     global dbConn
     cur = dbConn.cursor()
-    path =  value["customized_url_source"]
+    path =  value["metadata"]["customized_url_source"]
     log(f"<deleteDocByPath> path={path}")
 
     # Delete the document record
