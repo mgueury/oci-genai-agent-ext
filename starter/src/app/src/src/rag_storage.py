@@ -320,10 +320,15 @@ def insertTableDocsChunck(value, docs, file_path):
 
     # There is no standard in Langchain chuncking on the metadata.
     for d in docs_chunck:
-        d.metadata["doc_id"] = dictString(value,"docId")
-        d.metadata["resource_name"] = value["data"]["resourceName"]
+        d.metadata["docId"] = dictString(value,"docId")
+        d.metadata["resourceName"] = value["data"]["resourceName"]
+        d.metadata["contentType"] = dictString(value,"contentType")
         d.metadata["path"] = value["metadata"]["customized_url_source"]
-        d.metadata["content_type"] = dictString(value,"contentType")
+        # Copy OCI Agent Filters key
+        for key, value in value["metadata"].items():
+            if key.startswith( "gaas-metadata-filtering-field-" ):
+                key2 = key.split("filtering-field-",1)[1]
+                d.metadata[key2] = value
 
     log("-- docs_chunck --------------------")  
     log(pprint.pformat( docs_chunck ))
