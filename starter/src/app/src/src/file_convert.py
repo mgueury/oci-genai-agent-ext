@@ -712,7 +712,7 @@ def convertGrokImage2Text(value, content=None, path=None):
         with open(dest_file, 'w', encoding='utf-8') as f_out:
             f_out.write(text)   
 
-        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=dest_file, content_type="application/pdf", metadata=metadata)
+        rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=dest_file, content_type="text/markdown", metadata=metadata)
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         rag_storage.delete_file( value=value, object_name=resourceGenAI )
     log( "</convertGrokImage2Text>")

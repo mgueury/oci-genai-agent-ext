@@ -319,6 +319,8 @@ def insertTableDocsChunck(value, docs, file_path):
         docs_chunck = splitter.split_documents(docs)
 
     # There is no standard in Langchain chuncking on the metadata.
+    log("-- value --------------------")
+    log(pprint.pformat(value))    
     for d in docs_chunck:
         d.metadata["doc_id"] = dictString(value,"docId")        
         d.metadata["resource_name"] = value["data"]["resourceName"]
