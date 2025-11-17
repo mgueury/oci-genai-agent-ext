@@ -147,7 +147,7 @@ def delete_folder(value, folder):
 # -- insertDoc -----------------------------------------------------------------
 # See https://python.langchain.com/docs/integrations/document_loaders/
 
-def insertDoc( value, file_path, object_name, metadata ):
+def insertDoc( value, file_path, object_name ):
     if file_path:
         extension = pathlib.Path(object_name.lower()).suffix
         resourceName = value["data"]["resourceName"]
