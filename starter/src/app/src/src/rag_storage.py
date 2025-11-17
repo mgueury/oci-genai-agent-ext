@@ -327,7 +327,7 @@ def insertTableDocsChunck(value, docs, file_path):
         # Copy OCI Agent Filters key
         for k, v in value["metadata"].items():
             if k.startswith( "gaas-metadata-filtering-field-" ):
-                short_key = key.split("filtering-field-",1)[1]
+                short_key = k.split("filtering-field-",1)[1]
                 d.metadata[short_key] = v
 
     log("-- docs_chunck --------------------")  
