@@ -24,14 +24,39 @@ CREATE TABLE APEX_APP.docs (
 alter table "APEX_APP"."DOCS" add constraint "DOCS_PK" primary key ( "ID" );
 
 CREATE TABLE APEX_APP."DOCS_LANGCHAIN" (
-    "ID" RAW(16) DEFAULT SYS_GUID(), 
-	"TEXT" CLOB, 
-	"METADATA" JSON, 
-	"EMBEDDING" VECTOR, 
+    id RAW(16) DEFAULT SYS_GUID(), 
+	text CLOB, 
+	metadata JSON, 
+	embedding VECTOR, 
+    -- FILTER_COLUMNS
+    doc_id number,
+    path VARCHAR2(1024),
+    resource_name VARCHAR2(1024),
+    page_label VARCHAR2(1024),
+    category1 VARCHAR2(1024),
+    category2 VARCHAR2(1024),
+    category3 VARCHAR2(1024),
 	PRIMARY KEY ("ID")
 );
-CREATE INDEX APEX_APP.docs_langchain_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 
+CREATE OR REPLACE TRIGGER APEX_APP.docs_langchain_trigger
+BEFORE INSERT OR UPDATE ON APEX_APP.docs_langchain_index
+FOR EACH ROW
+BEGIN
+  -- Extract JSON values to populate columns
+  -- This is needed to get better speed for Vector Filtering index
+  :NEW.doc_id        := JSON_VALUE(:NEW.metadata, '$.doc_id');
+  :NEW.path          := JSON_VALUE(:NEW.metadata, '$.path');
+  :NEW.resource_name := JSON_VALUE(:NEW.metadata, '$.resource_name');
+  :NEW.page_label    := JSON_VALUE(:NEW.metadata, '$.page_label');
+  :NEW.category1     := JSON_VALUE(:NEW.metadata, '$.category1');
+  :NEW.category2     := JSON_VALUE(:NEW.metadata, '$.category2');
+  :NEW.category3     := JSON_VALUE(:NEW.metadata, '$.category3');      
+END;
+/
+
+CREATE INDEX APEX_APP.docs_langchain_ctx_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
+CREATE INDEX APEX_APP.docs_langchain_category1_index on APEX_APP.docs_langchain( category1 );  
 CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 -- Helper view for debugging
@@ -69,41 +94,6 @@ alter table "APEX_APP"."DOCS_CHUNCK" add constraint "DOCS_FK" foreign key ( "DOC
 create index APEX_APP.docs_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 */
 
-CREATE OR REPLACE FUNCTION APEX_APP.embedText( c VARCHAR2 ) 
-RETURN clob IS 
-    resp DBMS_CLOUD_TYPES.resp; 
-    b CLOB; 
-    s CLOB; 
-    start_vector number;
-    stop_vector number;
-    region varchar2(128);
-    compartment_ocid varchar2(128);    
-    genai_embed_model varchar2(128);    
-BEGIN 
-    select value into region from AI_AGENT_RAG_CONFIG where key='region';
-    select value into compartment_ocid from AI_AGENT_RAG_CONFIG where key='compartment_ocid';    
-    select value into genai_embed_model from AI_AGENT_RAG_CONFIG where key='genai_embed_model';    
-    resp := DBMS_CLOUD.send_request( 
-        credential_name => 'OCI$RESOURCE_PRINCIPAL', 
-        uri =>'https://inference.generativeai.'|| region || '.oci.oraclecloud.com/20231130/actions/embedText',
-        method => 'POST', 
-        body => UTL_RAW.cast_to_raw( JSON_OBJECT (
-            'compartmentId' VALUE compartment_ocid,
-            'servingMode' VALUE JSON_OBJECT( 'modelId' VALUE genai_embed_model, 
-                                             'servingType' VALUE 'ON_DEMAND' ),   
-            'inputs' VALUE JSON_ARRAY( c ),
-            'truncate' VALUE 'START'
-        ))    
-    ); 
-    b := DBMS_CLOUD.get_response_text(resp); 
-    -- JSON PARSING does not work....
-    start_vector := instr(b,'[[')+1;
-    stop_vector := instr(b, ']]')+1;
-    select substr(b,start_vector, stop_vector-start_vector) into s; 
-    return s;
-END embedText; 
-/
-
 -- UPDATE AI_CONFIG
 CREATE OR REPLACE PROCEDURE APEX_APP.AI_CONFIG_UPDATE( p_key IN VARCHAR2,p_value IN VARCHAR2)  IS
     n number;
@@ -129,7 +119,7 @@ begin
         select 
             JSON_VALUE(metadata,'$.doc_id') as DOCID, 
             text as BODY, 
-            vector_distance(embedding, to_vector(embedText( p_query ))) AS SCORE,
+            vector_distance(embedding, to_vector(ai_plsql.genai_embed( p_query ))) AS SCORE,
             id as CHUNKID, 
             JSON_VALUE(metadata,'$.file_name') as TITLE, 
             JSON_VALUE(metadata,'$.path') as URL,
@@ -137,9 +127,8 @@ begin
             -- NUMBER_TT( TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) ) as PAGE_NUMBERS   
             -- TO_NUMBER(1) as PAGE_NUMBERS   
         from docs_langchain
-        -- where JSON_VALUE(metadata,'$.doc_id') in (select to_char(id) from docs order by vector_distance(summary_embed,  to_vector(embedText( 'what is jazz' ))) fetch first 3 rows only)
         where p_filter_category1 is null 
-           or p_filter_category1 = JSON_VALUE(metadata,'$."gaas-metadata-filtering-field-category1"')
+           or p_filter_category1 = JSON_VALUE(metadata,'$.category1')
         order by score 
         fetch first top_k rows only;
     else 
@@ -157,7 +146,7 @@ begin
         ),
         vector_search AS (
 
-            SELECT id, vector_distance(embedding, to_vector(embedText( p_query ))) AS vector_distance
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( p_query ))) AS vector_distance
             FROM docs_langchain
         )
         SELECT 
@@ -172,7 +161,7 @@ begin
         JOIN text_search ts ON o.id = ts.id
         JOIN vector_search vs ON o.id = vs.id
         where p_filter_category1 is null 
-           or p_filter_category1 = JSON_VALUE(metadata,'$."gaas-metadata-filtering-field-category1"')        
+           or p_filter_category1 = JSON_VALUE(metadata,'$.category1')        
         ORDER BY score DESC
         FETCH FIRST top_k ROWS ONLY;
     end if;
@@ -194,7 +183,7 @@ insert into DOCS_CHUNCK(
        PATH,
        Content,
        embed)
-values( 1, 'oracle', 'https://www.oracle.com', 'hello world', embedtext('hello_world'));
+values( 1, 'oracle', 'https://www.oracle.com', 'hello world', ai_plsql.genai_embed('hello_world'));
 
 -- Check the RETRIEVAL_FUNC function
 -- Display the DOCID and SCORE

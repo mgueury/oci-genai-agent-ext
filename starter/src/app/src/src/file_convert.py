@@ -320,7 +320,7 @@ def convertOciDocumentUnderstanding(value):
     if eventType in [ "com.oraclecloud.objectstorage.updateobject", "com.oraclecloud.objectstorage.deleteobject" ]:
         # Delete previous conversion 
         shared.delete_bucket_folder( namespace, bucketName, prefix )
-        if eventType=="com.oraclecloud.objectstorage.deleteobject" and resourceName.endswith(".anonym.pdf"):
+        if eventType=="com.oraclecloud.objectstorage.deleteobject" and resourceName.endswith(".to_anonymize.pdf"):
             convertAnonymPDF( value, resourceName, None )
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
@@ -496,22 +496,33 @@ def convertChromeSelenium2Pdf(value):
 ## -- convertAnonymPDF ------------------------------------------------------------------
 # Called by DocumentUnderstanding convertJson
 
-def convertAnonymPDF(value, resourceName, j):
+def convertAnonymPDF(value, originalResourceName, j):
     log( "<convertAnonymPDF>")
     eventType = value["eventType"]  
     namespace = value["data"]["additionalDetails"]["namespace"]
     bucketName = value["data"]["additionalDetails"]["bucketName"]
-    anonymPdf = CONVERT_PREFIX + resourceName.replace(".anonym.pdf", ".pdf") 
+    anonymizedPdf = CONVERT_PREFIX + originalResourceName.replace(".to_anonymize.pdf", ".anonymized.pdf") 
 
     os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:     
-        anonym_pdf_file = download_file( namespace, bucketName, resourceName)
+        anonym_pdf_file = download_file( namespace, bucketName, originalResourceName)
         pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
         # Upload the anonymize file in the public bucket.
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
-        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=anonymPdf, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf")
+        upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=anonymizedPdf, file_path=pdf_file, part_size=2 * MEBIBYTE, content_type="application/pdf")
     elif eventType in [ "com.oraclecloud.objectstorage.deleteobject" ]:
-        os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=anonymPdf)        
+        os_client.delete_object(namespace_name=namespace, bucket_name=bucketName, object_name=anonymizedPdf)        
+
+
+## -- convertUploadAnonymizedPDF ------------------------------------------------------------------
+# Add the Original file path 
+# Called by Document.py 
+def convertUploadAnonymizedPDF(value):
+    # remove first directory
+    resourceName = value["data"]["resourceName"]
+    originalResourceName = os.path.join(*(resourceName.split(os.path.sep)[2:]))
+    originalResourceName = originalResourceName.replace(".anonymized.pdf","to_anonymize.pdf")                                                       
+    file_convert.convertUpload(value, None, None, originalResourceName )
 
 
 ## -- convertJson ------------------------------------------------------------------
@@ -543,7 +554,7 @@ def convertJson(value):
         # DocUnderstanding
         originalResourceName = resourceName[:resourceName.index(".json")][resourceName.index("/results/")+9:]
         originalResourceId = "/n/" + namespace + "/b/" + bucketName + "/o/" + originalResourceName
-        if originalResourceName.endswith(".anonym.pdf"):
+        if originalResourceName.endswith(".to_anonymize.pdf"):
             convertAnonymPDF( value, originalResourceName, j )
             return None  
         else: 
@@ -585,6 +596,9 @@ def convertJson(value):
     return result
 
 ## -- convertUpload ---------------------------------------------------
+# Parameters:
+#   content: (default none): text content of the file
+#   fileName: (default none): fileName when already downloaded (ex: test.anonymized.pdf )
 
 def convertUpload(value, content=None, path=None, originalResourceName=None):
 

@@ -16,7 +16,8 @@ def remove_entities(anonym_pdf_file, j):
     for idx, image in enumerate(images):
         # images[idx] = images[idx].convert('RGB')
         draw_boxes(images[idx], pages_boxes[idx])
-    pdf_file = anonym_pdf_file.replace(".anonym.pdf", ".pdf")    
+    # Save the converted file locally
+    pdf_file = anonym_pdf_file.replace(".to_anonymize.pdf", ".anonymized.pdf")    
     file_convert.save_image_as_pdf( pdf_file, images )  
     log( "</remove_entities> pdf_file created: "+ pdf_file )
     return pdf_file

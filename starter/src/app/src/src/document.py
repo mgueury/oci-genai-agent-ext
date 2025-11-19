@@ -21,9 +21,12 @@ def eventDocument(value):
 
     # Content 
     result = { "content": "-" }
-    if resourceExtension in [".tif"] or resourceName.endswith(".anonym.pdf"):
+    if resourceExtension in [".tif"] or resourceName.endswith(".to_anonymize.pdf"):
         # This will create a JSON file in Object Storage that will create a second even with resourceExtension "json" 
         file_convert.convertOciDocumentUnderstanding(value)
+        return
+    elif resourceName.endswith(".anonymized.pdf"):
+        file_convert.convertUploadAnonymizedPDF( value )
         return
     elif resourceExtension in [".pdf", ".txt", ".csv", ".md", ".html", ".htm", ""] or resourceName in ["_metadata_schema.json", "_all.metadata.json"] :
         # Simply copy the file to the agent bucket
