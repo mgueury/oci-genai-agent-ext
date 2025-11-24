@@ -8,6 +8,7 @@ export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
 export TF_VAR_region="##TF_VAR_region##"
 export TF_VAR_prefix="##TF_VAR_prefix##"
 export TF_VAR_namespace="##TF_VAR_namespace##"
+export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o/"
 
 # OCI Stream
 export STREAM_OCID="##STREAM_OCID##"

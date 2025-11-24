@@ -46,3 +46,6 @@ scrapy
 
 # FastMCP
 fastmcp
+
+# OpenWebUI
+open-webui

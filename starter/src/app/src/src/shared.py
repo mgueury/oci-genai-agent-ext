@@ -56,6 +56,7 @@ def log_in_file(prefix, value):
     filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
     with open(filename, "w", encoding="utf-8") as text_file:
         text_file.write(value)
+        text_file.flush() 
     log("<log_in_file>" +filename )  
 
 ## -- dictString ------------------------------------------------------------

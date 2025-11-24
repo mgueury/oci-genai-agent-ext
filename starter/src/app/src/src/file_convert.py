@@ -465,7 +465,7 @@ def convertChromeSelenium2Pdf(value):
                         else:
                             pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
     
-                        metadata=  {'customized_url_source': full_uri }    
+                        metadata = {'customized_url_source': full_uri, 'source_type': 'HTTP' }
 
                         # Upload to object storage as "site/"+pdf_path
                         rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
@@ -515,15 +515,15 @@ def convertAnonymPDF(value, originalResourceName, j):
 
 
 ## -- convertUploadAnonymizedPDF ------------------------------------------------------------------
-# Add the Original file path 
+# Calculate the originalResourceName then upload the document
 # Called by Document.py 
 def convertUploadAnonymizedPDF(value):
+    log( "<convertUploadAnonymizedPDF>")    
     # remove first directory
     resourceName = value["data"]["resourceName"]
-    originalResourceName = os.path.join(*(resourceName.split(os.path.sep)[2:]))
-    originalResourceName = originalResourceName.replace(".anonymized.pdf","to_anonymize.pdf")                                                       
-    file_convert.convertUpload(value, None, None, originalResourceName )
-
+    originalResourceName = os.path.join(*(resourceName.split(os.path.sep)[1:]))
+    originalResourceName = originalResourceName.replace(".anonymized.pdf",".to_anonymize.pdf")                                                       
+    convertUpload(value, None, None, originalResourceName )
 
 ## -- convertJson ------------------------------------------------------------------
 
@@ -842,7 +842,6 @@ def convertCrawler(value):
         os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-        folder = resourceName
         file_name = LOG_DIR+"/"+UNIQUE_ID+".crawler"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
@@ -880,7 +879,7 @@ def convertCrawler(value):
                                 title = row.get('title', 'N/A')
                                 filename = filename[len(CRAWLER_DIR)+1:]
                                 log(f"URL: {url} - Filename: {filename}")
-                                metadata=  {'customized_url_source': url } 
+                                metadata=  {'customized_url_source': url, 'source_type': 'HTTP' } 
                                 # value["data"]["resourceName"] = title   
                                 value["title"] = title   
                                 rag_storage.upload_file(value=value, object_name=folder+"/"+filename, file_path=CRAWLER_DIR+"/"+filename, content_type='text/html', metadata=metadata)

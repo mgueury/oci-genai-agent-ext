@@ -74,7 +74,9 @@ begin
   APEX_APP.AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
   APEX_APP.AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
   APEX_APP.AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
+  APEX_APP.AI_CONFIG_UPDATE( 'object_storage_url',  '$TF_VAR_object_storage_url' );
   APEX_APP.AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
+
   commit;
 end;
 /

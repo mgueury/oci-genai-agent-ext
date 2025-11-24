@@ -119,7 +119,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
 def delete_file( value, object_name ): 
     log(f"<delete_file>{object_name}")     
     if RAG_STORAGE=="db23ai":
-        deleteDoc( value )
+        deleteDocByOriginalResourceName( value )
     else:
         try: 
             namespace = value["data"]["additionalDetails"]["namespace"]
@@ -136,7 +136,7 @@ def delete_file( value, object_name ):
 def delete_folder(value, folder):
     log( "<delete_folder> "+folder)
     if RAG_STORAGE=="db23ai":
-        deleteDoc( value )
+        deleteDocByOriginalResourceName( value )
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
         bucketName = value["data"]["additionalDetails"]["bucketName"]
@@ -183,7 +183,8 @@ def insertDoc( value, file_path, object_name ):
         log("-- doc[0].metadata --------------------")
         log(pprint.pformat(docs[0].metadata))
 
-        value["source_type"] = "OBJECT_STORAGE"
+        # source_type=OBJECT_STORAGE unless told differently via metadata
+        value["source_type"] =  value["metadata"].get("source_type", "OBJECT_STORAGE" )
 
         # Summary 
         if len(value["content"])>250:
@@ -215,21 +216,28 @@ def insertTableDocs( value ):
     # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
     stmt = """
         INSERT INTO docs (
-            application_name, author, translation, content_type,
+            status, application_name, author, translation, content_type,
             creation_date, modified, category1, category2, category3, parsed_by,
             resource_name, original_resource_name, path, title, region, summary_embed, source_type,
             content, summary
         )
-        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18, :19)
-        RETURNING id INTO :20
+        VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13, :14, :15, :16, :17, :18, :19, :20)
+        RETURNING id INTO :21
     """
     resourceName=value["data"]["resourceName"]
+    # provided title if not resourceName
+    title = value.get("title", resourceName)
+    # resourceName is only valid when the file is in OBJECT_STORAGE
+    if value.get("source_type")!='OBJECT_STORAGE':
+        resourceName = ""
+
     metadata = value["metadata"]
   
     # Original Resource Name (ex: Speech and Document Understanding that create a second file)
     id_var = cur.var(oracledb.NUMBER)
 
     data = (
+            "CHUNCKED",
             dictString(value,"applicationName"), 
             dictString(value,"author"),
             dictString(value,"translation"),
@@ -244,7 +252,7 @@ def insertTableDocs( value ):
             resourceName,                               # resourceName that caused the event to be started (used for deletion, ex: mp3.json for speech) 
             dictString(metadata, "gaas-metadata-filtering-field-originalResourceName"), # originalResourceName (ex: mp3 filename for speech)
             value["metadata"]["customized_url_source"], # path
-            value.get("title", resourceName),           # provided title if not resourceName
+            title,         
             os.getenv("TF_VAR_region"),
             str(dictString(value,"summaryEmbed")),            
             dictString(value,"source_type"),
@@ -335,20 +343,20 @@ def insertTableDocsChunck(value, docs, file_path):
     vectorstore.add_documents( docs_chunck )
     log("</langchain insertDocsChunck>")
 
-# -- deleteDoc -----------------------------------------------------------------
+# -- deleteDocByOriginalResourceName ------------------------------------------
 
-def deleteDoc( value ):  
+def deleteDocByOriginalResourceName( value ):  
     global dbConn
     cur = dbConn.cursor()
-    resourceName = value["data"]["resourceName"]
-    log(f"<deleteDoc> resourceName={resourceName}")
+    originalResourceName = value["data"]["resourceName"]
+    log(f"<deleteDocByOriginalResourceName> originalResourceName={originalResourceName}")
 
     # Delete the document record
     try:
-        cur.execute("delete from docs where resource_name=:1", (resourceName,))
-        log(f"<deleteDoc> docs: Successfully {cur.rowcount} deleted")
+        cur.execute("delete from docs where original_resource_name=:1", (originalResourceName,))
+        log(f"<deleteDocByOriginalResourceName> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
-        log(f"<deleteDoc> docs: Error deleting: {error}")
+        log(f"<deleteDocByOriginalResourceName> docs: Error deleting: {error}")
     finally:
         # Close the cursor and connection
         if cur:
@@ -356,12 +364,12 @@ def deleteDoc( value ):
 
     # Delete from the table directly..
     cur = dbConn.cursor()
-    stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.resource_name')=:1"
+    stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.originalResourceName')=:1"
     try:
-        cur.execute(stmt, (resourceName,))
-        log(f"<deleteDoc> docs_langchain: Successfully {cur.rowcount} deleted")
+        cur.execute(stmt, (originalResourceName,))
+        log(f"<deleteDocByOriginalResourceName> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
-        log(f"<deleteDoc> docs_langchain: Error deleting: {error}")
+        log(f"<deleteDocByOriginalResourceName> docs_langchain: Error deleting: {error}")
     finally:
         # Close the cursor and connection
         if cur:
@@ -461,3 +469,94 @@ def getDocByPath( path ):
     log("<getDocByPath>Docs not found: " + path)
     return "-"  
 
+# -- getDocList ----------------------------------------------------------------------
+
+def getDocList( path ):
+    query = "SELECT title, path FROM docs"
+    cursor = dbConn.cursor()
+    cursor.execute(query)
+    results = []
+    column_names = [col[0] for col in cursor.description]
+    for row in cursor.fetchall():
+        # Manually map the row (tuple) to the column names
+        row_dict = dict(zip(column_names, row))
+        results.append(row_dict)    
+    return results
+
+# -- insertTableIngestLog -----------------------------------------------------------------
+
+def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_name, p_time_start, p_time_end, p_time_secs ):  
+    if RAG_STORAGE!="db23ai":
+        return
+
+    global dbConn
+    cur = dbConn.cursor()
+
+    log("<insertTableIngestLog>")
+    # log(pprint.pformat(value))    
+    # CLOB at the end (content, summary) to avoid BINDING error: ORA-24816: Expanded non LONG bind data supplied after actual LONG or LOB column
+    try:
+        stmt = """
+            INSERT INTO ai_agent_rag_ingest_log (
+                status, resource_name, event_type, content, time_start, time_end, time_secs
+            )
+            VALUES (:1, :2, :3, :4, :5, :6, :7)
+            RETURNING id INTO :8
+        """ 
+        # Original Resource Name (ex: Speech and Document Understanding that create a second file)
+        id_var = cur.var(oracledb.NUMBER)
+        f = open(p_log_file_name)
+        content = f.read()
+        data = (
+                p_status,
+                p_resource_name,
+                p_event_type.replace("com.oraclecloud.objectstorage.", ""), 
+                content,
+                p_time_start,
+                p_time_end,
+                p_time_secs,
+                id_var
+            )
+
+        cur.execute(stmt, data)
+        # Get generated id
+        id = id_var.getvalue()    
+        log("<insertTableIngestLog> returning id=" + str(id[0]) )        
+        log(f"<insertTableIngestLog> Successfully inserted {cur.rowcount} records.")
+        updateDocStatus( p_status, p_resource_name )
+    except (Exception) as error:
+        log(f"\u270B <insertTableIngestLog> Error inserting records: {error}")
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()
+
+# -- updateDocStatus -----------------------------------------------------------------
+
+def updateDocStatus( p_status, p_resource_name ):  
+    if RAG_STORAGE!="db23ai":
+        return
+
+    global dbConn
+    cur = dbConn.cursor()
+
+    log("<updateDocStatus>")
+    try:
+        # Update files that are:
+        # - Uploaded from APEX and of type .crawler, .selenium where original file was not replaced
+        # - Status NEW, or OK -> 1 Error in 1 child resource will cause an ERROR in the parent 
+        stmt = """
+            UPDATE DOCS set status=:1 where resource_name=:2 and status in ('NEW','OK')
+        """ 
+        data = (
+                p_status,
+                p_resource_name
+            )
+        cur.execute(stmt, data)
+        log(f"<updateDocStatus> Successfully updated {cur.rowcount} records.")
+    except (Exception) as error:
+        log(f"\u270B <updateDocStatus> Error updating records: {error}")
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close()

@@ -2,6 +2,7 @@
 import oci
 import os
 import json 
+import datetime
 import time
 import traceback
 import shared
@@ -50,10 +51,11 @@ def stream_loop(client, stream_id, initial_cursor):
         # Process the messages
         log("<stream_loop> Read {} messages".format(len(get_response.data)))
         for message in get_response.data:
-            timeStart = time.time()
+            timeStart = datetime.now()
             updateCount += 1
+            status = 'PROCESSING'
             try:
-                log_file_name = shared.LOG_DIR + f"/message_{updateCount}.log"
+                log_file_name = shared.LOG_DIR + f"/message_{timeStart.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log"
                 log_write_in_file(log_file_name)
                 log(f"\n\n-- STREAM LOOP - MESSAGE {updateCount} -----------------------------------------------------------------------------------------" )
                 if message.key is None:
@@ -77,6 +79,7 @@ def stream_loop(client, stream_id, initial_cursor):
                     if updateList.get(resourceName):
                         if eventTime_utc<updateList.get(resourceName):
                             log(f"\u2705 {resourceName} Skipped - Parsed at {updateList.get(resourceName)} after event {eventTime_utc}")
+                            status = 'SKIPPED'
                             continue
                         else:
                             log(f"<stream_loop>{resourceName} Modified after last parsing. {updateList.get(resourceName)} before event {eventTime_utc}")
@@ -88,14 +91,18 @@ def stream_loop(client, stream_id, initial_cursor):
                 # DEBUG
                 # for k, v in updateList.items():
                 #    log(f"updateList - {k} - {v}")
-
                 document.eventDocument(value)
-                log( f"\u2705 {resourceName}")                  
+                log( f"\u2705 {resourceName}")     
+                status = 'DONE'             
             except:
                 log( f"\u274C Exception: stream_loop") 
                 log( traceback.format_exc())
-            timeEnd = time.time()
-            log(f"Time: {timeEnd - timeStart} secs")                
+                status = 'ERROR'             
+            timeEnd = datetime.now()
+            timeDiff = timeEnd - timeStart # Result is of timedelta type
+            timeSecs = timeDiff.total_seconds()
+            log(f"Time: {timeSecs} secs")
+            rag_storage.insertTableIngestLog( status, resourceName, eventType, log_file_name, timeStart, timeEnd, timeSecs )                
             log_write_in_file(None)                
                 
         log("<stream_loop> Processed {} messages".format(len(get_response.data)))        
