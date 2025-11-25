@@ -23,7 +23,6 @@ CREATE TABLE APEX_APP.docs (
     source_type varchar2(256),
     file_blob BLOB                       -- New Uploaded file 
 );
-alter table "APEX_APP"."DOCS" add constraint "DOCS_PK" primary key ( "ID" );
 
 create or replace trigger APEX_APP.DOCS_TRIGGER_INSERT_UPDATE
 before insert or update on APEX_APP.DOCS for each row
@@ -51,7 +50,7 @@ end;
 /
 
 CREATE TABLE APEX_APP.DOCS_LANGCHAIN (
-    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY, 
+    id RAW(16) DEFAULT SYS_GUID(), 
 	text CLOB, 
 	metadata JSON, 
 	embedding VECTOR, 
