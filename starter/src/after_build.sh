@@ -20,10 +20,12 @@ echo
 # echo "-----------------------------------------------------------------------"
 
 echo "URLs" > $FILE_DONE
-append_done "-----------------------------------------------------------------------"
-append_done "Streamlit:"
-append_done "http://${NLB_IP}:8080/"
-append_done
+if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
+    append_done "-----------------------------------------------------------------------"
+    append_done "MCP Streamlit Client:"
+    append_done "http://${NLB_IP}:8080/"
+    append_done
+fi
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
 append_done

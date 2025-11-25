@@ -68,6 +68,11 @@ begin
 end;
 /
 @ai_agent_rag.sql
+/
+begin
+    apex_application_install.set_application_id(1002);
+end;
+/
 @ai_agent_rag_admin.sql
 quit
 EOF
