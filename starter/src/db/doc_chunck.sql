@@ -136,7 +136,7 @@ begin
 end;    
 /
 
-create or replace function retrieval_func( p_query IN VARCHAR2,top_k IN NUMBER, p_filter_category1 in VARCHAR2 default null ) RETURN SYS_REFCURSOR IS
+create or replace function APEX_APP.retrieval_func( p_query IN VARCHAR2,top_k IN NUMBER, p_filter_category1 in VARCHAR2 default null ) RETURN SYS_REFCURSOR IS
     v_results SYS_REFCURSOR;
     cleaned_query varchar2(4096);
     g_rag_search_type varchar2(256);
