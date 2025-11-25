@@ -85,7 +85,10 @@ END;
 
 CREATE INDEX APEX_APP.docs_langchain_ctx_index on APEX_APP.docs_langchain( text ) indextype is ctxsys.context;  
 CREATE INDEX APEX_APP.docs_langchain_category1_index on APEX_APP.docs_langchain( category1 );  
-CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
+-- This should work, but I get sometimes ORA-51928: Data Manipulation Language (DML) on tables with in-memory neighbor graph vector index is not supported
+-- CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
+-- WA for now...
+CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION NEIGHBOR PARTITIONS DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 -- Helper view for debugging
 create view APEX_APP.V_DOCS_LANGCHAIN as

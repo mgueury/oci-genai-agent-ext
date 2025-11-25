@@ -22544,7 +22544,7 @@ wwv_flow_imp_shared.create_install_script(
 'begin',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''region'', ''##YOUR_REGION##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''agent_endpoint_ocid'', ''##YOUR_AGENT_ENDPOINT##'');',
-'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI\$RESOURCE_PRINCIPAL'');',
+'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI$RESOURCE_PRINCIPAL'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''compartment_ocid'', ''##COMPATMENT##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''genai_embed_model'', ''##MODEL##'');  ',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''genai_cohere_model'', ''##MODEL##'');',
