@@ -1,7 +1,7 @@
 # Releases notes
 - 2025-09-17:
     - Change the OCI starter used to 4.0 (lot of small improvement. env.sh -> terraform.tfvars. Allow creation of the whole stack with Resource Manager)
-    - rag_storage mode db23ai 
+    - rag_storage mode db26ai 
     - Added web site crawler 
     - sitemap extension
     - convertion to markdown

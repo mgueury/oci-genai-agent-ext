@@ -154,8 +154,8 @@ data "oci_database_tools_database_tools_connections" "starter_database_tools_con
 
 resource "oci_generative_ai_agent_knowledge_base" "starter_agent_kb" {
 	compartment_id = local.lz_serv_cmp_ocid
-    display_name = "${var.prefix}-db23ai-kb"
-    description = "${var.prefix}-db23ai-kb"
+    display_name = "${var.prefix}-db26ai-kb"
+    description = "${var.prefix}-db26ai-kb"
 	index_config {
 		index_config_type = "OCI_DATABASE_CONFIG"
 

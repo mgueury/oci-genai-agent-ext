@@ -38,7 +38,7 @@ embeddings = OCIGenAIEmbeddings(
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
     auth_type="INSTANCE_PRINCIPAL"
 )
-# db23ai or object_storage
+# db26ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
 DOCLING_HYBRID_CHUNK=True #False
 
@@ -48,7 +48,7 @@ dbConn = None
 ## -- init ------------------------------------------------------------------
 
 def init():
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         global dbConn 
         # Thick driver...
         # oracledb.init_oracle_client()
@@ -58,7 +58,7 @@ def init():
 ## -- close -----------------------------------------------------------------
 
 def close():
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         global dbConn 
         dbConn.close()
 
@@ -70,7 +70,7 @@ def updateCount(count):
     global countUpdate
 
     ## RAG ObjectStorage - start Ingestion when no new messsage is arriving
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         pass
     else:
         if count>0:
@@ -101,7 +101,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
     if len(parts)>3:
         metadata['gaas-metadata-filtering-field-category3'] = parts[2]
 
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         value["metadata"] = metadata
         insertDoc( value, file_path, object_name )
     else:
@@ -118,7 +118,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
 
 def delete_file( value, object_name ): 
     log(f"<delete_file>{object_name}")     
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         deleteDocByOriginalResourceName( value )
     else:
         try: 
@@ -135,7 +135,7 @@ def delete_file( value, object_name ):
 
 def delete_folder(value, folder):
     log( "<delete_folder> "+folder)
-    if RAG_STORAGE=="db23ai":
+    if RAG_STORAGE=="db26ai":
         deleteDocByOriginalResourceName( value )
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
@@ -517,7 +517,7 @@ def getDocList():
 # -- insertTableIngestLog -----------------------------------------------------------------
 
 def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_name, p_time_start, p_time_end, p_time_secs ):  
-    if RAG_STORAGE!="db23ai":
+    if RAG_STORAGE!="db26ai":
         return
 
     global dbConn
@@ -565,7 +565,7 @@ def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_na
 # -- updateDocStatus -----------------------------------------------------------------
 
 def updateDocStatus( p_status, p_resource_name ):  
-    if RAG_STORAGE!="db23ai":
+    if RAG_STORAGE!="db26ai":
         return
 
     global dbConn

@@ -7,7 +7,7 @@ waitress
 uvicorn[standard]   
 fastapi
 
-#DB23ai
+#DB26ai
 oracledb
 
 # OCI
