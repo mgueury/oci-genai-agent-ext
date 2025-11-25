@@ -22,4 +22,3 @@ resource "oci_identity_policy" "starter_search_policy" {
 
 # "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
 # "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where ALL { request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}', request.permission = 'PAR_MANAGE' }", */
-allow group ocigenaigrp to manage generative-ai-family in compartment xxxx
