@@ -58,6 +58,7 @@ if REGION == "us-chicago-1":
         "openai.gpt-5",
         "meta.llama-3.3-70b-instruct",
         "cohere.command-a-03-2025",
+        "openai.gpt-oss-120b"
     ]
 else:
     MODEL_LIST = [
@@ -66,6 +67,7 @@ else:
         "openai.gpt-4.1",
         "openai.gpt-4o",
         "openai.gpt-5",
+        "openai.gpt-oss-120b"
     ]
 
 # for MCP server

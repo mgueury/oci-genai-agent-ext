@@ -4,7 +4,7 @@ import rag_storage
 import shared
 import pprint
 
-mcp = FastMCP("RAG Server")  # Initialize an MCP server instance with a descriptive name
+mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
 
 session_id=None
 rag_storage.init()
@@ -12,7 +12,6 @@ rag_storage.init()
 @mcp.tool()
 def search(question: str) -> dict:
     """Search in document."""
-
     print("<search>", flush=True)
     global session_id
     # Create session
@@ -25,6 +24,19 @@ def search(question: str) -> dict:
 
     d = {"response": response.message.content.text, "citation": source_url}
     return pprint.pformat(response.message.content)
+
+@mcp.tool()
+def list_documents() -> str:
+    """get the list of documents. Return for each document (title, path)"""
+    print("<list_documents>", flush=True)
+    return rag_storage.getDocList()
+
+
+@mcp.tool()
+def get_document_summary(doc_path: str) -> str:
+    """get document summary by path"""
+    print("<get_document_summary>", flush=True)
+    return rag_storage.getDocByPath(doc_path)
 
 @mcp.tool()
 def get_document_by_path(doc_path: str) -> str:

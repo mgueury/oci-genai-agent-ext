@@ -5,8 +5,7 @@ export PATH=~/.local/bin/:$PATH
 
 . ./env.sh
 
-# User Interface with Streamlit
-cd src
-open-webui serve --port 9999 2>&1 | tee ../openwebui.log
-
-# Ex: curl "http://$BASTION_IP:8080/"
+cd src/mcp
+export PYTHONPATH=$HOME/app/src
+# Default port is 9000
+python mcp_server_rag.py 2>&1 | tee ../../mcp_server_rag.log

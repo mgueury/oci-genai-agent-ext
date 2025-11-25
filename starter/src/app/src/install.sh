@@ -10,6 +10,9 @@ function download()
    wget -nv $1
 }
 
+# GrowFS
+/usr/libexec/oci-growfs -y
+
 # Anonymize
 sudo dnf install -y poppler-utils mesa-libGL
 

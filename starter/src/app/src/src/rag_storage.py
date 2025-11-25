@@ -456,32 +456,63 @@ def queryDb( type, question, embed ):
     return result
 
 
+# -- row2Dict -----------------------------------------------------------------------
+
+def row2Dict( column_names, row ):
+    processed_row = []
+    for value in row:
+        log( f"fvalue {value} / type {type(value)}" )
+        if isinstance(value, oracledb.LOB):
+            # Convert Read LOB
+            log( "<row2Dict> Reading LOB")
+            processed_row.append(value.read())
+        else:
+            # Keep everything else as is
+            processed_row.append(str(value))
+    # Manually map the row (tuple) to the column names
+    row_dict = dict(zip(column_names, processed_row))
+    return row_dict
+
 # -- getDocByPath ----------------------------------------------------------------------
 
 def getDocByPath( path ):
-    query = "SELECT filename, path, content, content_type, region, summary FROM docs WHERE path=:1"
+    log(f"<getDocByPath> path={path}")    
+    query = "SELECT path, content, content_type, region, summary FROM docs WHERE path=:1"
     cursor = dbConn.cursor()
     cursor.execute(query,(path,))
-    rows = cursor.fetchall()
-    for row in rows:
-        log("<getDocByPath>" + str(row[2]))
-        return str(row[2])  
-    log("<getDocByPath>Docs not found: " + path)
+    column_names = [col[0] for col in cursor.description]
+    for row in cursor.fetchall():
+        result=row2Dict(column_names, row)
+        log(pprint.pformat(result))   
+        return result  
+    log("<getDocByPath>Docs not found by path: " + path)
+
+    # Tries with the title
+    query = "SELECT path, content, content_type, region, summary FROM docs WHERE title=:1"
+    cursor = dbConn.cursor()
+    cursor.execute(query,(path,))
+    column_names = [col[0] for col in cursor.description]
+    for row in cursor.fetchall():
+        result=row2Dict(column_names, row)
+        log(pprint.pformat(result))              
+        return result  
+    log("<getDocByPath>Docs not found by title: " + path)    
     return "-"  
 
 # -- getDocList ----------------------------------------------------------------------
 
-def getDocList( path ):
+def getDocList():
+    log(f"<getDocList>")    
     query = "SELECT title, path FROM docs"
     cursor = dbConn.cursor()
     cursor.execute(query)
-    results = []
+    result = []
     column_names = [col[0] for col in cursor.description]
     for row in cursor.fetchall():
-        # Manually map the row (tuple) to the column names
-        row_dict = dict(zip(column_names, row))
-        results.append(row_dict)    
-    return results
+        row_dict = row2Dict(column_names, row)
+        result.append(row_dict)  
+    log(pprint.pformat(result)) 
+    return result
 
 # -- insertTableIngestLog -----------------------------------------------------------------
 

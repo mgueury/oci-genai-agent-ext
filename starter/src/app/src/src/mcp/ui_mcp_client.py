@@ -32,6 +32,7 @@ if "agent" not in st.session_state:
 if "chat" not in st.session_state:
     # list of {"role": "user"|"assistant", "content": str}
     st.session_state.chat = []
+    connect = True
 
 # ---------- Connect / reload ----------
 if connect:

@@ -67,7 +67,8 @@ begin
     COMMIT;                      
 end;
 /
-@apex_app.sql
+@ai_agent_rag.sql
+@ai_agent_rag_admin.sql
 quit
 EOF
 

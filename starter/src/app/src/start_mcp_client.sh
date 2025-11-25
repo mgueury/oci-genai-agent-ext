@@ -5,8 +5,10 @@ export PATH=~/.local/bin/:$PATH
 
 . ./env.sh
 
+cd src/mcp
+
 # User Interface with Streamlit
-cd src
-streamlit run streamlit/streamlit.py --server.port 8080 2>&1 | tee ../streamlit.log
+export PYTHONPATH=$HOME/app/src
+streamlit run ui_mcp_client.py --server.port 8080 --global.logLevel=debug 2>&1 | tee ../../mcp_client.log
 
 # Ex: curl "http://$BASTION_IP:8080/"

@@ -6,4 +6,4 @@ cd $SCRIPT_DIR
 
 export PYTHONPATH=$HOME/app/src
 # Default port is 9000
-python mcp_server_rag.py 2>&1 | tee ../../mcp_server_rag.log
+python mcp_server.py 2>&1 | tee ../../mcp.log
