@@ -9,6 +9,6 @@ cd src/mcp
 
 # User Interface with Streamlit
 export PYTHONPATH=$HOME/app/src
-streamlit run ui_mcp_client.py --server.port 8080 --global.logLevel=debug 2>&1 | tee ../../mcp_client.log
+streamlit run ui_mcp_client.py --server.port 8080 2>&1 | tee ../../mcp_client.log
 
 # Ex: curl "http://$BASTION_IP:8080/"
