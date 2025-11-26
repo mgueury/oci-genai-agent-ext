@@ -28,7 +28,6 @@ from typing import List
 import logging
 import re
 import json
-from langchain.schema import Document
 
 
 def get_console_logger(name: str = "ConsoleLogger", level: str = "INFO"):
@@ -111,23 +110,6 @@ def remove_path_from_ref(ref_pathname):
         ref = ref_pathname.split(os.sep)[-1]
 
     return ref
-
-
-def docs_serializable(docs: List[Document]) -> dict:
-    """
-    Convert Langchain document in dict json serializable.
-
-    (30/06/2025): this function has been introduced to transform Langchain Document in dict,
-    that can be easily serializable (for the streaming API)
-    Args:
-        docs (List[Document]): Lista     di Document da convertire.
-    Returns:
-    """
-    _docs_serializable = [
-        {"page_content": doc.page_content, "metadata": doc.metadata or {}}
-        for doc in docs
-    ]
-    return _docs_serializable
 
 
 def print_mcp_available_tools(tools):
