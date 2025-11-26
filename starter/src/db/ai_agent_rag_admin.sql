@@ -33,7 +33,7 @@ prompt APPLICATION 100 - AI_AGENT_RAG_ADMIN
 -- Application Export:
 --   Application:     100
 --   Name:            AI_AGENT_RAG_ADMIN
---   Date and Time:   10:55 Wednesday November 26, 2025
+--   Date and Time:   10:59 Wednesday November 26, 2025
 --   Exported By:     APEX_APP
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -119,7 +119,7 @@ wwv_imp_workspace.create_flow(
 ,p_substitution_value_01=>'RAG Admin'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>28
-,p_version_scn=>45863673052246
+,p_version_scn=>45863675737596
 ,p_print_server_type=>'NATIVE'
 ,p_file_storage=>'DB'
 ,p_is_pwa=>'Y'
@@ -21696,6 +21696,18 @@ wwv_flow_imp_page.create_worksheet_rpt(
 ,p_status=>'PUBLIC'
 ,p_is_default=>'Y'
 ,p_report_columns=>'ID:LOG_DATE:LOG_CONTEXT:LOG_TEXT'
+,p_sort_column_1=>'LOG_DATE'
+,p_sort_direction_1=>'DESC'
+,p_sort_column_2=>'0'
+,p_sort_direction_2=>'ASC'
+,p_sort_column_3=>'0'
+,p_sort_direction_3=>'ASC'
+,p_sort_column_4=>'0'
+,p_sort_direction_4=>'ASC'
+,p_sort_column_5=>'0'
+,p_sort_direction_5=>'ASC'
+,p_sort_column_6=>'0'
+,p_sort_direction_6=>'ASC'
 );
 wwv_flow_imp_page.create_page_plug(
  p_id=>wwv_flow_imp.id(9847805719601434)
