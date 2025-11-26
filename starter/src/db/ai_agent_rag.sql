@@ -33,7 +33,7 @@ prompt APPLICATION 1001 - AI_AGENT_RAG
 -- Application Export:
 --   Application:     1001
 --   Name:            AI_AGENT_RAG
---   Date and Time:   21:42 Tuesday November 25, 2025
+--   Date and Time:   10:50 Wednesday November 26, 2025
 --   Exported By:     APEX_APP
 --   Flashback:       0
 --   Export Type:     Application Export
@@ -118,7 +118,7 @@ wwv_imp_workspace.create_flow(
 ,p_substitution_value_01=>'AI_AGENT_RAG'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>23
-,p_version_scn=>45860316882521
+,p_version_scn=>45863637477368
 ,p_print_server_type=>'NATIVE'
 ,p_file_storage=>'DB'
 ,p_is_pwa=>'Y'
@@ -22563,7 +22563,7 @@ wwv_flow_imp_shared.create_install_script(
 'begin',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''region'', ''##YOUR_REGION##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''agent_endpoint_ocid'', ''##YOUR_AGENT_ENDPOINT##'');',
-'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI\$RESOURCE_PRINCIPAL'');',
+'  insert into AI_AGENT_RAG_CONFIG(key,value) values(''credential_name'', ''OCI$RESOURCE_PRINCIPAL'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''compartment_ocid'', ''##COMPATMENT##'');',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''genai_embed_model'', ''##MODEL##'');  ',
 '  insert into AI_AGENT_RAG_CONFIG(key,value) values(''genai_cohere_model'', ''##MODEL##'');',
