@@ -9,6 +9,7 @@ This is the backend for the Streamlit MCP UI.
 import json
 import asyncio
 from typing import List, Dict, Any, Callable, Sequence, Optional
+import pprint
 
 from fastmcp import Client as MCPClient
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -224,6 +225,7 @@ class AgentWithMCP:
                 try:
                     # here we call the tool
                     result = await self._call_tool(name, args)
+                    pprint.pprint(result)
                     payload = (
                         getattr(result, "data", None)
                         or getattr(result, "content", None)

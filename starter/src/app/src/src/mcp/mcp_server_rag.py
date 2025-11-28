@@ -3,6 +3,7 @@ import shared
 import rag_storage
 import shared
 import pprint
+from typing import List, TypedDict
 
 mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
 
@@ -23,23 +24,27 @@ def search(question: str) -> dict:
         source_url = response.message.content.citations[0].source_location.url.replace( " ", "%20" )
 
     d = {"response": response.message.content.text, "citation": source_url}
-    return pprint.pformat(response.message.content)
+    pprint.pprint(d)
+    return d
+
+class DocList:
+    PATH: str
+    TITLE: str
 
 @mcp.tool()
-def list_documents() -> str:
-    """get the list of documents. Return for each document (title, path)"""
+def list_documents() ->  List[DocList]:
+    """get the list of documents. Return for each document (PATH, TITLE)"""
     print("<list_documents>", flush=True)
     return rag_storage.getDocList()
 
-
 @mcp.tool()
-def get_document_summary(doc_path: str) -> str:
+def get_document_summary(doc_path: str) -> dict:
     """get document summary by path"""
     print("<get_document_summary>", flush=True)
     return rag_storage.getDocByPath(doc_path)
 
 @mcp.tool()
-def get_document_by_path(doc_path: str) -> str:
+def get_document_by_path(doc_path: str) -> dict:
     """get document by path"""
     print("<get_document_by_path>", flush=True)
     return rag_storage.getDocByPath(doc_path)
