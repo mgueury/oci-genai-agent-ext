@@ -58,12 +58,11 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment" {
   compartment_id = local.lz_app_cmp_ocid
   display_name   = "${var.prefix}-apigw-deployment"
   gateway_id     = local.apigw_ocid
-  # path_prefix    = "/${var.prefix}"
-  path_prefix    = "/"
+  path_prefix    = "/${var.prefix}"
   specification {
     # Route the COMPUTE_PRIVATE_IP 
     routes {
-      path    = "/{pathname*}"
+      path    = "/chat/{pathname*}"
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"

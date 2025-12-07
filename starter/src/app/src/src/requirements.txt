@@ -56,3 +56,6 @@ opentelemetry-exporter-otlp-proto-http
 langchain_openai
 oci-openai
 langgraph-cli[inmem]
+langchain_mcp_adapters
+# langchain==1.1.2
+# langchain_oci
