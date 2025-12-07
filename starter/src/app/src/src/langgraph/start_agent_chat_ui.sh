@@ -1,1 +1,1 @@
-npx create-agent-chat-app -Y
+npx create-agent-chat-app -Y --package-manager npm
