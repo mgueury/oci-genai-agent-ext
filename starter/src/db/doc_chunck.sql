@@ -39,15 +39,6 @@ begin
     end if;   
 end;
 /
-/
-create or replace trigger APEX_APP.DOCS_TRIGGER_DELETE
-before delete on APEX_APP.DOCS for each row
-begin
-    if :OLD.PATH LIKE 'https://objectstorage%' and :old.resource_name=:old.original_resource_name then 
-        ai_plsql.delete_blob_from_object_storage( :old.resource_name );
-    end if;
-end;
-/
 
 CREATE TABLE APEX_APP.DOCS_LANGCHAIN (
     id RAW(16) DEFAULT SYS_GUID(), 

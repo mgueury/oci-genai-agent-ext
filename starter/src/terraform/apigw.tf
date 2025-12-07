@@ -62,13 +62,27 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment" {
   specification {
     # Route the COMPUTE_PRIVATE_IP 
     routes {
-      path    = "/app/{pathname*}"
+      path    = "/chat/{pathname*}"
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
         url    = "http://${local.apigw_dest_private_ip}:8080/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
       }
     } 
+    routes {
+      path    = "/agent/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:2024/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    }     
     routes {
       path    = "/{pathname*}"
       methods = [ "ANY" ]

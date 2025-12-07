@@ -46,3 +46,12 @@ scrapy
 
 # FastMCP
 fastmcp
+
+# OpenTelemetry
+opentelemetry-api
+opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http
+
+# Langgraph
+langchain_openai
+oci-openai
