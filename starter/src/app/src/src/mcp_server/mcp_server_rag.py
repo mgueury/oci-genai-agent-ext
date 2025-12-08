@@ -7,17 +7,14 @@ from typing import List, TypedDict
 
 mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
 
-session_id=None
 rag_storage.init()
 
 @mcp.tool()
 def search(question: str) -> dict:
     """Search in document."""
     print("<search>", flush=True)
-    global session_id
     # Create session
-    if not session_id:
-        session_id = shared.genai_agent_get_session()
+    session_id = shared.genai_agent_get_session()
     response = shared.genai_agent_chat(session_id, question)
     source_url = "none"
     if response.message.content.citations:

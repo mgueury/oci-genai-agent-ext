@@ -22,9 +22,8 @@ echo
 echo "URLs" > $FILE_DONE
 if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
     append_done "-----------------------------------------------------------------------"
-    append_done "MCP Streamlit Client:"
-    append_done "http://${NLB_IP}:8080/"
-    append_done
+    append_done "LangGraph Agent Chat:"
+    append_done "http://${NLB_IP}:8080/?apiUrl=http://${NLB_IP}:2024&assistantId=agent"
 fi
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
