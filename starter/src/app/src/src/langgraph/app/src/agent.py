@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
 import os
+import time
 from langchain_oci import ChatOCIGenAI
 
 COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
@@ -28,15 +29,31 @@ llm = ChatOCIGenAI(
 )
 
 async def init() -> StateGraph:
-    client = MultiServerMCPClient(
-        {
-            "Documents": {
-                "transport": "streamable_http",
-                "url": "http://localhost:9000/mcp"
-            },
-        }
-    )
-    tools = await client.get_tools()
+
+    # Waiting is important, since after reboot the MCP server could start afterwards.
+    delay = 5
+    for attempt in range(1, 10):
+        try:
+            print(f"Connecting to MCP {attempt}...")
+            client = MultiServerMCPClient(
+                {
+                    "Documents": {
+                        "transport": "streamable_http",
+                        "url": "http://localhost:9000/mcp"
+                    },
+                }
+            )
+            tools = await client.get_tools()
+            break
+        except Exception as e:
+            print(f"Connection failed {attempt}: {e}")            
+            print(f"Waiting for {delay} seconds before the next attempt...")
+            time.sleep(delay)
+
+    if client==None:
+        print("ERROR: connection to MCP Failed")
+        exit(1)
+
     agent = create_react_agent(
         model=llm,
         tools=tools,
