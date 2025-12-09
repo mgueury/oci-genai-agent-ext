@@ -16,12 +16,6 @@ oci
 # HTTP Client
 requests
 
-# Langchain
-langchain
-langchain_community
-langchain_chroma
-langchain_docling 
-langchain_text_splitters
 
 # Sitemap
 pdfkit
@@ -54,6 +48,11 @@ opentelemetry-exporter-otlp-proto-http
 
 # Langgraph
 langchain_oci
+langchain>=1.0
+langchain_community
+langchain_chroma
+langchain_docling 
+langchain_text_splitters
 langchain_openai
 oci-openai
 langgraph-cli[inmem]
