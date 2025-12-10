@@ -8,5 +8,6 @@ export PATH=~/.local/bin/:$PATH
 cd src/langgraph/app
 
 # Start LangGraph CompiledStateGraph on port 2024
+source lgenv/bin/activate
 langgraph dev --host 0.0.0.0 2>&1 | tee ../../../langgraph.log
 

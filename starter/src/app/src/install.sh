@@ -100,3 +100,10 @@ sudo dnf install -y nodejs
 cd src
 npx create-agent-chat-app -Y --project-name agent-chat-app --package-manager npm 
 sed -i "s/next dev/next dev -p 8080/" agent-chat-app/apps/web/package.json
+
+# WA because of langchain_oci dependencies
+cd langgraph/app
+uv venv lgenv
+source lgenv/bin/activate
+uv pip install -r requirements.txt
+uv pip install "langchain>=1.0"
