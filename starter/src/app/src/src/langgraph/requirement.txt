@@ -1,0 +1,4 @@
+langchain_oci
+langchain
+langgraph-cli[inmem]
+langchain_mcp_adapters
