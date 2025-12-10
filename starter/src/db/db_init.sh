@@ -11,12 +11,13 @@ sudo dnf install -y java-17
 # Install SQL*Plus
 if [[ `arch` == "aarch64" ]]; then
   sudo dnf install -y oracle-release-el8 
-  sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus
+  sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus oracle-instantclient19.19-tools
 else
-  export INSTANT_VERSION=23.9.0.25.07-1
+  export INSTANT_VERSION=23.26.0.0.0-1-1
   wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
   wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
-  sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
+  sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
   mv *.rpm /tmp
 fi
 
@@ -74,6 +75,12 @@ begin
 end;
 /
 @ai_agent_rag_admin.sql
+/
+begin
+    apex_application_install.set_application_id(1003);
+end;
+/
+@ai_agent_eval.sql
 quit
 EOF
 
@@ -86,5 +93,54 @@ EOT
 export TNS_ADMIN=$HOME/db
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @import_application.sql
 
-# Install Dept/Emp for SQL agent
+# Install DocChunks 
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @doc_chunck.sql
+
+# Install SR for SQL agent
+cat > @support_table.sql << EOF 
+CREATE TABLE SUPPORT_OWNER (
+    id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    email VARCHAR2(100) UNIQUE NOT NULL,
+    phone VARCHAR2(20)
+);
+
+CREATE TABLE SUPPORT_SR (
+    id NUMBER PRIMARY KEY,
+    customer_name VARCHAR2(200) NOT NULL,
+    subject VARCHAR2(200) NOT NULL,
+    question CLOB NOT NULL,
+    answer CLOB NOT NULL,
+    create_date DATE DEFAULT SYSTIMESTAMP NOT NULL,
+    last_update_date DATE DEFAULT SYSTIMESTAMP NOT NULL,
+    owner_id NUMBER,
+    embedding VECTOR,
+    FOREIGN KEY (owner_id) REFERENCES SUPPORT_OWNER(id)
+);
+
+CREATE INDEX SUPPORT_SR_SUBJECT_IDX ON SUPPORT_SR(Subject) INDEXTYPE IS CTXSYS.CONTEXT;    
+CREATE INDEX SUPPORT_SR_DESCRIPTION_IDX ON SUPPORT_SR(Description) INDEXTYPE IS CTXSYS.CONTEXT;   
+exit;
+EOF
+
+sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_table.sql
+
+# Import the tables
+/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_owner.ctl
+/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_sr.ctl
+/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=ai_eval_question_answer.ctl
+
+# Update the Indexes
+cat > @support_index.sql << EOF 
+begin
+  update SUPPORT_SR set EMBEDDING=ai_plsql.genai_embed( question || chr(13) || answer  );
+  commit;
+end;
+EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_SUBJECT_IDX');
+EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_DESCRIPTION_IDX');
+CREATE VECTOR INDEX SUPPORT_SR_HNSW_IDX ON SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
+exit;
+EOF
+
+sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_index.sql
