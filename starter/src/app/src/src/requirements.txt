@@ -47,7 +47,7 @@ opentelemetry-exporter-otlp
 opentelemetry-exporter-otlp-proto-http
 
 # Langgraph
-# langchain_oci
+langchain_oci
 langchain_community
 langchain_chroma
 langchain_docling 
