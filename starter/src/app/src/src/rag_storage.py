@@ -473,6 +473,21 @@ def row2Dict( column_names, row ):
     row_dict = dict(zip(column_names, processed_row))
     return row_dict
 
+# -- query2Dict ----------------------------------------------------------------------
+
+def query2Dict( query, params ):
+    log(f"<query2Dict>")    
+    cursor = dbConn.cursor()
+    cursor.execute(query,params)    
+    result = []
+    column_names = [col[0] for col in cursor.description]
+    for row in cursor.fetchall():
+        result=row2Dict(column_names, row)
+        log(pprint.pformat(result))   
+        return result  
+    log("<query2Dict>Not found")    
+    return {"error": "Not found"}   
+
 # -- getDocByPath ----------------------------------------------------------------------
 
 def getDocByPath( path ):
@@ -512,7 +527,7 @@ def getDocList():
         row_dict = row2Dict(column_names, row)
         result.append(row_dict)  
     log(pprint.pformat(result)) 
-    return result
+    return result 
 
 # -- insertTableIngestLog -----------------------------------------------------------------
 
@@ -591,3 +606,33 @@ def updateDocStatus( p_status, p_resource_name ):
         # Close the cursor and connection
         if cur:
             cur.close()
+
+# -- findServiceRequest -----------------------------------------------------------------
+
+def findServiceRequest(question: str) -> dict:
+    log(f"<findServiceRequest> question={question}")   
+    """WITH text_search AS (
+            SELECT id, score(99)/100 as score FROM support_sr
+            WHERE CONTAINS(subject, :1, 99)>0 order by score(99) DESC FETCH FIRST top_k ROWS ONLY
+        ),
+        vector_search AS (
+
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS vector_distance
+            FROM support_sr
+        )
+        SELECT ID, SUBJECT, QUESTION, ANSWER 
+        from SUPPORT_SR 
+        JOIN text_search ts ON o.id = ts.id
+        JOIN vector_search vs ON o.id = vs.id
+        ORDER BY score DESC
+        FETCH FIRST top_k ROWS ONLY;"""    
+    return query2Dict( query, (question,))
+
+
+# -- getDocByPath ----------------------------------------------------------------------
+
+def getServiceRequest( id ):
+    log(f"<getServiceRequest> id={id}")    
+    query = "select ID, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
+    return query2Dict( query, (id,))
+  

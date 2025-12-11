@@ -46,6 +46,19 @@ def get_document_by_path(doc_path: str) -> dict:
     print("<get_document_by_path>", flush=True)
     return rag_storage.getDocByPath(doc_path)
 
+@mcp.tool()
+def find_service_request(question: str) -> dict:
+    """find similar service requests"""
+    print("<find_service_request>", flush=True)
+    return rag_storage.findServiceRequest(question)
+
+@mcp.tool()
+def get_service_request(id: str) -> dict:
+    """get the service request details"""
+    print("<get_service_request>", flush=True)
+    return rag_storage.getServiceRequest(id)
+
+
 if __name__ == "__main__":
     mcp.run(transport="http", host="127.0.0.1", port=9000)
     # print( search( "what is jazz" ) )

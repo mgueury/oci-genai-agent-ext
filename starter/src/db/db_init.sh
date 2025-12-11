@@ -13,10 +13,10 @@ if [[ `arch` == "aarch64" ]]; then
   sudo dnf install -y oracle-release-el8 
   sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus oracle-instantclient19.19-tools
 else
-  export INSTANT_VERSION=23.26.0.0.0-1-1
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2390000/oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
+  export INSTANT_VERSION=23.26.0.0.0-1
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
+  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
   sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
   mv *.rpm /tmp
 fi
@@ -30,6 +30,7 @@ grant connect, resource, unlimited tablespace to apex_app;
 EXEC DBMS_CLOUD_ADMIN.ENABLE_RESOURCE_PRINCIPAL('APEX_APP');
 grant execute on DBMS_CLOUD to APEX_APP;
 grant execute on DBMS_CLOUD_AI to APEX_APP;
+grant execute on CTX_DDL to APEX_APP;
 /
 begin
     apex_instance_admin.add_workspace(
@@ -97,7 +98,7 @@ sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @import_application.sql
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @doc_chunck.sql
 
 # Install SR for SQL agent
-cat > @support_table.sql << EOF 
+cat > support_table.sql << EOF 
 CREATE TABLE SUPPORT_OWNER (
     id NUMBER PRIMARY KEY,
     first_name VARCHAR2(50) NOT NULL,
@@ -119,26 +120,27 @@ CREATE TABLE SUPPORT_SR (
     FOREIGN KEY (owner_id) REFERENCES SUPPORT_OWNER(id)
 );
 
-CREATE INDEX SUPPORT_SR_SUBJECT_IDX ON SUPPORT_SR(Subject) INDEXTYPE IS CTXSYS.CONTEXT;    
-CREATE INDEX SUPPORT_SR_DESCRIPTION_IDX ON SUPPORT_SR(Description) INDEXTYPE IS CTXSYS.CONTEXT;   
+CREATE INDEX SUPPORT_SR_QUESTION_IDX ON SUPPORT_SR(question) INDEXTYPE IS CTXSYS.CONTEXT;    
+CREATE INDEX SUPPORT_SR_ANSWER_IDX ON SUPPORT_SR(answer) INDEXTYPE IS CTXSYS.CONTEXT;   
 exit;
 EOF
 
 sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_table.sql
 
 # Import the tables
-/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_owner.ctl
-/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_sr.ctl
-/usr/lib/oracle/21/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=ai_eval_question_answer.ctl
+/usr/lib/oracle/23/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_owner.ctl
+/usr/lib/oracle/23/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_sr.ctl
+/usr/lib/oracle/23/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=ai_eval_question_answer.ctl
 
 # Update the Indexes
-cat > @support_index.sql << EOF 
+cat > support_index.sql << EOF 
 begin
   update SUPPORT_SR set EMBEDDING=ai_plsql.genai_embed( question || chr(13) || answer  );
   commit;
 end;
-EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_SUBJECT_IDX');
-EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_DESCRIPTION_IDX');
+/
+EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_QUESTION_IDX');
+EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_ANSWER_IDX');
 CREATE VECTOR INDEX SUPPORT_SR_HNSW_IDX ON SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 exit;
 EOF

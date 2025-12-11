@@ -6,6 +6,7 @@ import asyncio
 import os
 import time
 from langchain_oci import ChatOCIGenAI
+import pprint
 
 COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
 OPENAI_BASE_URL = os.getenv("TF_VAR_openai_base_url")
@@ -28,7 +29,7 @@ llm = ChatOCIGenAI(
     model_kwargs={"temperature": 0}
 )
 
-async def init() -> StateGraph:
+async def init( prompt, tools_list ) -> StateGraph:
 
     # Waiting is important, since after reboot the MCP server could start afterwards.
     delay = 5
@@ -44,6 +45,15 @@ async def init() -> StateGraph:
                 }
             )
             tools = await client.get_tools()
+            print( "-- tools ------------------------------------------------------------")
+            pprint.pprint( tools )
+            # Filter tools.
+            tools_filtered = []
+            for tool in tools:
+                if tool.name in tools_list:
+                    tools_filtered.append( tool )
+            print( "-- tools_filtered ---------------------------------------------------")
+            pprint.pprint( tools_filtered )
             break
         except Exception as e:
             print(f"Connection failed {attempt}: {e}")            
@@ -56,15 +66,30 @@ async def init() -> StateGraph:
 
     agent = create_react_agent(
         model=llm,
-        tools=tools,
-        prompt=(
+        tools=tools_filtered,
+        prompt=prompt,
+        name="research_agent", 
+    ) 
+
+    return agent
+
+agent_rag = asyncio.run(init((
             "You are a research agent.\n\n"
             "INSTRUCTIONS:\n"
             "- Assist ONLY with research-related tasks, DO NOT do any math\n"
             "- Respond ONLY with the results of your work, do NOT include ANY other text."
-        ),
-        name="research_agent", 
-    ) 
-    return agent
+            ),
+            ["search","list_documents","get_document_summary","get_document_by_path"]))
+agent_sr = asyncio.run(init("""You are a support agent.
+            INSTRUCTIONS:
+            - when you receive a question, search the answer by calling the tools search and the tool find_service_request
+            - combine the response of the 2 tools to create a final answer to the user or several possible answers found in the different documents.
+            - Respond ONLY with the results of your work, do NOT include ANY other text.""",
+            ["search","find_service_request","get_service_request"]))
 
-agent = asyncio.run(init())
+        # prompt=(
+        #     "You are a research agent.\n\n"
+        #     "INSTRUCTIONS:\n"
+        #     "- Assist ONLY with research-related tasks, DO NOT do any math\n"
+        #     "- Respond ONLY with the results of your work, do NOT include ANY other text."
+        # ),
