@@ -504,15 +504,7 @@ def getDocByPath( path ):
 
     # Tries with the title
     query = "SELECT path, content, content_type, region, summary FROM docs WHERE title=:1"
-    cursor = dbConn.cursor()
-    cursor.execute(query,(path,))
-    column_names = [col[0] for col in cursor.description]
-    for row in cursor.fetchall():
-        result=row2Dict(column_names, row)
-        log(pprint.pformat(result))              
-        return result  
-    log("<getDocByPath>Docs not found by title: " + path)    
-    return "-"  
+    return query2Dict( query, (path,))
 
 # -- getDocList ----------------------------------------------------------------------
 
@@ -611,22 +603,27 @@ def updateDocStatus( p_status, p_resource_name ):
 
 def findServiceRequest(question: str) -> dict:
     log(f"<findServiceRequest> question={question}")   
-    """WITH text_search AS (
-            SELECT id, score(99)/100 as score FROM support_sr
-            WHERE CONTAINS(subject, :1, 99)>0 order by score(99) DESC FETCH FIRST top_k ROWS ONLY
-        ),
-        vector_search AS (
+    # query = """WITH text_search AS (
+    #         SELECT id, score(99)/100 as score FROM support_sr
+    #         WHERE CONTAINS(question, :1, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+    #     ),
+    #     vector_search AS (
 
-            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS vector_distance
+    #         SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS vector_distance
+    #         FROM support_sr
+    #     )
+    #     SELECT o.ID, o.SUBJECT, o.QUESTION, o.ANSWER 
+    #     from SUPPORT_SR o
+    #     JOIN text_search ts ON o.id = ts.id
+    #     JOIN vector_search vs ON o.id = vs.id
+    #     ORDER BY score DESC
+    #     FETCH FIRST 10 ROWS ONLY;"""    
+    query = """
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, o.SUBJECT, o.QUESTION, o.ANSWER 
             FROM support_sr
-        )
-        SELECT ID, SUBJECT, QUESTION, ANSWER 
-        from SUPPORT_SR 
-        JOIN text_search ts ON o.id = ts.id
-        JOIN vector_search vs ON o.id = vs.id
-        ORDER BY score DESC
-        FETCH FIRST top_k ROWS ONLY;"""    
-    return query2Dict( query, (question,))
+            ORDER BY score DESC
+            FETCH FIRST 10 ROWS ONLY"""        
+    return query2Dict( query, (question, ))
 
 
 # -- getDocByPath ----------------------------------------------------------------------
