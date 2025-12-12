@@ -31,6 +31,8 @@ EXEC DBMS_CLOUD_ADMIN.ENABLE_RESOURCE_PRINCIPAL('APEX_APP');
 grant execute on DBMS_CLOUD to APEX_APP;
 grant execute on DBMS_CLOUD_AI to APEX_APP;
 grant execute on CTX_DDL to APEX_APP;
+grant execute on DBMS_SCHEDULER to APEX_APP;
+grant create any job to APEX_APP;
 /
 begin
     apex_instance_admin.add_workspace(

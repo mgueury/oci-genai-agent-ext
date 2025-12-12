@@ -82,10 +82,18 @@ agent_rag = asyncio.run(init((
             ["search","list_documents","get_document_summary","get_document_by_path"]))
 agent_sr = asyncio.run(init("""You are a support agent.
             INSTRUCTIONS:
-            - when you receive a question, search the answer by calling the tools search and the tool find_service_request
-            - combine the response of the 2 tools to create a final answer to the user or several possible answers found in the different documents.
-            - Respond ONLY with the results of your work, do NOT include ANY other text.""",
+            - When you receive a question, search the answer by calling the tools search and the tool find_service_request
+            - Combine the response of the 2 tools to create a final answer to the user or several possible answers found in the different documents.
+            - Respond ONLY with the results of your work, do NOT include ANY other text.
+            
+            REFERENCES:
+            - When you answer always give the list of document on which you based your response. Give this in a table format. 2 columns.
+            - One line for each reference found in 
+               - For the tool search. Give the document path and content.
+               - For the tool find_service_request. Give the link to the SR and the question.                       
+            """,
             ["search","find_service_request","get_service_request"]))
+
 
         # prompt=(
         #     "You are a research agent.\n\n"

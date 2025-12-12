@@ -40,6 +40,7 @@ embeddings = OCIGenAIEmbeddings(
 )
 # db26ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
+APIGW_HOSTNAME = os.getenv("APIGW_HOSTNAME")
 DOCLING_HYBRID_CHUNK=True #False
 
 # Connection
@@ -473,10 +474,10 @@ def row2Dict( column_names, row ):
     row_dict = dict(zip(column_names, processed_row))
     return row_dict
 
-# -- query2Dict ----------------------------------------------------------------------
+# -- queryFirstRecord ----------------------------------------------------------------------
 
-def query2Dict( query, params ):
-    log(f"<query2Dict>")    
+def queryFirstRecord( query, params ):
+    log(f"<queryFirstRecord>")    
     cursor = dbConn.cursor()
     cursor.execute(query,params)    
     result = []
@@ -485,8 +486,22 @@ def query2Dict( query, params ):
         result=row2Dict(column_names, row)
         log(pprint.pformat(result))   
         return result  
-    log("<query2Dict>Not found")    
+    log("<queryFirstRecord>Not found")    
     return {"error": "Not found"}   
+
+# -- queryAllRecords ----------------------------------------------------------------------
+
+def queryAllRecords( query, params ):
+    log(f"<queryAllRecords>")    
+    cursor = dbConn.cursor()
+    cursor.execute(query,params)    
+    result = []
+    column_names = [col[0] for col in cursor.description]
+    for row in cursor.fetchall():
+        row_dict = row2Dict(column_names, row)
+        result.append(row_dict)  
+    log(pprint.pformat(result)) 
+    return result 
 
 # -- getDocByPath ----------------------------------------------------------------------
 
@@ -504,22 +519,14 @@ def getDocByPath( path ):
 
     # Tries with the title
     query = "SELECT path, content, content_type, region, summary FROM docs WHERE title=:1"
-    return query2Dict( query, (path,))
+    return queryFirstRecord( query, (path,))
 
 # -- getDocList ----------------------------------------------------------------------
 
 def getDocList():
     log(f"<getDocList>")    
     query = "SELECT title, path FROM docs"
-    cursor = dbConn.cursor()
-    cursor.execute(query)
-    result = []
-    column_names = [col[0] for col in cursor.description]
-    for row in cursor.fetchall():
-        row_dict = row2Dict(column_names, row)
-        result.append(row_dict)  
-    log(pprint.pformat(result)) 
-    return result 
+    queryAllRecords( query, None )
 
 # -- insertTableIngestLog -----------------------------------------------------------------
 
@@ -619,17 +626,18 @@ def findServiceRequest(question: str) -> dict:
     #     ORDER BY score DESC
     #     FETCH FIRST 10 ROWS ONLY;"""    
     query = """
-            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, o.SUBJECT, o.QUESTION, o.ANSWER 
-            FROM support_sr
-            ORDER BY score DESC
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id='||id LINK, o.SUBJECT, o.QUESTION, o.ANSWER 
+            FROM support_sr o
+            ORDER BY score ASC
             FETCH FIRST 10 ROWS ONLY"""        
-    return query2Dict( query, (question, ))
+    return queryAllRecords( query, (question, ))
 
 
 # -- getDocByPath ----------------------------------------------------------------------
 
 def getServiceRequest( id ):
     log(f"<getServiceRequest> id={id}")    
-    query = "select ID, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
-    return query2Dict( query, (id,))
+    query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id='||id LINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
+    return queryFirstRecord( query, (id,))
   
+  # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id={id}

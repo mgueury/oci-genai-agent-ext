@@ -2,6 +2,7 @@
 export DB_USER="apex_app"
 export DB_PASSWORD="##TF_VAR_db_password##"
 export DB_URL="##DB_URL##"
+export APIGW_HOSTNAME="##APIGW_HOSTNAME##"
 
 # Generic
 export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
@@ -24,6 +25,10 @@ export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 
 # LibreOffice
 export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
+
+# export LANGSMITH_TRACING=true
+# export LANGSMITH_API_KEY=<your-api-key>
+# export LANGSMITH_WORKSPACE_ID=agext
 
 # Python VirtualEnv
 if [ -d $HOME/app/myenv ]; then

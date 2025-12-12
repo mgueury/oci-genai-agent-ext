@@ -82,7 +82,9 @@ begin
   APEX_APP.AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
   APEX_APP.AI_CONFIG_UPDATE( 'object_storage_url',  '$TF_VAR_object_storage_url' );
   APEX_APP.AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
-
+  -- AI_EVAL
+  APEX_APP.AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefixagent/runs/wait' );
+  APEX_APP.AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
   commit;
 end;
 /

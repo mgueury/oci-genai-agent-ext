@@ -24,12 +24,8 @@ def search(question: str) -> dict:
     pprint.pprint(d)
     return d
 
-class DocList:
-    PATH: str
-    TITLE: str
-
 @mcp.tool()
-def list_documents() ->  List[DocList]:
+def list_documents() ->  List[dict]:
     """get the list of documents. Return for each document (PATH, TITLE)"""
     print("<list_documents>", flush=True)
     return rag_storage.getDocList()
@@ -47,7 +43,7 @@ def get_document_by_path(doc_path: str) -> dict:
     return rag_storage.getDocByPath(doc_path)
 
 @mcp.tool()
-def find_service_request(question: str) -> dict:
+def find_service_request(question: str) -> List[dict]:
     """find similar service requests"""
     print("<find_service_request>", flush=True)
     return rag_storage.findServiceRequest(question)
