@@ -84,6 +84,11 @@ begin
 end;
 /
 @ai_agent_eval.sql
+begin
+    apex_application_install.set_application_id(1004);
+end;
+/
+@ai_support.sql
 quit
 EOF
 
