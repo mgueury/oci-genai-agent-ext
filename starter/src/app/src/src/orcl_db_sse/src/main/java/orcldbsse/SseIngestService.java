@@ -1,6 +1,5 @@
 package orcldbsse;
 
-import com.example.dto.StartSseRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micronaut.context.annotation.Value;
@@ -8,7 +7,7 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.MutableHttpRequest;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
-import io.micronaut.http.client.sse.Event;
+import io.micronaut.http.sse.Event;
 import io.micronaut.http.client.sse.SseClient;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -27,67 +26,76 @@ public class SseIngestService {
     @Value("${LANGGRAPH_URL:env:LANGGRAPH_URL}")
     Optional<String> langgraphUrlEnv;
 
-    private final SseClient sseClient;
     private final HttpClient httpClient;
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
 
     @Inject
+    @Client("/") // base-less client; absolute URLs are allowed
+    SseClient sseClient;
+
+    @Inject
     public SseIngestService(@Client("/") HttpClient httpClient, DataSource dataSource, ObjectMapper objectMapper) {
         this.httpClient = httpClient;
-        this.sseClient = SseClient.create(httpClient);
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
     }
 
     public void startAndIngest(StartSseRequest req) {
-        String sseUrl = langgraphUrlEnv.orElseGet(() -> System.getenv("LANGGRAPH_URL"));
-        if (sseUrl == null || sseUrl.isBlank()) {
-            throw new IllegalStateException("LANGGRAPH_URL is not set");
-        }
-        String streamId = UUID.randomUUID().toString();
-        AtomicInteger order = new AtomicInteger(0);
-
-        // Prepare the outbound request (POST with JSON body). Change to GET with query
-        // params if needed.
-        MutableHttpRequest<StartSseRequest> request = io.micronaut.http.HttpRequest.POST(sseUrl, req)
-                .contentType(MediaType.APPLICATION_JSON_TYPE)
-                .accept(MediaType.TEXT_EVENT_STREAM_TYPE);
-
-        sseClient.eventStream(request, String.class).subscribe(event -> {
-            try {
-                handleEvent(streamId, order.incrementAndGet(), event);
-            } catch (Exception e) {
-                // Log and continue; you might want to cancel subscription on severe errors
-                e.printStackTrace();
+        try {
+            String sseUrl = System.getenv("LANGGRAPH_URL");
+            if (sseUrl == null || sseUrl.isBlank()) {
+                throw new IllegalStateException("LANGGRAPH_URL is not set");
             }
-        }, throwable -> {
-            // Log SSE error
-            throwable.printStackTrace();
-        });
+            String streamId = java.util.UUID.randomUUID().toString();
+            java.util.concurrent.atomic.AtomicInteger order = new java.util.concurrent.atomic.AtomicInteger(0);
 
+            MutableHttpRequest<StartSseRequest> request = io.micronaut.http.HttpRequest
+                    .POST(sseUrl, req) // absolute URL
+                    .contentType(MediaType.APPLICATION_JSON_TYPE)
+                    .accept(MediaType.TEXT_EVENT_STREAM_TYPE);
+
+            reactor.core.publisher.Flux.from(sseClient.eventStream(request, String.class))
+                    .subscribe(event -> {
+                        try {
+                            handleEvent(streamId, order.incrementAndGet(), event);
+                        } catch (Exception e) {
+                            IO.println("<startAndIngest>Exception:" + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }, throwable -> {
+                        throwable.printStackTrace();
+                    });
+        } catch (Exception e) {
+            IO.println("<startAndIngest>Exception:" + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void handleEvent(String streamId, int eventOrder, Event<String> event) throws Exception {
-        String eventName = event.getName().orElse(null);
-        String eventId = event.getId().orElse(streamId); // Prefer SSE's own id if present
+        String eventName = event.getName(); // may be null
+        String eventId = event.getId(); // may be null
+        if (eventId == null || eventId.isBlank()) {
+            eventId = streamId;
+        }
         String data = event.getData();
-        // Parse JSON safely
+
         String finishReason = null;
         String dataContent = null;
         if (data != null && !data.isBlank()) {
             try {
-                JsonNode root = objectMapper.readTree(data);
-                JsonNode rm = root.at("/response_metadata/finish_reason");
+                com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(data);
+                var rm = root.at("/response_metadata/finish_reason");
                 if (!rm.isMissingNode() && !rm.isNull()) {
                     finishReason = rm.asText();
                 }
-                JsonNode dc = root.at("/data/content");
+                var dc = root.at("/data/content");
                 if (!dc.isMissingNode() && !dc.isNull()) {
                     dataContent = dc.isTextual() ? dc.asText() : dc.toString();
                 }
-            } catch (Exception ex) {
-                // If not JSON, keep fields null and still store the raw payload
+            } catch (Exception e) {
+                IO.println("<handleEvent>Exception when reading the JSON payload:" + e.getMessage());
+                e.printStackTrace();
             }
         }
         insertEventRow(eventId, eventOrder, eventName, finishReason, dataContent, data);

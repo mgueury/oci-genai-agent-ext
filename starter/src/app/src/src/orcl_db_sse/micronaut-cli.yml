@@ -1,5 +1,5 @@
 applicationType: default
-defaultPackage: com.example
+defaultPackage: orcldbsse
 testFramework: junit
 sourceLanguage: java
 buildTool: gradle

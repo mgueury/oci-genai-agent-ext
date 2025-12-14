@@ -1,4 +1,4 @@
-package com.example;
+package orcldbsse;
 
 import io.micronaut.runtime.Micronaut;
 
