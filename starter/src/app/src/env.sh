@@ -28,6 +28,7 @@ export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
 
 # export LANGSMITH_TRACING=true
+# export LANGSMITH_TRACING=true
 # export LANGSMITH_API_KEY=<your-api-key>
 # export LANGSMITH_WORKSPACE_ID=agext
 
