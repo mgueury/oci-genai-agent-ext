@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: demo
+  datasource:
+    url: jdbc:oracle:thin:@//HOST:PORT/SERVICE
+    username: YOUR_USER
+    password: YOUR_PASSWORD
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari.maximum-pool-size: 8
