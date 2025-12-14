@@ -526,7 +526,7 @@ def getDocByPath( path ):
 def getDocList():
     log(f"<getDocList>")    
     query = "SELECT title, path FROM docs"
-    queryAllRecords( query, None )
+    return queryAllRecords( query, None )
 
 # -- insertTableIngestLog -----------------------------------------------------------------
 
@@ -625,8 +625,8 @@ def findServiceRequest(question: str) -> dict:
     #     JOIN vector_search vs ON o.id = vs.id
     #     ORDER BY score DESC
     #     FETCH FIRST 10 ROWS ONLY;"""    
-    query = """
-            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id='||id LINK, o.SUBJECT, o.QUESTION, o.ANSWER 
+    query = f"""
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
             FROM support_sr o
             ORDER BY score ASC
             FETCH FIRST 10 ROWS ONLY"""        
@@ -637,7 +637,7 @@ def findServiceRequest(question: str) -> dict:
 
 def getServiceRequest( id ):
     log(f"<getServiceRequest> id={id}")    
-    query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id='||id LINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
+    query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
     return queryFirstRecord( query, (id,))
   
-  # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai-support/support-sr?p2_id={id}
+  # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id={id}

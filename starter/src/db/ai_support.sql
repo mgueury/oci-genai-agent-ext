@@ -77,7 +77,7 @@ wwv_imp_workspace.create_flow(
  p_id=>wwv_flow.g_flow_id
 ,p_owner=>nvl(wwv_flow_application_install.get_schema,'APEX_APP')
 ,p_name=>nvl(wwv_flow_application_install.get_application_name,'AI_SUPPORT')
-,p_alias=>nvl(wwv_flow_application_install.get_application_alias,'AI-SUPPORT')
+,p_alias=>nvl(wwv_flow_application_install.get_application_alias,'AI_SUPPORT')
 ,p_page_view_logging=>'YES'
 ,p_page_protection_enabled_y_n=>'Y'
 ,p_checksum_salt=>'46879BDBE8CCDE0D2664F4DED066D4A1DC23B9FE1ED793BFB45B98BAE52742BC'

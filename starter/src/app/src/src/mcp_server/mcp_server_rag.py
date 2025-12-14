@@ -4,10 +4,15 @@ import rag_storage
 import shared
 import pprint
 from typing import List, TypedDict
+from pydantic import BaseModel
 
 mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
 
 rag_storage.init()
+
+class DocInfo(BaseModel):
+    TITLE: str
+    PATH: str
 
 @mcp.tool()
 def search(question: str) -> dict:
@@ -25,7 +30,7 @@ def search(question: str) -> dict:
     return d
 
 @mcp.tool()
-def list_documents() ->  List[dict]:
+def list_documents() ->  List[DocInfo]:
     """get the list of documents. Return for each document (PATH, TITLE)"""
     print("<list_documents>", flush=True)
     return rag_storage.getDocList()
