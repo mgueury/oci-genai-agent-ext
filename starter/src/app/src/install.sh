@@ -83,11 +83,11 @@ begin
   APEX_APP.AI_CONFIG_UPDATE( 'object_storage_url',  '$TF_VAR_object_storage_url' );
   APEX_APP.AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
   -- AI_EVAL
-  APEX_APP.AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/langgraph/runs/wait' );
+  APEX_APP.AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );
   APEX_APP.AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
   -- AI_LANGGRAPH
-  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/langgraph/thread' );
-  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/orcldbsse/startsse?thread_id=' );
+  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/thread' );
+  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
   commit;
 end;
 /

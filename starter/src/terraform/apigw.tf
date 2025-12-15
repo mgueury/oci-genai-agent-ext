@@ -73,11 +73,22 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment" {
       }
     } 
     routes {
-      path    = "/agent/{pathname*}"
+      path    = "/langgraph/{pathname*}"
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
         url    = "http://${local.apigw_dest_private_ip}:2024/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    }     
+    routes {
+      path    = "/orcldbsee/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:8081/$${request.path[pathname]}"
         connect_timeout_in_seconds = 60
         read_timeout_in_seconds = 120
         send_timeout_in_seconds = 120              
