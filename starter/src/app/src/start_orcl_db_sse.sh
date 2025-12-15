@@ -8,4 +8,4 @@ export PATH=~/.local/bin/:$PATH
 cd src/orcl_db_sse
 
 # Start only the user interface
-./gradlew run 2>&1 | tee ../../orcl_db_sse.log
+./gradlew bootRun 2>&1 | tee ../../orcl_db_sse.log

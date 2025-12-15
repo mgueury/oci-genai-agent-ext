@@ -7,3 +7,5 @@ spring:
     password: YOUR_PASSWORD
     driver-class-name: oracle.jdbc.OracleDriver
     hikari.maximum-pool-size: 8
+server:
+  port: 8081

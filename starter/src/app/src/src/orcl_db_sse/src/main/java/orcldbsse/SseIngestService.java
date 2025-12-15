@@ -1,4 +1,4 @@
-package orcldbsee; 
+package orcldbsee;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -7,83 +7,107 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.netty.http.client.HttpClient; 
+import reactor.netty.http.client.HttpClient;
+import reactor.core.Disposable;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger; 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
-public class SseIngestService { 
-private final SseEventRepository repository;
-private final WebClient baseClient;
+public class SseIngestService {
+    private final SseEventRepository repository;
+    private final WebClient baseClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-// Track per-thread event order
-private final Map<String, AtomicInteger> threadOrderCounters = new ConcurrentHashMap<>();
+    // Track per-thread event order
+    private final Map<String, AtomicInteger> threadOrderCounters = new ConcurrentHashMap<>();
 
-public SseIngestService(SseEventRepository repository) {
-    this.repository = repository;
+    public SseIngestService(SseEventRepository repository) {
+        this.repository = repository;
 
-    HttpClient httpClient = HttpClient.create()
-            .responseTimeout(Duration.ofMinutes(5));
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofMinutes(5));
 
-    this.baseClient = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
-            .build();
-}
-
-public Mono<Void> start(String threadId, String jsonBody) {
-    if (request == null || request.getSseUrl() == null || request.getSseUrl().isBlank()) {
-        return Mono.error(new IllegalArgumentException("sseUrl must be provided in the request body"));
+        this.baseClient = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
     }
 
-    // Initialize event order counter from DB max for this thread
-        threadOrderCounters.computeIfAbsent(threadId, t -> new AtomicInteger(repository.currentMaxOrderForThread(threadId)));
+    public void startAsync(String threadId, String jsonBody) {
+        // Initialize event order counter from DB max for this thread
+        threadOrderCounters.computeIfAbsent(threadId,
+                t -> new AtomicInteger(repository.currentMaxOrderForThread(threadId)));
 
-    String base = System.getenv("LANGGRAPH_URL");
-    String normBase = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
-    String encodedThreadId = URLEncoder.encode(threadId, StandardCharsets.UTF_8);
-    String sseUrl = normBase + "/threads/" + encodedThreadId + "/runs/stream";
+        String base = System.getenv("LANGGRAPH_URL");
+        String normBase = base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        String encodedThreadId = URLEncoder.encode(threadId, StandardCharsets.UTF_8);
+        String sseUrl = normBase + "/threads/" + encodedThreadId + "/runs/stream";
+        IO.println("base=" + base);
+        IO.println("sseUrl=" + sseUrl);
+        IO.println("jsonBody=" + jsonBody);
 
-    WebClient client = baseClient.mutate()
-            .baseUrl(sseUrl)
-            .defaultHeaders(h -> {
-                h.setAccept(java.util.List.of(MediaType.TEXT_EVENT_STREAM));
-                Map<String, String> headers = request.getHeaders();
-                if (headers != null) {
-                    headers.forEach(h::add);
-                }
-            })
-            .build();
+        Disposable sub = baseClient.post()
+                .uri(sseUrl)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .bodyValue(jsonBody) // forward payload exactly as received
+                .retrieve()
+                .bodyToFlux(ServerSentEvent.class)
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(evt -> {
+                    try {
+                        String sseId = evt.id();
+                        String eventName = evt.event();
+                        Object data = evt.data();
+                        String dataContent = null;
+                        String finishReason = null;
+                        String fullData = null;
+                        String name = null;
+                        String type = null;
+                        int order = threadOrderCounters.get(threadId).incrementAndGet();
 
-    // Start consuming SSE. We subscribe on a boundedElastic scheduler so JDBC calls don't block event loops.
-    return client.get()
-            .accept(MediaType.TEXT_EVENT_STREAM)
-            .retrieve()
-            .bodyToFlux(ServerSentEvent.class)
-            .publishOn(Schedulers.boundedElastic())
-            .doOnNext(evt -> {
-                try {
-                    String sseId = evt.id() != null ? evt.id().toString() : UUID.randomUUID().toString();
-                    String eventName = evt.event() != null ? evt.event() : "message";
-                    String data = evt.data() != null ? String.valueOf(evt.data()) : null;
-                    String fullData = data; // If you need raw lines, keep same for now
-                    String finishReason = null;
+                        if (data != null) {
+                            IO.println("class=" + evt.getClass().getSimpleName());
+                            IO.println("data class=" + evt.data().getClass().getSimpleName());
+                            objectMapper.writeValueAsString(data);
 
-                    int order = threadOrderCounters.get(threadId).incrementAndGet();
-                    repository.insertEvent(sseId, threadId, order, eventName, finishReason, data, fullData);
-                } catch (Exception e) {
-                    // Log and continue; in real apps, use a logger
-                    e.printStackTrace();
-                }
-            })
-            .doOnError(err -> {
-                // Log error; in real apps use Logger and possibly persist an error entry
-                err.printStackTrace();
-            })
-            .then();
+                            // Try to parse JSON
+                            try {
+                                JsonNode root = objectMapper.valueToTree(data);
+                                fullData = objectMapper.writeValueAsString(root);
+                                JsonNode messages = root.path("messages");
+                                if (messages.isArray() && messages.size() > 0) {
+                                    int idx = messages.size() - 1;
+                                    JsonNode lastMessage = messages.get(messages.size() - 1);
+                                    fullData = objectMapper.writeValueAsString(lastMessage);
+                                    type = lastMessage.path("type").asText(null);
+                                    name = lastMessage.path("name").asText(null);
+                                    JsonNode content = lastMessage.path("content");
+                                    if (content.isArray() && content.size() > 0) {  
+                                       dataContent = content.get(0).path("text").asText(null);
+                                    }  else {
+                                       dataContent = content.asText(null);
+                                    }
+                                    finishReason = lastMessage.path("additional_kwargs").path("finish_reason").asText(null);
+                                }
+                                repository.insertEvent(sseId, threadId, order, eventName, finishReason, name, type, dataContent, fullData);
+                            } catch (Exception e) {
+                                IO.println("Exeption: " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                })
+                .doOnError(Throwable::printStackTrace)
+                .subscribe(); // fire-and-forget
+    }
 }
-
-} 
