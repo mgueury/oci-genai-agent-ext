@@ -29,6 +29,7 @@ export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
 
 # LangGraph
 export LANGGRAPH_URL="http://127.0.0.1:2024"
+export LANGGRAPH_APIKEY="##TF_VAR_api_key##"
 
 # export LANGSMITH_TRACING=true
 # export LANGSMITH_TRACING=true

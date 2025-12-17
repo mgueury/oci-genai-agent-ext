@@ -31,10 +31,6 @@ public class SseService {
         return g_threadHashMap.containsKey(threadId);
     }
 
-    public void rememberThread(String threadId) {
-        g_threadHashMap.put(threadId, Boolean.TRUE);
-    }
-
     public SseEmitter startProxySse(String threadId, String jsonBody) {
         SseEmitter emitter = new SseEmitter(0L); // no timeout; adjust if needed
 
@@ -46,7 +42,7 @@ public class SseService {
                         .build(threadId))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.TEXT_EVENT_STREAM)
-                .bodyValue(jsonBody == null ? "" : jsonBody)
+                .bodyValue(jsonBody)
                 .retrieve()
                 .bodyToFlux(type);
 
@@ -93,7 +89,7 @@ public class SseService {
         record ThreadResponse(String thread_id) {
         }
         ThreadResponse tr = langGraphClient.get()
-                .uri("/thread")
+                .uri("/threads")
                 .retrieve()
                 .bodyToMono(ThreadResponse.class)
                 .block();
@@ -103,7 +99,7 @@ public class SseService {
         }
 
         String threadId = tr.thread_id();
-        rememberThread(threadId);
+        g_threadHashMap.put(threadId, Boolean.TRUE);
 
         // Store the thread creation as an event row
         try {
