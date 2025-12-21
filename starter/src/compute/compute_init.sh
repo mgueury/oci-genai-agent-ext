@@ -19,6 +19,9 @@ echo "ARCH=$ARCH"
 sudo setenforce 0
 sudo sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
 
+# GrowFS - resize the volume
+sudo /usr/libexec/oci-growfs -y
+
 # Set VI and NANO in utf8
 echo "export LC_CTYPE=en_US.UTF-8" >> $HOME/.bashrc
 

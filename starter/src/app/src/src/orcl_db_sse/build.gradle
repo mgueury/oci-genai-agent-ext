@@ -20,6 +20,15 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.zaxxer:HikariCP:5.1.0' 
+// Oracle JDBC driver (ensure you have proper licensing and repository access)
+
+} 
+
+dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-restclient'
     implementation 'org.springframework.boot:spring-boot-starter-webclient'
     runtimeOnly 'com.oracle.database.jdbc:ojdbc11'

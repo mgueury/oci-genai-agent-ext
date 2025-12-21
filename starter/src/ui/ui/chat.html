@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f6f6f6;
+        }
+
+        #chat-container {
+            max-width: 1024px;
+            margin: 40px auto;
+            background: white;
+            padding: 16px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, .06);
+            border-radius: 8px;
+        }
+
+        #messages {
+            min-height: 300px;
+            margin-bottom: 16px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+        }
+
+        .human {
+            justify-content: flex-end;
+        }
+
+        .ai,
+        .tool {
+            justify-content: flex-start;
+        }
+
+        .meta {
+            font-size: .9em;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            background: #eee;
+            position: relative;
+            word-break: break-word;
+            box-shadow: 0 2px 6px rgba(20, 71, 151, .08);
+        }
+
+        .human .bubble {
+            background: #ddd;
+            color: black;
+            border-bottom-right-radius: 5px;
+            border-bottom-left-radius: 18px;
+            border-top-right-radius: 18px;
+            border-top-left-radius: 18px;
+        }
+
+        .ai .bubble,
+        .tool .bubble {
+            background: #ddd;
+            color: black;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 18px;
+            border-top-right-radius: 18px;
+            border-top-left-radius: 18px;
+        }
+
+        form {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 8px;
+        }
+
+        button {
+            padding: 8px 14px;
+        }
+
+        .tool-calls {
+            background: #eef4fc;
+            padding: 8px;
+            font-size: 0.95em;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+
+        .bubble table {
+            background: #ccc;
+            padding: 8px;
+            font-size: 0.95em;
+            border-radius: 4px;
+            margin-top: 8px;
+            min-width: 15em;
+        }
+
+        .bubble td {
+            padding: 0.3em;
+            max-width: 150px;
+            background: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bubble tr:hover td {
+            white-space: wrap;
+            overflow: auto;
+        }
+
+        .bubble th {}
+
+        .citation {
+            font-size: 0.9em;
+            color: #187;
+            margin-top: 3px;
+        }
+
+        /* Spinner styles */
+        #spinner-container {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            min-height: 38px;
+        }
+
+        #spinner {
+            margin-top: -8px;
+            margin-bottom: 8px;
+            width: 35px;
+            height: 37px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .pulse-dot {
+            margin-left: 16px;
+            width: 18px;
+            height: 18px;
+            background: #111;
+            border-radius: 50%;
+            animation: pulseAnim 1s cubic-bezier(.4, 0, .6, 1) infinite;
+        }
+
+        @keyframes pulseAnim {
+            0% {
+                transform: scale(1);
+                opacity: .8;
+            }
+
+            50% {
+                transform: scale(1.7);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: .8;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-container">
+        <h2>Chat</h2>
+        <div id="messages"></div>
+        <div id="spinner-container"></div>
+        <form id="chat-form">
+            <input id="chat-input" type="text" placeholder="Type your message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+    <script>
+        const BASE_URL = 'http://130.61.21.18:2024'; // TODO: Replace with real backend
+
+        let thread_id = null;
+        let last_message_id = 0;
+        const messagesEl = document.getElementById('messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const spinnerContainer = document.getElementById('spinner-container');
+
+        // Utility: safely parse JSON
+        function safeParse(json) {
+            try { return JSON.parse(json); }
+            catch (e) { return {}; }
+        }
+        function renderMarkdown(md) {
+            return marked.parse(md || "");
+        }
+        // Add or move spinner below last message (show while waiting for SSE)
+        function showSpinner() {
+            spinnerContainer.innerHTML = `<div id="spinner"><div class="pulse-dot"></div></div>`;
+            scrollToBottom();
+        }
+        // Remove spinner (when SSE is done)
+        function hideSpinner() {
+            spinnerContainer.innerHTML = '';
+        }
+
+        function scrollToBottom() {
+            // Scroll so the anchor div is visible
+            document.getElementById('spinner-container').scrollIntoView({ behavior: "smooth" });
+        }
+
+
+        function renderJsTable(data) {
+            if (!Array.isArray(data) || data.length === 0) return "<em>(No data)</em>";
+
+            const headers = Object.keys(data[0]);
+            let html = '<table>';
+            html += '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
+            html += '<tbody>';
+            for (const row of data) {
+                html += '<tr>'; 
+                for (let h of headers) {
+                   let value = row[h];
+                   if (typeof value === 'string' && /^https?:\/\//.test(value)) {
+                       html +=  `<td><a href="${value}" target="_blank">URL</a></td>`;
+                   } else {
+                   html +=  `<td>${value}</td>`;
+                   }
+                }
+                html += '</tr>'; 
+            }
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function renderMessage(msgObj) {
+            const el = document.createElement('div');
+            el.classList.add('message');
+            el.classList.add(msgObj.type || 'ai');
+            let innerHTML = '';
+            // Human message
+            if (msgObj.type === 'human') {
+                innerHTML = `<div class="bubble"><div class="meta">You</div>${renderMarkdown(msgObj.content)}</div>`;
+            } else if (msgObj.type === 'ai') {
+                if (msgObj.content) {
+                    innerHTML = `<div class="bubble"><div class="meta">AI</div>${renderMarkdown(msgObj.content)}`;
+                    if (msgObj.tool_calls && msgObj.tool_calls.length > 0) {
+                        let tools = msgObj.tool_calls.map(t =>
+                            `<div><b>${t.name}</b> &rarr; <code>${JSON.stringify(t.args)}</code></div>`
+                        ).join('');
+                        innerHTML += `<div class="tool-calls">${tools}</div>`;
+                    }
+                    innerHTML += `</div>`;
+                } else if (msgObj.tool_calls && msgObj.tool_calls.length > 0) {
+                    let bubble = `<div class="bubble"><div class="meta">Tool Calls</div>`;
+                    let tools = msgObj.tool_calls.map(t =>
+                        `<tr><td>${t.name}</td><td>${JSON.stringify(t.args)}</td></tr>`
+                    ).join('');
+                    bubble += `<table class='tools-table'><thead><tr><th>Name</th><th>Arguments</th><tr></thead><tbody>${tools}</tbody></table>`;
+                    innerHTML = bubble;
+                }
+            } else if (msgObj.type === 'tool') {
+                let data = msgObj.artifact?.structured_content ?? {};
+                let bubble = "<div class='bubble'><div class='meta'>Tool - " + msgObj.name + "</div>";
+                if (data?.response) {
+                    bubble += renderMarkdown(data.response);
+                }
+                if (data?.result) {
+                    bubble += renderJsTable(data.result);
+                }
+                bubble += "</div>";
+                innerHTML = bubble;
+            }
+            el.innerHTML = innerHTML;
+            messagesEl.appendChild(el);
+            scrollToBottom();
+        }
+
+        function startSSE(reqBody, onMessage, onDone) {
+            showSpinner();
+            const url = `${BASE_URL}/threads/${thread_id}/runs/stream`;
+
+            // SSE with POST is non-standard. We'll use fetch + stream reader
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(reqBody),
+                headers: {Authorization: 'Bearer public'}
+            }).then(async response => {
+                if (!response.ok || !response.body) {
+                    hideSpinner();
+                    onMessage({ type: "ai", content: "Network/server error." });
+                    if (onDone) onDone();
+                    return;
+                }
+                const reader = response.body.getReader();
+                let pending = '';
+                while (true) {
+                    let { done, value } = await reader.read();
+                    if (done) break;
+                    let chunk = new TextDecoder().decode(value);
+                    pending += chunk;
+                    // Handle SSE events: lines like `data: {...}\n\n`
+                    let parts = pending.split('\r\n\r\n');
+                    pending = parts.pop(); // Last piece (possibly incomplete)
+                    for (let part of parts) {
+                        let lines = part.split('\r\n');
+                        for (let line of lines) {
+                            let match = line.match(/^data:\s*(.*)$/m);
+                            if (match) {
+                                let data = match[1];
+                                let json = safeParse(data);
+                                if (json?.messages) {
+                                    for (const id in json.messages) {
+                                        if (id > last_message_id) {
+                                            onMessage(json.messages[id]);
+                                            last_message_id = id
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                hideSpinner();
+                if (onDone) onDone();
+            }).catch(e => {
+                hideSpinner();
+                onMessage({ type: "ai", content: "Connection error." });
+                if (onDone) onDone();
+            });
+        }
+
+        async function getThreadId() {
+            const url = `${BASE_URL}/threads?2=2`;
+            try {
+                const resp = await fetch(url, { 
+                    method: "POST", 
+                    body: "{}", 
+                    headers: {Authorization: 'Bearer public'} 
+                });
+                const data = await resp.json();
+                return data.thread_id;
+            } catch (e) {
+                alert("Failed to connect to chat server.");
+            }
+        }
+
+        function addMessage(msgObj) {
+            renderMessage(msgObj);
+        }
+
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const msg = chatInput.value.trim();
+            if (!msg) return;
+
+            addMessage({ type: "human", content: msg });
+            chatInput.value = '';
+
+            const reqBody = {
+                "assistant_id": "agent",
+                input: { messages: [{ role: "human", content: msg }] }
+            };
+
+            startSSE(reqBody, respMsg => {
+                try {
+                    if (!respMsg) return;
+                    // Filter out empty events
+                    if ("content" in respMsg && (respMsg.content || (Array.isArray(respMsg.content) && respMsg.content.length))) {
+                        addMessage(respMsg);
+                    } else if (respMsg.tool_calls) {
+                        // Sometimes tool_calls is the main payload
+                        addMessage(respMsg);
+                    } else {
+                        // Sometimes tool_calls is the main payload
+                        addMessage(respMsg);
+                    }
+                } catch (e) {
+                    console.log("Failed to add message:" + e);
+                }
+            });
+        });
+
+        (async function init() {
+            thread_id = await getThreadId();
+            last_message_id = 0;
+            if (!thread_id) {
+                messagesEl.innerHTML = '<div class="message ai">Error: could not get thread_id from backend.</div>';
+                chatInput.disabled = true;
+            }
+        })();
+    </script>
+</body>
+
+</html>
