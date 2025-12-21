@@ -6,7 +6,7 @@ locals {
 # The reason of the 3 entries is to allow to make it work when the APIGW is shared with other URLs (ex: testsuite)
 resource "oci_apigateway_deployment" "starter_apigw_deployment_ords" {
   compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
+  display_name   = "${var.prefix}-apigw-deployment-ords"
   gateway_id     = local.apigw_ocid
   path_prefix    = "/ords"
   specification {
@@ -38,7 +38,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_ords" {
 
 resource "oci_apigateway_deployment" "starter_apigw_deployment_i" {
   compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
+  display_name   = "${var.prefix}-langgraph-deployment-i"
   gateway_id     = local.apigw_ocid
   path_prefix    = "/i"
   specification {
@@ -68,9 +68,9 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_i" {
   freeform_tags = local.api_tags
 }
 
-resource "oci_apigateway_deployment" "starter_apigw_deployment" {
+resource "oci_apigateway_deployment" "starter_apigw_deployment_langgraph" {
   compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
+  display_name   = "${var.prefix}-apigw-deployment-langgraph"
   gateway_id     = local.apigw_ocid
   path_prefix    = "/langgraph"
   specification {
