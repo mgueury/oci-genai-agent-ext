@@ -2,6 +2,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.interceptors import MCPToolCallRequest
 import asyncio
 import os
 import time
@@ -23,14 +24,34 @@ REGION = os.getenv("TF_VAR_region")
 
 llm = ChatOCIGenAI(
     auth_type="INSTANCE_PRINCIPAL",
-    model_id="openai.gpt-oss-120b",
-    service_endpoint="https://inference.generativeai."+REGION+".oci.oraclecloud.com",
+#     model_id="openai.gpt-oss-120b",
+#    service_endpoint="https://inference.generativeai."+REGION+".oci.oraclecloud.com",
+    model_id="xai.grok-4-fast-reasoning",
+    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
     compartment_id=COMPARTMENT_OCID,
     is_stream=True,
     model_kwargs={"temperature": 0}
 )
 
-async def init( prompt, tools_list ) -> StateGraph:
+# See https://docs.langchain.com/oss/python/langchain/mcp#accessing-runtime-context
+async def inject_user_context(
+    request: MCPToolCallRequest,
+    handler,
+):
+    """Inject user credentials into MCP tool calls."""
+    print( "--- request ----" )
+    pprint( request )
+    runtime = request.runtime
+    user_id = runtime.context.user_id  
+    print( f"user_id={user_id}", flush=True )
+
+    # Add user context to tool arguments
+    modified_request = request.override(
+        args={**request.args, "user_id": user_id}
+    )
+    return await handler(modified_request)
+
+async def init( prompt, tools_list, callback_handler=None ) -> StateGraph:
 
     # Waiting is important, since after reboot the MCP server could start afterwards.
     delay = 5
@@ -39,11 +60,12 @@ async def init( prompt, tools_list ) -> StateGraph:
             print(f"Connecting to MCP {attempt}...")
             client = MultiServerMCPClient(
                 {
-                    "Documents": {
+                    "McpServerRag": {
                         "transport": "streamable_http",
-                        "url": "http://localhost:2025/mcp"
+                        "url": "http://localhost:2025/mcp",                     
                     },
-                }
+                },
+                tool_interceptors=[inject_user_context],
             )
             tools = await client.get_tools()
             print( "-- tools ------------------------------------------------------------")
@@ -69,7 +91,7 @@ async def init( prompt, tools_list ) -> StateGraph:
         model=llm,
         tools=tools_filtered,
         prompt=prompt,
-        name="research_agent", 
+        name="research_agent"
     ) 
 
     return agent
@@ -81,7 +103,8 @@ agent_rag = asyncio.run(init((
             "- Respond ONLY with the results of your work, do NOT include ANY other text."
             ),
             ["search","list_documents","get_document_summary","get_document_by_path"]))
-agent_sr = asyncio.run(init("""You are a support agent.
+
+prompt_sr = """You are a support agent.
             INSTRUCTIONS:
             - When you receive a question, search the answer by calling the tools search and the tool find_service_request
             - Combine the response of the 2 tools to create a final answer to the user or several possible answers found in the different documents.
@@ -97,9 +120,12 @@ agent_sr = asyncio.run(init("""You are a support agent.
             | ---- | ---- |                                                                
             | [SR 1](https://url/sr/1) | SR question |                                                                
             | [Document Name](https://document_url/) | Document content |                                                                
-            """,
+            """
+
+agent_sr = asyncio.run(init(prompt_sr,
             ["search","find_service_request","get_service_request"]))
- 
+
+
 
         # prompt=(
         #     "You are a research agent.\n\n"

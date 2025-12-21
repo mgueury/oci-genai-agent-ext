@@ -2,7 +2,6 @@
   "dependencies": ["."],
   "graphs": {
     "agent": "./agent.py:agent_sr",
-    "agent_langfuse": "./agent.py:agent_langfuse",
     "agent_rag": "./agent.py:agent_rag"
   },
   "auth": {

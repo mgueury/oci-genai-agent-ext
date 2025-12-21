@@ -1,7 +1,9 @@
 from langgraph_sdk import Auth
 
+# See https://docs.langchain.com/langsmith/auth
 auth = Auth()
 
+# Authenticate
 @auth.authenticate
 async def get_current_user(authorization: str | None) -> Auth.types.MinimalUserDict:
     """Validate JWT tokens and extract user information."""
@@ -23,6 +25,7 @@ async def get_current_user(authorization: str | None) -> Auth.types.MinimalUserD
         "is_authenticated": True
     }
     
+# Access only your own threads    
 @auth.on
 async def owner_only(ctx: Auth.types.AuthContext, value: dict):
     metadata = value.setdefault("metadata", {})

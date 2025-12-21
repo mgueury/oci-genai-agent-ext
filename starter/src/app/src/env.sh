@@ -32,8 +32,8 @@ export LANGGRAPH_URL="http://127.0.0.1:2024"
 export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
 
 # LangFuse
-export LANGFUSE_PUBLIC_KEY=<your_public_key>
-export LANGFUSE_SECRET_KEY=<your_secret_key>
+# export LANGFUSE_PUBLIC_KEY=<your_public_key>
+# export LANGFUSE_SECRET_KEY=<your_secret_key>
 export LANGFUSE_HOST=http://localhost:3000
 
 
