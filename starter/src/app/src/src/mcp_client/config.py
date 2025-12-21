@@ -75,7 +75,7 @@ else:
 # for MCP server
 TRANSPORT = "streamable-http"
 HOST = "0.0.0.0"
-PORT = 9000
+PORT = 2025
 
 # with this we can toggle JWT token auth
 ENABLE_JWT_TOKEN = False

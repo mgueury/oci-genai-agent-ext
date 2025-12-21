@@ -61,6 +61,6 @@ def get_service_request(id: str) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="http", host="127.0.0.1", port=9000)
+    mcp.run(transport="http", host="127.0.0.1", port=2025)
     # print( search( "what is jazz" ) )
     # mcp.run(transport="stdio")  # Run the server, using standard input/output for communication

@@ -1,8 +1,9 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agent_rag": "./agent.py:agent_rag",
-    "agent": "./agent.py:agent_sr"
+    "agent": "./agent.py:agent_sr",
+    "agent_langfuse": "./agent.py:agent_langfuse",
+    "agent_rag": "./agent.py:agent_rag"
   },
   "auth": {
     "path": "./auth.py:auth"

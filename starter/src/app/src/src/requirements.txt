@@ -57,3 +57,5 @@ oci-openai
 langgraph-cli[inmem]
 langchain_mcp_adapters
 
+# LangFuse
+langfuse

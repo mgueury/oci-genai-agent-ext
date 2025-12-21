@@ -41,7 +41,7 @@ async def init( prompt, tools_list ) -> StateGraph:
                 {
                     "Documents": {
                         "transport": "streamable_http",
-                        "url": "http://localhost:9000/mcp"
+                        "url": "http://localhost:2025/mcp"
                     },
                 }
             )

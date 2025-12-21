@@ -92,7 +92,7 @@ exit;
 EOF
 
 # MCP 
-sudo firewall-cmd --zone=public --add-port=9000/tcp --permanent
+sudo firewall-cmd --zone=public --add-port=2025/tcp --permanent
 
 # Langgraph
 sudo firewall-cmd --zone=public --add-port=2024/tcp --permanent
@@ -108,3 +108,11 @@ sudo dnf install -y nodejs
 cd src
 npx create-agent-chat-app -Y --project-name agent-chat-app --package-manager npm 
 sed -i "s/next dev/next dev -p 8080/" agent-chat-app/apps/web/package.json
+
+# Podman Compose
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+sudo dnf install -y git podman-compose
+
+# LangFuse
+git clone https://github.com/langfuse/langfuse.git
+# sudo dnf -y install oraclelinux-developer-release-el8
