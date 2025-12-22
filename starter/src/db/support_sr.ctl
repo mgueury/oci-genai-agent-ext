@@ -7,5 +7,6 @@ fields terminated by "," optionally enclosed by '"'
   owner_id,
   subject,
   question CHAR(20000),
-  answer
+  answer,
+  internal
 )

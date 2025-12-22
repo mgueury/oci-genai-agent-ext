@@ -10,17 +10,16 @@ async def get_current_user(authorization: str | None) -> Auth.types.MinimalUserD
     print( f"authorization{authorization}", flush=True )
     assert authorization
     scheme, token = authorization.split()
-    assert scheme.lower() == "bearer"
     print( f"scheme{scheme} token{token}", flush=True )
 
     # Validate with your auth provider
-    if not token or token!="public":
+    if not scheme!="User":
         raise Auth.exceptions.HTTPException(
             status_code=401,
             detail="Access Denied"
         )
     return {
-        "identity": "public",
+        "identity": token,
         "email": "spam@oracle.com",
         "is_authenticated": True
     }

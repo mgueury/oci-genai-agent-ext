@@ -1,4 +1,5 @@
 from fastmcp import FastMCP  # Import FastMCP, the quickstart server base
+from fastmcp.server.dependencies import get_http_request
 import shared
 import rag_storage
 import shared
@@ -13,6 +14,11 @@ rag_storage.init()
 class DocInfo(BaseModel):
     TITLE: str
     PATH: str
+
+def get_app_user():
+    request = get_http_request()
+    auth_header = request.headers.get("Authorization", "Unknown")
+    return "EMPLOYEE" if "EMPLOYEE" in auth_header else "CUSTOMER"
 
 @mcp.tool()
 def search(question: str) -> dict:
@@ -51,14 +57,13 @@ def get_document_by_path(doc_path: str) -> dict:
 def find_service_request(question: str) -> List[dict]:
     """find similar service requests"""
     print("<find_service_request>", flush=True)
-    return rag_storage.findServiceRequest(question)
+    return rag_storage.findServiceRequest(question, get_app_user())
 
 @mcp.tool()
 def get_service_request(id: str) -> dict:
     """get the service request details"""
     print("<get_service_request>", flush=True)
-    return rag_storage.getServiceRequest(id)
-
+    return rag_storage.getServiceRequest(id, get_app_user())
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="127.0.0.1", port=2025)

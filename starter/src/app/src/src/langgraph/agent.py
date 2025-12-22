@@ -24,10 +24,10 @@ REGION = os.getenv("TF_VAR_region")
 
 llm = ChatOCIGenAI(
     auth_type="INSTANCE_PRINCIPAL",
-#     model_id="openai.gpt-oss-120b",
-#    service_endpoint="https://inference.generativeai."+REGION+".oci.oraclecloud.com",
-    model_id="xai.grok-4-fast-reasoning",
-    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    model_id="openai.gpt-oss-120b",
+    service_endpoint="https://inference.generativeai."+REGION+".oci.oraclecloud.com",
+#    model_id="xai.grok-4-fast-reasoning",
+#    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
     compartment_id=COMPARTMENT_OCID,
     is_stream=True,
     model_kwargs={"temperature": 0}
@@ -39,16 +39,12 @@ async def inject_user_context(
     handler,
 ):
     """Inject user credentials into MCP tool calls."""
-    print( "--- request ----" )
-    pprint( request )
+    # print( "--- request ----" )
+    # pprint.pprint( request )
     runtime = request.runtime
-    user_id = runtime.context.user_id  
-    print( f"user_id={user_id}", flush=True )
-
-    # Add user context to tool arguments
-    modified_request = request.override(
-        args={**request.args, "user_id": user_id}
-    )
+    user_id = runtime.config["configurable"]["user_id"]
+    print( f"<inject_user_context> user_id={user_id}", flush=True )
+    modified_request = request.override( headers = { "Authorization": f"User {user_id}" } )
     return await handler(modified_request)
 
 async def init( prompt, tools_list, callback_handler=None ) -> StateGraph:

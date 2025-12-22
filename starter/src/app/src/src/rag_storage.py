@@ -43,25 +43,33 @@ RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
 APIGW_HOSTNAME = os.getenv("APIGW_HOSTNAME")
 DOCLING_HYBRID_CHUNK=True #False
 
-# Connection
-dbConn = None
+# connection pool
+pool = None
 
 ## -- init ------------------------------------------------------------------
 
 def init():
     if RAG_STORAGE=="db26ai":
-        global dbConn 
+        global pool 
         # Thick driver...
         # oracledb.init_oracle_client()
-        dbConn = oracledb.connect( user=os.getenv('DB_USER'), password=os.getenv('DB_PASSWORD'), dsn=os.getenv('DB_URL'))
-        dbConn.autocommit = True
+        # Create the pool with the "proxy" user
+        pool = oracledb.SessionPool(
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            dsn=os.getenv('DB_URL'),
+            min=10, max=10, increment=0,
+            encoding="UTF-8",
+            getmode=oracledb.SPOOL_ATTRVAL_WAIT            
+        )
+        # XXXXXX pool.autocommit = True
 
 ## -- close -----------------------------------------------------------------
 
 def close():
     if RAG_STORAGE=="db26ai":
-        global dbConn 
-        dbConn.close()
+        global pool 
+        pool.close()
 
 ## -- updateCount ------------------------------------------------------------------
 
@@ -210,7 +218,8 @@ def insertDoc( value, file_path, object_name ):
 # Normal insert
 
 def insertTableDocs( value ):  
-    global dbConn
+    global pool
+    dbConn = pool.acquire()
     cur = dbConn.cursor()
     log("<insertTableDocs>")
     # log(pprint.pformat(value))    
@@ -274,17 +283,16 @@ def insertTableDocs( value ):
         # Close the cursor and connection
         if cur:
             cur.close()
+        if dbConn:
+            pool.release(dbConn)
 
 # -- insertTableDocsChunck -----------------------------------------------------------------
 
 def insertTableDocsChunck(value, docs, file_path):  
     
-    global dbConn
     log("<langchain insertDocsChunck>")
     log("-- docs --------------------")
     log(pprint.pformat(docs))
-
-    vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
 
     if value.get("content_markdown"):
         if DOCLING_HYBRID_CHUNK:
@@ -339,15 +347,25 @@ def insertTableDocsChunck(value, docs, file_path):
                 short_key = k.split("filtering-field-",1)[1]
                 d.metadata[short_key] = v
 
-    log("-- docs_chunck --------------------")  
-    log(pprint.pformat( docs_chunck ))
-    vectorstore.add_documents( docs_chunck )
-    log("</langchain insertDocsChunck>")
+    global pool
+    dbConn = pool.acquire()                
+    try:
+        log("-- docs_chunck --------------------")  
+        log(pprint.pformat( docs_chunck ))
+        vectorstore = OracleVS( client=dbConn, table_name="docs_langchain", embedding_function=embeddings, distance_strategy=DistanceStrategy.DOT_PRODUCT )
+        vectorstore.add_documents( docs_chunck )
+        log("</langchain insertDocsChunck>")
+    except (Exception) as error:
+        log(f"\u270B <insertTableDocsChunck> Error vectorstore: {error}")
+    finally:
+        if dbConn:
+            pool.release(dbConn)
 
 # -- deleteDocByOriginalResourceName ------------------------------------------
 
 def deleteDocByOriginalResourceName( value ):  
-    global dbConn
+    global pool
+    dbConn = pool.acquire()  
     cur = dbConn.cursor()
     originalResourceName = value["data"]["resourceName"]
     log(f"<deleteDocByOriginalResourceName> originalResourceName={originalResourceName}")
@@ -375,11 +393,14 @@ def deleteDocByOriginalResourceName( value ):
         # Close the cursor and connection
         if cur:
             cur.close()    
+        if dbConn:
+            pool.release(dbConn)            
 
 # -- deleteDocByPath --------------------------------------------------------
 
 def deleteDocByPath( value ):  
-    global dbConn
+    global pool
+    dbConn = pool.acquire() 
     cur = dbConn.cursor()
     path =  value["metadata"]["customized_url_source"]
     log(f"<deleteDocByPath> path={path}")
@@ -407,55 +428,68 @@ def deleteDocByPath( value ):
         # Close the cursor and connection
         if cur:
             cur.close() 
+        if dbConn:
+            pool.release(dbConn)              
 
 # -- queryDb ----------------------------------------------------------------
 
 def queryDb( type, question, embed ):
+    global pool
+    dbConn = pool.acquire() 
     result = [] 
-    cursor = dbConn.cursor()
-    about = "about("+question+")";
-    if type=="search": 
-        # Text search example
-        query = """
-        SELECT filename, path, TO_CHAR(content) content_char, content_type, region, page, summary, score(99) score FROM docs_chunck
-        WHERE CONTAINS(content, :1, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
-        """
-        cursor.execute(query,(about,))
-    elif type=="semantic":
-        query = """
-        SELECT filename, path, TO_CHAR(content) content_char, content_type, region, page, summary, cohere_embed <=> :1 score FROM docs_chunck
-            ORDER BY score FETCH FIRST 10 ROWS ONLY
-        """
-        cursor.execute(query,(array.array("f", embed),))
-    else: # type in ["hybrid","rag"]:
-        query = """
-        WITH text_search AS (
-            SELECT id, score(99)/100 as score FROM docs_chunck
+    try:
+        cur = dbConn.cursor()
+        about = "about("+question+")";
+        if type=="search": 
+            # Text search example
+            query = """
+            SELECT filename, path, TO_CHAR(content) content_char, content_type, region, page, summary, score(99) score FROM docs_chunck
             WHERE CONTAINS(content, :1, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
-        ),
-        vector_search AS (
-            SELECT id, cohere_embed <=> :2 AS vector_distance
-            FROM docs_chunck
-        )
-        SELECT o.filename, o.path, TO_CHAR(content) content_char, o.content_type, o.region, o.page, o.summary,
-            (0.3 * ts.score + 0.7 * (1 - vs.vector_distance)) AS score
-        FROM docs_chunck o
-        JOIN text_search ts ON o.id = ts.id
-        JOIN vector_search vs ON o.id = vs.id
-        ORDER BY score DESC
-        FETCH FIRST 10 ROWS ONLY
-        """
-        cursor.execute(query,(about,array.array("f", embed),))
-#        FULL OUTER JOIN text_search ts ON o.id = ts.id
-#        FULL OUTER JOIN vector_search vs ON o.id = vs.id
-    rows = cursor.fetchall()
-    for row in rows:
-        result.append( {"filename": row[0], "path": row[1], "content": str(row[2]), "contentType": row[3], "region": row[4], "page": row[5], "summary": str(row[6]), "score": row[7]} )  
-    for r in result:
-        log("filename="+r["filename"])
-        log("content: "+r["content"][:150])
-    return result
-
+            """
+            cursor.execute(query,(about,))
+        elif type=="semantic":
+            query = """
+            SELECT filename, path, TO_CHAR(content) content_char, content_type, region, page, summary, cohere_embed <=> :1 score FROM docs_chunck
+                ORDER BY score FETCH FIRST 10 ROWS ONLY
+            """
+            cursor.execute(query,(array.array("f", embed),))
+        else: # type in ["hybrid","rag"]:
+            query = """
+            WITH text_search AS (
+                SELECT id, score(99)/100 as score FROM docs_chunck
+                WHERE CONTAINS(content, :1, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
+            ),
+            vector_search AS (
+                SELECT id, cohere_embed <=> :2 AS vector_distance
+                FROM docs_chunck
+            )
+            SELECT o.filename, o.path, TO_CHAR(content) content_char, o.content_type, o.region, o.page, o.summary,
+                (0.3 * ts.score + 0.7 * (1 - vs.vector_distance)) AS score
+            FROM docs_chunck o
+            JOIN text_search ts ON o.id = ts.id
+            JOIN vector_search vs ON o.id = vs.id
+            ORDER BY score DESC
+            FETCH FIRST 10 ROWS ONLY
+            """
+            cur.execute(query,(about,array.array("f", embed),))
+    #        FULL OUTER JOIN text_search ts ON o.id = ts.id
+    #        FULL OUTER JOIN vector_search vs ON o.id = vs.id
+        rows = cur.fetchall()
+        for row in rows:
+            result.append( {"filename": row[0], "path": row[1], "content": str(row[2]), "contentType": row[3], "region": row[4], "page": row[5], "summary": str(row[6]), "score": row[7]} )  
+        for r in result:
+            log("filename="+r["filename"])
+            log("content: "+r["content"][:150])
+        return result
+    except Exception as error:
+        log(f"<queryDb> Exception: {error}")
+        raise
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close() 
+        if dbConn:
+            pool.release(dbConn)              
 
 # -- row2Dict -----------------------------------------------------------------------
 
@@ -476,50 +510,93 @@ def row2Dict( column_names, row ):
 
 # -- queryFirstRecord ----------------------------------------------------------------------
 
-def queryFirstRecord( query, params ):
+def queryFirstRecord( query, params, app_user=None ):
     log(f"<queryFirstRecord>")    
-    cursor = dbConn.cursor()
-    cursor.execute(query,params)    
-    result = []
-    column_names = [col[0] for col in cursor.description]
-    for row in cursor.fetchall():
-        result=row2Dict(column_names, row)
-        log(pprint.pformat(result))   
-        return result  
-    log("<queryFirstRecord>Not found")    
-    return {"error": "Not found"}   
+    global pool
+    dbConn = pool.acquire() 
+    cur = dbConn.cursor()
+    result = [] 
+    try:    
+        if app_user:
+            cur.callproc("DBMS_XS_SESSION.SET_USER", [app_user])
+        cur.execute(query,params)    
+        column_names = [col[0] for col in cur.description]
+        for row in cur.fetchall():
+            result=row2Dict(column_names, row)
+            log(pprint.pformat(result))   
+            return result  
+        log("<queryFirstRecord>Not found")    
+        return {"error": "Not found"}   
+    except Exception as error:
+        log(f"<queryFirstRecord> Exception: {error}")
+        raise
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close() 
+        if dbConn:
+            pool.release(dbConn)  
+
 
 # -- queryAllRecords ----------------------------------------------------------------------
 
-def queryAllRecords( query, params ):
+def queryAllRecords( query, params, app_user=None ):
     log(f"<queryAllRecords>")    
-    cursor = dbConn.cursor()
-    cursor.execute(query,params)    
-    result = []
-    column_names = [col[0] for col in cursor.description]
-    for row in cursor.fetchall():
-        row_dict = row2Dict(column_names, row)
-        result.append(row_dict)  
-    log(pprint.pformat(result)) 
-    return result 
+    global pool
+    dbConn = pool.acquire() 
+    result = [] 
+    try:      
+        if app_user:
+            cur.callproc("DBMS_XS_SESSION.SET_USER", [app_user])
+        cur = dbConn.cursor()
+        cur.execute(query,params)    
+        result = []
+        column_names = [col[0] for col in cur.description]
+        for row in cur.fetchall():
+            row_dict = row2Dict(column_names, row)
+            result.append(row_dict)  
+        log(pprint.pformat(result)) 
+        return result 
+    except Exception as error:
+        log(f"<queryAllRecords> Exception: {error}")
+        raise
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close() 
+        if dbConn:
+            pool.release(dbConn)  
 
 # -- getDocByPath ----------------------------------------------------------------------
 
 def getDocByPath( path ):
     log(f"<getDocByPath> path={path}")    
-    query = "SELECT path, content, content_type, region, summary FROM docs WHERE path=:1"
-    cursor = dbConn.cursor()
-    cursor.execute(query,(path,))
-    column_names = [col[0] for col in cursor.description]
-    for row in cursor.fetchall():
-        result=row2Dict(column_names, row)
-        log(pprint.pformat(result))   
-        return result  
-    log("<getDocByPath>Docs not found by path: " + path)
+    global pool
+    dbConn = pool.acquire() 
+    try:     
+        query = "SELECT path, content, content_type, region, summary FROM docs WHERE path=:1"
+        cur = dbConn.cursor()
+        cur.execute(query,(path,))
+        column_names = [col[0] for col in cur.description]
+        for row in cur.fetchall():
+            result=row2Dict(column_names, row)
+            log(pprint.pformat(result))   
+            return result  
+        log("<getDocByPath>Docs not found by path: " + path)
 
-    # Tries with the title
-    query = "SELECT path, content, content_type, region, summary FROM docs WHERE title=:1"
-    return queryFirstRecord( query, (path,))
+        # Tries with the title
+        query = "SELECT path, content, content_type, region, summary FROM docs WHERE title=:1"
+        return queryFirstRecord( query, (path,))
+    except Exception as error:
+        log(f"<getDocByPath> Exception: {error}")
+        raise
+    finally:
+        # Close the cursor and connection
+        if cur:
+            cur.close() 
+        if dbConn:
+            pool.release(dbConn)  
+    
 
 # -- getDocList ----------------------------------------------------------------------
 
@@ -534,7 +611,8 @@ def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_na
     if RAG_STORAGE!="db26ai":
         return
 
-    global dbConn
+    global pool
+    dbConn = pool.acquire() 
     cur = dbConn.cursor()
 
     log("<insertTableIngestLog>")
@@ -575,6 +653,8 @@ def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_na
         # Close the cursor and connection
         if cur:
             cur.close()
+        if dbConn:
+            pool.release(dbConn)              
 
 # -- updateDocStatus -----------------------------------------------------------------
 
@@ -582,7 +662,8 @@ def updateDocStatus( p_status, p_resource_name ):
     if RAG_STORAGE!="db26ai":
         return
 
-    global dbConn
+    global pool
+    dbConn = pool.acquire() 
     cur = dbConn.cursor()
 
     log("<updateDocStatus>")
@@ -605,10 +686,15 @@ def updateDocStatus( p_status, p_resource_name ):
         # Close the cursor and connection
         if cur:
             cur.close()
+        if dbConn:
+            pool.release(dbConn)                   
+
+# -- 
+
 
 # -- findServiceRequest -----------------------------------------------------------------
 
-def findServiceRequest(question: str) -> dict:
+def findServiceRequest(question: str, app_user: str) -> dict:
     log(f"<findServiceRequest> question={question}")   
     # query = """WITH text_search AS (
     #         SELECT id, score(99)/100 as score FROM support_sr
@@ -629,15 +715,15 @@ def findServiceRequest(question: str) -> dict:
             SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :2 ))) AS score, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
             FROM support_sr o
             ORDER BY score ASC
-            FETCH FIRST 10 ROWS ONLY"""        
-    return queryAllRecords( query, (question, ))
+            FETCH FIRST 10 ROWS ONLY"""    
+    return queryAllRecords( query, (question, ),app_user)
 
 
 # -- getDocByPath ----------------------------------------------------------------------
 
-def getServiceRequest( id ):
+def getServiceRequest( id, app_user ):
     log(f"<getServiceRequest> id={id}")    
     query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
-    return queryFirstRecord( query, (id,))
+    return queryFirstRecord( query, (id,), app_user)
   
   # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id={id}

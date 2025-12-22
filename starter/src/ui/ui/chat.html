@@ -84,13 +84,14 @@
             flex: 1;
             padding: 14px;
             border-radius: 8px;
-            border: 2px gray solid;
-            outline: 1px gray solid;
+            border: 2px lightgray solid;
+            outline: 1px lightgray solid;
         }
 
         button {
             padding: 14px 14px;
             border-radius: 8px;
+            border: 2px lightgray solid;
         }
 
         .tool-calls {
@@ -297,7 +298,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(reqBody),
-                headers: {Authorization: 'Bearer public'}
+                headers: {Authorization: 'User CUSTOMER'}
             }).then(async response => {
                 if (!response.ok || !response.body) {
                     hideSpinner();
@@ -349,7 +350,7 @@
                 const resp = await fetch(url, { 
                     method: "POST", 
                     body: "{}", 
-                    headers: {Authorization: 'Bearer public'} 
+                    headers: {Authorization: 'User CUSTOMER'} 
                 });
                 const data = await resp.json();
                 return data.thread_id;
