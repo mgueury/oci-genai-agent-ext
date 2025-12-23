@@ -138,8 +138,6 @@ locals {
 
 locals {
   apigw_hostname = oci_apigateway_gateway.starter_apigw.hostname
-  vault_ocid = var.vault_ocid==null ? oci_kms_vault.starter_vault[0].id : var.vault_ocid 
-  vault_key_ocid = var.vault_key_ocid==null ? oci_kms_key.starter_key[0].id : var.vault_key_ocid 
 }
 
 resource "oci_vault_secret" "starter_openid_secret" {
