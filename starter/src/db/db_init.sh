@@ -25,13 +25,20 @@ fi
 cat > import_application.sql << EOF 
 create user if not exists apex_app identified by "$DB_PASSWORD" default tablespace USERS quota unlimited on USERS temporary tablespace TEMP; 
 /
-grant connect, resource, unlimited tablespace to apex_app;
+grant connect, resource, create role, unlimited tablespace to apex_app;
 /
 EXEC DBMS_CLOUD_ADMIN.ENABLE_RESOURCE_PRINCIPAL('APEX_APP');
 grant execute on DBMS_CLOUD to APEX_APP;
 grant execute on DBMS_CLOUD_AI to APEX_APP;
 grant execute on CTX_DDL to APEX_APP;
 grant execute on DBMS_SCHEDULER to APEX_APP;
+grant xs_session_admin, create session to APEX_APP;
+grant execute on DBMS_XS_SESSIONS to apex_app;
+BEGIN
+    -- Grant system privileges
+    SYS.XS_ADMIN_CLOUD_UTIL.GRANT_SYSTEM_PRIVILEGE('ADMIN_ANY_SEC_POLICY','APEX_APP',SYS.XS_ADMIN_UTIL.PTYPE_DB,NULL);
+END;
+/
 grant create any job to APEX_APP;
 /
 begin
@@ -150,29 +157,125 @@ end;
 
 CREATE VECTOR INDEX SUPPORT_SR_HNSW_IDX ON APEX_APP.SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
-CREATE OR REPLACE FUNCTION SUPPORT_SR_RAS_PREDICATE RETURN VARCHAR2 AS
-BEGIN
-  IF SYS_CONTEXT('XS$SESSION', 'APP_USER') = 'EMPLOYEE' THEN
-    RETURN '1=1';
-  ELSE
-    RETURN 'INTERNAL=0';
-  END IF;
-END;
-/
-BEGIN
-    DBMS_XS_DATA_SECURITY.CREATE_POLICY(
-        policy_name   => 'SUPPORT_SR_RAS_PREDICATE',
-        policy_expr   => 'SUPPORT_SR_RAS_PREDICATE',
-        description   => 'Filter SR for non EMPLOYEE to INTERNAL=0'
-    );
-    DBMS_XS_DATA_SECURITY.ATTACH_POLICY(
-        policy_name   => 'SUPPORT_SR_RAS_PREDICATE',
-        schema_name   => 'APEX_APP',
-        object_name   => 'SUPPORT_SR'
-    );
-END;
-/ 
 
+exec sys.xs_principal.create_role(name => 'employee_role', enabled => true);
+exec sys.xs_principal.create_role(name => 'customer_role', enabled => true);
+
+create role ras_role;
+grant select on apex_app.support_sr to ras_role;
+grant execute on apex_app.ai_plsql to ras_role;
+grant ras_role to employee_role;
+grant ras_role to customer_role;
+
+exec sys.xs_principal.create_user(name => 'employee', schema => 'APEX_APP');
+exec sys.xs_principal.set_password('employee', 'Not__Used1234');
+exec sys.xs_principal.create_user(name => 'customer', schema => 'APEX_APP');
+exec sys.xs_principal.set_password('customer', 'Not__Used1234');
+
+exec  sys.xs_principal.grant_roles('employee', 'employee_role');
+exec  sys.xs_principal.grant_roles('customer', 'customer_role');
+
+begin
+    sys.xs_security_class.create_security_class(
+    name => 'SUPPORT_SR_SEC_CLASS',
+    description => 'Security Class',
+    parent_list => XS$NAME_LIST('SYS.DML'),
+    priv_list => xs$privilege_list(xs$privilege('internal_sr')));
+end;
+/
+
+-- Creation of the ACL & mapping of the previously created roles : 
+declare  
+  aces xs$ace_list := xs$ace_list();  
+begin 
+  aces.extend(1);
+  aces(1) := xs$ace_type(privilege_list => xs$name_list
+                            ('select'),
+                             principal_name => 'customer_role');
+  sys.xs_acl.create_acl(name => 'customer_acl',
+                    ace_list  => aces,
+                    sec_class => 'SUPPORT_SR_SEC_CLASS');
+
+  aces(1) := xs$ace_type(privilege_list => xs$name_list
+                            ('select','internal_sr'),
+                             principal_name => 'employee_role');
+  sys.xs_acl.create_acl(name => 'employee_acl',
+                    ace_list  => aces,
+                    sec_class => 'SUPPORT_SR_SEC_CLASS');
+
+  aces(1) := xs$ace_type(privilege_list => xs$name_list
+                            ('select','insert','update','delete','index'),
+                             principal_name => 'APEX_APP',
+                             principal_type=>XS_ACL.PTYPE_DB);
+  sys.xs_acl.create_acl(name => 'apex_app_acl',
+                    ace_list  => aces,
+                    sec_class => 'SUPPORT_SR_SEC_CLASS');                    
+end;
+/
+
+-- Creation of a policy 
+declare
+  realms   xs$realm_constraint_list := xs$realm_constraint_list();      
+  cols     xs$column_constraint_list := xs$column_constraint_list();
+begin  
+  realms.extend(3);
+  realms(1) := xs$realm_constraint_type(
+    realm=> '1=1',acl_list => xs$name_list('employee_acl'));
+  
+  realms(2) := xs$realm_constraint_type(
+    realm=> 'internal=0',acl_list => xs$name_list('customer_acl'));
+
+  realms(3) := xs$realm_constraint_type(
+    realm=> '1=1',acl_list => xs$name_list('apex_app_acl'));    
+
+  sys.xs_data_security.create_policy(
+    name                   => 'support_sr_policy',
+    realm_constraint_list  => realms);
+end;
+/
+
+-- Apply the policy to the table
+begin
+    XS_DATA_SECURITY.apply_object_policy(
+        schema=>'apex_app', 
+        object=>'support_sr',
+        policy=>'support_sr_policy',
+        statement_types=>'SELECT');
+end;    
+/  
+
+begin
+  if (sys.xs_diag.validate_workspace()) then
+    dbms_output.put_line('All configurations are correct.');
+  else
+    dbms_output.put_line('Some configurations are incorrect.');
+  end if;
+end;
+/
+select * from xs$validation_table order by 1, 2, 3, 4;
+
+
+
+create or replace package "AI_RAS" as
+  g_sessionid RAW(16);
+  PROCEDURE CREATE_SESSION( app_user varchar2 );
+  PROCEDURE DESTROY_SESSION;
+end "AI_RAS";
+/
+create or replace package body "AI_RAS" as
+PROCEDURE CREATE_SESSION( app_user varchar2 ) is
+BEGIN
+  SYS.DBMS_XS_SESSIONS.CREATE_SESSION('XSGUEST', g_sessionid);
+  SYS.DBMS_XS_SESSIONS.ATTACH_SESSION(g_sessionid);
+  SYS.DBMS_XS_SESSIONS.ASSIGN_USER( app_user );
+END;
+PROCEDURE DESTROY_SESSION is
+BEGIN
+  SYS.DBMS_XS_SESSIONS.DETACH_SESSION;
+  SYS.DBMS_XS_SESSIONS.DESTROY_SESSION(g_sessionid);
+END;
+end "AI_RAS";
+/
 exit;
 EOF
 

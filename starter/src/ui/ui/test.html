@@ -5,189 +5,42 @@
     <meta charset="UTF-8">
     <title>Chat Page</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #f6f6f6;
-        }
-
-        #chat-container {
-            max-width: 1024px;
-            margin: 40px auto;
-            background: white;
-            padding: 16px;
-            box-shadow: 0 0 8px rgba(0, 0, 0, .06);
-            border-radius: 8px;
-        }
-
-        #messages {
-            min-height: 300px;
-            margin-bottom: 16px;
-        }
-
-        .message {
-            margin-bottom: 20px;
-            display: flex;
-        }
-
-        .human {
-            justify-content: flex-end;
-        }
-
-        .ai,
-        .tool {
-            justify-content: flex-start;
-        }
-
-        .meta {
-            font-size: .9em;
-            color: #888;
-            margin-bottom: 2px;
-        }
-
-        .bubble {
-            max-width: 75%;
-            padding: 14px 20px;
-            border-radius: 18px;
-            background: #eee;
-            position: relative;
-            word-break: break-word;
-            box-shadow: 0 2px 6px rgba(20, 71, 151, .08);
-        }
-
-        .human .bubble {
-            background: #ddd;
-            color: black;
-            border-bottom-right-radius: 5px;
-            border-bottom-left-radius: 18px;
-            border-top-right-radius: 18px;
-            border-top-left-radius: 18px;
-        }
-
-        .ai .bubble,
-        .tool .bubble {
-            background: #ddd;
-            color: black;
-            border-bottom-left-radius: 5px;
-            border-bottom-right-radius: 18px;
-            border-top-right-radius: 18px;
-            border-top-left-radius: 18px;
-        }
-
-        form {
-            display: flex;
-            gap: 8px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 8px;
-        }
-
-        button {
-            padding: 8px 14px;
-        }
-
-        .tool-calls {
-            background: #eef4fc;
-            padding: 8px;
-            font-size: 0.95em;
-            border-radius: 4px;
-            margin-top: 8px;
-        }
-
-        .bubble table {
-            background: #ccc;
-            padding: 8px;
-            font-size: 0.95em;
-            border-radius: 4px;
-            margin-top: 8px;
-            min-width: 15em;
-        }
-
-        .bubble td {
-            padding: 0.3em;
-            max-width: 150px;
-            background: #fff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .bubble tr:hover td {
-            white-space: wrap;
-            overflow: auto;
-        }
-
-        .bubble th {}
-
-        .citation {
-            font-size: 0.9em;
-            color: #187;
-            margin-top: 3px;
-        }
-
-        /* Spinner styles */
-        #spinner-container {
-            width: 100%;
-            display: flex;
-            justify-content: flex-start;
-            min-height: 38px;
-        }
-
-        #spinner {
-            margin-top: -8px;
-            margin-bottom: 8px;
-            width: 35px;
-            height: 37px;
-            display: flex;
-            align-items: flex-start;
-        }
-
-        .pulse-dot {
-            margin-left: 16px;
-            width: 18px;
-            height: 18px;
-            background: #111;
-            border-radius: 50%;
-            animation: pulseAnim 1s cubic-bezier(.4, 0, .6, 1) infinite;
-        }
-
-        @keyframes pulseAnim {
-            0% {
-                transform: scale(1);
-                opacity: .8;
-            }
-
-            50% {
-                transform: scale(1.7);
-                opacity: 1;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: .8;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="chat.css">
 </head>
 
 <body>
+    <nav id="agentMenu" aria-label="Accessible agents and users">
+        <div class="section-title">Agents</div>
+        <ul id="agentList"></ul>
+        <div class="section-title">Users</div>
+        <ul id="userList"></ul>
+    </nav>
     <div id="chat-container">
         <h2>Chat</h2>
         <div id="messages"></div>
-        <div id="spinner-container"></div>
+        <div id="spinner-container">
+        </div>
         <form id="chat-form">
             <input id="chat-input" type="text" placeholder="Type your message..." autocomplete="off" required />
             <button type="submit">Send</button>
         </form>
+        
     </div>
+    <div id="currentDisplay">Agent: agent - User: customer</div>
+
+    <button class="hamburger" aria-label="Open accessible agents menu" aria-controls="agentMenu" aria-expanded="false">
+    </button>
+
     <script>
-        const BASE_URL = '/langgraph/server'; 
+        const BASE_URL = 'http://130.61.21.18:2024'; // TODO: Replace with real backend
+        // const BASE_URL = '/langgraph/server';
+        // State
+        let currentAgent = 'agent';
+        let currentUser = 'customer';
+        const users = ['employee', 'customer'];
 
         let thread_id = null;
-        let last_message_id = 0;
+        let last_message_id = -1;
         const messagesEl = document.getElementById('messages');
         const chatForm = document.getElementById('chat-form');
         const chatInput = document.getElementById('chat-input');
@@ -225,16 +78,16 @@
             html += '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
             html += '<tbody>';
             for (const row of data) {
-                html += '<tr>'; 
+                html += '<tr>';
                 for (let h of headers) {
-                   let value = row[h];
-                   if (typeof value === 'string' && /^https?:\/\//.test(value)) {
-                       html +=  `<td><a href="${value}" target="_blank">URL</a></td>`;
-                   } else {
-                   html +=  `<td>${value}</td>`;
-                   }
+                    let value = row[h];
+                    if (typeof value === 'string' && /^https?:\/\//.test(value)) {
+                        html += `<td><a href="${value}" target="_blank">URL</a></td>`;
+                    } else {
+                        html += `<td>${value}</td>`;
+                    }
                 }
-                html += '</tr>'; 
+                html += '</tr>';
             }
             html += '</tbody></table>';
             return html;
@@ -290,9 +143,8 @@
             // SSE with POST is non-standard. We'll use fetch + stream reader
             fetch(url, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", 'Authorization': 'User CUSTOMER' },
                 body: JSON.stringify(reqBody),
-                headers: {Authorization: 'Bearer public'}
             }).then(async response => {
                 if (!response.ok || !response.body) {
                     hideSpinner();
@@ -341,10 +193,10 @@
         async function getThreadId() {
             const url = `${BASE_URL}/threads?2=2`;
             try {
-                const resp = await fetch(url, { 
-                    method: "POST", 
-                    body: "{}", 
-                    headers: {Authorization: 'Bearer public'} 
+                const resp = await fetch(url, {
+                    method: "POST",
+                    body: "{}",
+                    headers: { Authorization: 'User CUSTOMER' }
                 });
                 const data = await resp.json();
                 return data.thread_id;
@@ -374,7 +226,9 @@
                 try {
                     if (!respMsg) return;
                     // Filter out empty events
-                    if ("content" in respMsg && (respMsg.content || (Array.isArray(respMsg.content) && respMsg.content.length))) {
+                    if ("type" in respMsg && respMsg.type == "human") {
+                        console.log("Skip type=human");
+                    } else if ("content" in respMsg && (respMsg.content || (Array.isArray(respMsg.content) && respMsg.content.length))) {
                         addMessage(respMsg);
                     } else if (respMsg.tool_calls) {
                         // Sometimes tool_calls is the main payload
@@ -397,6 +251,106 @@
                 chatInput.disabled = true;
             }
         })();
+
+        // -- Hamburger menu logic ------------------------------------------
+        const hamburger = document.querySelector('.hamburger');
+        const nav = document.getElementById('agentMenu');
+        hamburger.addEventListener('click', () => {
+            const isOpen = nav.classList.toggle('open');
+            hamburger.setAttribute('aria-expanded', isOpen);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === "Escape") {
+                nav.classList.remove('open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Users section
+        function renderUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = user;
+                li.tabIndex = 0;
+                li.setAttribute('aria-current', user === currentUser ? 'true' : 'false');
+
+                li.addEventListener('click', () => setCurrentUser(user));
+                li.addEventListener('keydown', (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        setCurrentUser(user);
+                        e.preventDefault();
+                    }
+                });
+                userList.appendChild(li);
+            });
+        }
+
+        // Agents section
+        async function fetchAgents() {
+            const response = await fetch(`${BASE_URL}/assistants/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json',
+                           'Authorization': 'User CUSTOMER' },
+                body: JSON.stringify({
+                    sort_by: 'assistant_id',
+                    sort_order: 'asc'
+                })
+            });
+            if (!response.ok) throw new Error('Failed to fetch agents');
+            return await response.json();
+        }
+
+        function renderAgentList(agents) {
+            const agentList = document.getElementById('agentList');
+            agentList.innerHTML = '';
+            agents.forEach(agent => {
+                const li = document.createElement('li');
+                li.textContent = agent.graph_id;
+                li.tabIndex = 0;
+                li.setAttribute('aria-current', agent.graph_id === currentAgent ? 'true' : 'false');
+
+                li.addEventListener('click', () => setCurrentAgent(agent.graph_id));
+                li.addEventListener('keydown', (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        setCurrentAgent(agent.graph_id);
+                        e.preventDefault();
+                    }
+                });
+                agentList.appendChild(li);
+            });
+        }
+
+        // Updating display
+        function updateDisplay() {
+            document.getElementById('currentDisplay').textContent = `Agent: ${currentAgent} - User: ${currentUser}`;
+        }
+        function setCurrentAgent(agentName) {
+            currentAgent = agentName;
+            updateDisplay();
+            nav.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+            // Re-render to update aria-current
+            fetchAgents().then(renderAgentList);
+            renderUserList();
+        }
+        function setCurrentUser(user) {
+            currentUser = user;
+            updateDisplay();
+            nav.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+            // Re-render to update aria-current
+            fetchAgents().then(renderAgentList);
+            renderUserList();
+        }
+
+        // On page load
+        renderUserList();
+        fetchAgents()
+            .then(renderAgentList)
+            .catch(error => alert("Could not load agents: " + error));
+
     </script>
 </body>
 

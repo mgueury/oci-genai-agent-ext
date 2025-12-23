@@ -10,10 +10,10 @@ async def get_current_user(authorization: str | None) -> Auth.types.MinimalUserD
     print( f"authorization{authorization}", flush=True )
     assert authorization
     scheme, token = authorization.split()
-    print( f"scheme{scheme} token{token}", flush=True )
+    print( f"scheme={scheme} token={token}", flush=True )
 
     # Validate with your auth provider
-    if not scheme!="User":
+    if scheme!="User":
         raise Auth.exceptions.HTTPException(
             status_code=401,
             detail="Access Denied"
@@ -25,8 +25,8 @@ async def get_current_user(authorization: str | None) -> Auth.types.MinimalUserD
     }
     
 # Access only your own threads    
-@auth.on
-async def owner_only(ctx: Auth.types.AuthContext, value: dict):
-    metadata = value.setdefault("metadata", {})
-    metadata["owner"] = ctx.user.identity
-    return {"owner": ctx.user.identity}
+# @auth.on
+# async def owner_only(ctx: Auth.types.AuthContext, value: dict):
+#     metadata = value.setdefault("metadata", {})
+#     metadata["owner"] = ctx.user.identity
+#     return {"owner": ctx.user.identity}

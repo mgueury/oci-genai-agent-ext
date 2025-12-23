@@ -1,4 +1,5 @@
 from langchain_openai import ChatOpenAI
+from langchain_oci import ChatOCIGenAI
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -6,8 +7,9 @@ from langchain_mcp_adapters.interceptors import MCPToolCallRequest
 import asyncio
 import os
 import time
-from langchain_oci import ChatOCIGenAI
 import pprint
+import httpx
+import oci_openai 
 
 COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
 OPENAI_BASE_URL = os.getenv("TF_VAR_openai_base_url")
@@ -15,11 +17,15 @@ OPENAI_MODEL = os.getenv("TF_VAR_openai_model")
 OPENAI_API_KEY = os.getenv("TF_VAR_openai_api_key")
 REGION = os.getenv("TF_VAR_region")
 
+# auth = oci_openai.OciInstancePrincipalAuth()
 # llm = ChatOpenAI(
-#     model=OPENAI_MODEL, # LLM_MODEL_ID,  # for example "xai.grok-4-fast-reasoning"
-#     api_key=OPENAI_API_KEY,
-#     base_url=OPENAI_BASE_URL,
-#     stream_usage=True,
+#     model="xai.grok-4-fast-reasoning",
+#     api_key="OCI",
+#     base_url="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1",
+#     http_client=httpx.Client(
+#         auth=auth,
+#         headers={"CompartmentId": COMPARTMENT_OCID}
+#     ),
 # )
 
 llm = ChatOCIGenAI(
@@ -47,7 +53,7 @@ async def inject_user_context(
     modified_request = request.override( headers = { "Authorization": f"User {user_id}" } )
     return await handler(modified_request)
 
-async def init( prompt, tools_list, callback_handler=None ) -> StateGraph:
+async def init( agent_name, prompt, tools_list, callback_handler=None ) -> StateGraph:
 
     # Waiting is important, since after reboot the MCP server could start afterwards.
     delay = 5
@@ -87,17 +93,19 @@ async def init( prompt, tools_list, callback_handler=None ) -> StateGraph:
         model=llm,
         tools=tools_filtered,
         prompt=prompt,
-        name="research_agent"
+        name=agent_name
     ) 
 
     return agent
 
-agent_rag = asyncio.run(init((
-            "You are a research agent.\n\n"
-            "INSTRUCTIONS:\n"
-            "- Assist ONLY with research-related tasks, DO NOT do any math\n"
-            "- Respond ONLY with the results of your work, do NOT include ANY other text."
-            ),
+prompt_rag = """You are a research agent.
+
+            INSTRUCTIONS:
+            - Assist ONLY with research-related tasks, DO NOT do any math.
+            - Respond ONLY with the results of your work, do NOT include ANY other text.
+            """
+
+agent_rag = asyncio.run(init("agent_rag", prompt_rag,
             ["search","list_documents","get_document_summary","get_document_by_path"]))
 
 prompt_sr = """You are a support agent.
@@ -118,14 +126,5 @@ prompt_sr = """You are a support agent.
             | [Document Name](https://document_url/) | Document content |                                                                
             """
 
-agent_sr = asyncio.run(init(prompt_sr,
+agent_sr = asyncio.run(init("agent_sr", prompt_sr,
             ["search","find_service_request","get_service_request"]))
-
-
-
-        # prompt=(
-        #     "You are a research agent.\n\n"
-        #     "INSTRUCTIONS:\n"
-        #     "- Assist ONLY with research-related tasks, DO NOT do any math\n"
-        #     "- Respond ONLY with the results of your work, do NOT include ANY other text."
-        # ),
