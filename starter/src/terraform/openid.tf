@@ -135,43 +135,6 @@ locals {
   openid_client_secret = oci_identity_domains_app.starter_confidential_app.client_secret
 }
 
-variable "vault_ocid" {
-  description = "OCI Vault OCID"  
-}
-
-variable "vault_key_ocid" {
-  description = "OCI Vault Key OCID"  
-}
-
-resource "oci_kms_vault" "starter_vault" {
-  count = var.vault_ocid==null ? 1 : 0  
-  compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-vault"
-  vault_type     = "DEFAULT"
-}
-
-data "oci_kms_vault" "starter_vault" {
-  vault_id = local.vault_ocid
-}
-
-resource "oci_kms_key" "starter_key" {
-  #Required
-  count = var.vault_key_ocid==null ? 1 : 0  
-  compartment_id      = local.lz_app_cmp_ocid
-  display_name        = "${var.prefix}-key"
-  management_endpoint = data.oci_kms_vault.starter_vault.management_endpoint
-  key_shape {
-    #Required
-    algorithm = "AES"
-    length    = "16"
-  }
-  protection_mode="SOFTWARE"
-}
-
-data "oci_kms_key" "starter_key" {
-  key_id = local.vault_key_ocid
-  management_endpoint = data.oci_kms_vault.starter_vault.management_endpoint
-}
 
 locals {
   apigw_hostname = oci_apigateway_gateway.starter_apigw.hostname
