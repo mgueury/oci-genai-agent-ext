@@ -200,9 +200,7 @@ resource "oci_identity_domains_app" "starter_confidential_app" {
     "https://${local.apigw_hostname}/${var.prefix}/",
   ]
   redirect_uris = [
-    "https://${local.apigw_hostname}/${var.prefix}/",
-    "https://${local.apigw_hostname}/${var.prefix}/app/dept",
-    "https://${local.apigw_hostname}/${var.prefix}/app/info"
+    "https://${local.apigw_hostname}/openid/chat.html"
   ]
   schemas = [
     "urn:ietf:params:scim:schemas:oracle:idcs:App"
