@@ -350,16 +350,11 @@
             .then(renderAgentList)
             .catch(error => alert("Could not load agents: " + error));
 
-        // If the URL contains a JWT access token (XXXXX bad practice), use it to get the user identity
-        // XXX to improve XXXXX    
-        const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        if( accessToken ) {
+        // If the URL is in openid, get the userinfo from IDCS via APIGW
+        if (window.location.pathname.startsWith('/openid')) {
             fetch('/openid/userinfo', {
                 method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken
-                }
+                credentials: 'include'
                 })
                 .then(response => response.json())
                 .then(data => {

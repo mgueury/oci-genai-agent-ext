@@ -26,6 +26,18 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
         read_timeout_in_seconds = 120
         send_timeout_in_seconds = 120              
       }
+      request_policies {
+        header_transformations {
+          set_headers {
+            items {
+              if_exists = "OVERWRITE"
+              name      = "Authorization"
+              values = [
+                "Bearer $${request.auth[access_token]}",
+              ]
+            }
+          }
+        }        
     } 
     routes {
       path    = "/userinfo"
@@ -36,14 +48,6 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
         connect_timeout_in_seconds = 60
         read_timeout_in_seconds = 120
         send_timeout_in_seconds = 120              
-      }
-    }     
-    routes {
-      path    = "/{pathname*}"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.apigw_dest_private_ip}/$${request.path[pathname]}"
       }
       request_policies {
         header_transformations {
@@ -56,23 +60,15 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
               ]
             }
           }
-        }
-        query_parameter_transformations {
-          set_query_parameters {
-            items {
-              if_exists = "OVERWRITE"
-              name      = "access_token"
-              values = [
-                "$${request.auth[access_token]}",
-              ]
-            }
-          }
-        }     
-        #header_validations = <<Optional value not found in discovery>>
-        #query_parameter_transformations = <<Optional value not found in discovery>>
-        #query_parameter_validations = <<Optional value not found in discovery>>
-        #response_cache_lookup = <<Optional value not found in discovery>>
-      }   
+        }      
+    }     
+    routes {
+      path    = "/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}/$${request.path[pathname]}"
+      } 
     }           
     request_policies {
       authentication {
