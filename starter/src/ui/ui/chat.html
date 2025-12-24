@@ -144,7 +144,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json", 'Authorization': 'User CUSTOMER' },
                 credentials: 'include',
-                body: JSON.stringify(reqBody),
+                body: JSON.stringify(reqBody)
             }).then(async response => {
                 if (!response.ok || !response.body) {
                     hideSpinner();
@@ -197,7 +197,7 @@
                     method: "POST",
                     body: "{}",
                     headers: { Authorization: 'User CUSTOMER' },
-                    credentials: 'include',
+                    credentials: 'include'
                 });
                 const data = await resp.json();
                 return data.thread_id;
@@ -294,11 +294,11 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json',
                            'Authorization': 'User CUSTOMER' },
+                credentials: 'include',
                 body: JSON.stringify({
                     sort_by: 'assistant_id',
                     sort_order: 'asc'
-                }),
-                credentials: 'include'
+                })
             });
             if (!response.ok) throw new Error('Failed to fetch agents');
             return await response.json();
