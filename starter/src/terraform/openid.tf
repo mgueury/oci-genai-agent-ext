@@ -37,7 +37,8 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
               ]
             }
           }
-        }        
+        }   
+      }     
     } 
     routes {
       path    = "/userinfo"
@@ -60,7 +61,8 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
               ]
             }
           }
-        }      
+        }  
+      }    
     }     
     routes {
       path    = "/{pathname*}"
