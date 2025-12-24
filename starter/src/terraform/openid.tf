@@ -45,7 +45,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       methods = [ "ANY" ]
       backend {
         type = "HTTP_BACKEND"
-        url    = "${local.local_idcs_url}/oauth2/v1/userinfo"
+        url    = "${local.local_idcs_url}oauth2/v1/userinfo"
         connect_timeout_in_seconds = 60
         read_timeout_in_seconds = 120
         send_timeout_in_seconds = 120              
@@ -256,4 +256,3 @@ resource "oci_identity_policy" "starter_apigw_vault_policy" {
   ]
   freeform_tags = local.freeform_tags
 }
-
