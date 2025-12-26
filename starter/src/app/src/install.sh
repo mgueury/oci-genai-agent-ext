@@ -85,6 +85,7 @@ begin
   -- AI_LANGGRAPH
   APEX_APP.AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/threads' );
   APEX_APP.AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
+  APEX_APP.AI_CONFIG_UPDATE( 'idcs_url', '$IDCS_URL' );
   commit;
 end;
 /

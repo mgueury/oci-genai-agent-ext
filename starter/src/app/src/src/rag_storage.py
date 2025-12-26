@@ -517,7 +517,7 @@ def rasCreateSession( cur, auth_header ):
             sessionid RAW(16); 
             username varchar2(1024);
         BEGIN
-            username := ai_ras.get_username_from_auth_header( :auth_header );
+            username := ai_plsql.get_username_from_auth_header( :auth_header );
             SYS.DBMS_XS_SESSIONS.CREATE_SESSION(username, sessionid);
             SYS.DBMS_XS_SESSIONS.ATTACH_SESSION(sessionid);
             :sessionid := sessionid;
