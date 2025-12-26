@@ -15,10 +15,11 @@ class DocInfo(BaseModel):
     TITLE: str
     PATH: str
 
-def get_app_user():
+def get_auth_header():
     request = get_http_request()
     auth_header = request.headers.get("Authorization", "Unknown")
-    return "EMPLOYEE" if "EMPLOYEE" in auth_header else "CUSTOMER"
+    return auth_header
+    # "EMPLOYEE" if "EMPLOYEE" in auth_header else "CUSTOMER"
 
 @mcp.tool()
 def search(question: str) -> dict:
@@ -57,13 +58,13 @@ def get_document_by_path(doc_path: str) -> dict:
 def find_service_request(question: str) -> List[dict]:
     """find similar service requests"""
     print("<find_service_request>", flush=True)
-    return rag_storage.findServiceRequest(question, get_app_user())
+    return rag_storage.findServiceRequest(question, get_auth_header())
 
 @mcp.tool()
 def get_service_request(id: str) -> dict:
     """get the service request details"""
     print("<get_service_request>", flush=True)
-    return rag_storage.getServiceRequest(id, get_app_user())
+    return rag_storage.getServiceRequest(id, get_auth_header())
 
 if __name__ == "__main__":
     mcp.run(transport="http", host="127.0.0.1", port=2025)

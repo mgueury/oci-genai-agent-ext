@@ -510,27 +510,29 @@ def row2Dict( column_names, row ):
 
 # -- rasCreateSession ----------------------------------------------------------------------
 
-def rasCreateSession( cur, app_user ):
-    if app_user:
+def rasCreateSession( cur, auth_header ):
+    if auth_header:
         plsql_block = """
         DECLARE 
             sessionid RAW(16); 
+            username varchar2(1024);
         BEGIN
-            SYS.DBMS_XS_SESSIONS.CREATE_SESSION(:app_user, sessionid);
+            username := ai_ras.get_username_from_auth_header( :auth_header );
+            SYS.DBMS_XS_SESSIONS.CREATE_SESSION(username, sessionid);
             SYS.DBMS_XS_SESSIONS.ATTACH_SESSION(sessionid);
             :sessionid := sessionid;
         END;
-        """
+        """        
         sessionid_var = cur.var(oracledb.DB_TYPE_RAW, size=16)
-        cur.execute(plsql_block, { ":app_user": app_user, ":sessionid": sessionid_var } )
+        cur.execute(plsql_block, { ":auth_header": auth_header, ":sessionid": sessionid_var } )
         session_id_bytes = sessionid_var.getvalue()
         print("Session ID:", session_id_bytes.hex() if session_id_bytes else None)
         return session_id_bytes
 
 # -- rasDestroySession ----------------------------------------------------------------------
 
-def rasDestroySession( cur, app_user, sessionid ):
-    if app_user:
+def rasDestroySession( cur, auth_header, sessionid ):
+    if auth_header:
         plsql_block = """
         BEGIN
             SYS.DBMS_XS_SESSIONS.DETACH_SESSION;
@@ -541,14 +543,14 @@ def rasDestroySession( cur, app_user, sessionid ):
 
 # -- queryFirstRecord ----------------------------------------------------------------------
 
-def queryFirstRecord( query, params, app_user=None ):
+def queryFirstRecord( query, params, auth_header=None ):
     log(f"<queryFirstRecord>")    
     global pool
     dbConn = pool.acquire() 
     cur = dbConn.cursor()
     result = [] 
     try:    
-        sessionid = rasCreateSession( cur, app_user )
+        sessionid = rasCreateSession( cur, auth_header )
         cur.execute(query,params)    
         column_names = [col[0] for col in cur.description]
         for row in cur.fetchall():
@@ -562,7 +564,7 @@ def queryFirstRecord( query, params, app_user=None ):
         raise
     finally:
         # Close the cursor and connection
-        rasDestroySession( cur, app_user, sessionid )
+        rasDestroySession( cur, auth_header, sessionid )
         if cur:
             cur.close() 
         if dbConn:
@@ -571,14 +573,14 @@ def queryFirstRecord( query, params, app_user=None ):
 
 # -- queryAllRecords ----------------------------------------------------------------------
 
-def queryAllRecords( query, params, app_user=None ):
+def queryAllRecords( query, params, auth_header=None ):
     log(f"<queryAllRecords>")    
     global pool
     dbConn = pool.acquire() 
     cur = dbConn.cursor()
     result = [] 
     try:      
-        sessionid = rasCreateSession( cur, app_user )
+        sessionid = rasCreateSession( cur, auth_header )
         cur.execute(query,params)    
         result = []
         column_names = [col[0] for col in cur.description]
@@ -592,7 +594,7 @@ def queryAllRecords( query, params, app_user=None ):
         raise
     finally:
         # Close the cursor and connection
-        rasDestroySession( cur, app_user, sessionid )
+        rasDestroySession( cur, auth_header, sessionid )
         if cur:
             cur.close() 
         if dbConn:
@@ -725,8 +727,8 @@ def updateDocStatus( p_status, p_resource_name ):
 
 # -- findServiceRequest -----------------------------------------------------------------
 
-def findServiceRequest(question: str, app_user: str) -> dict:
-    log(f"<findServiceRequest> question={question} app_user={app_user}")   
+def findServiceRequest(question: str, auth_header: str) -> dict:
+    log(f"<findServiceRequest> question={question} auth_header={auth_header}")   
     # query = """WITH text_search AS (
     #         SELECT id, score(99)/100 as score FROM support_sr
     #         WHERE CONTAINS(question, :1, 99)>0 order by score(99) DESC FETCH FIRST 10 ROWS ONLY
@@ -747,14 +749,14 @@ def findServiceRequest(question: str, app_user: str) -> dict:
             FROM support_sr o
             ORDER BY score ASC
             FETCH FIRST 10 ROWS ONLY"""    
-    return queryAllRecords( query, (question, ),app_user)
+    return queryAllRecords( query, (question, ),auth_header)
 
 
 # -- getDocByPath ----------------------------------------------------------------------
 
-def getServiceRequest( id, app_user ):
-    log(f"<getServiceRequest> id={id} app_user={app_user}")    
+def getServiceRequest( id, auth_header ):
+    log(f"<getServiceRequest> id={id} auth_header={auth_header}")    
     query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
-    return queryFirstRecord( query, (id,), app_user)
+    return queryFirstRecord( query, (id,), auth_header)
   
   # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id={id}

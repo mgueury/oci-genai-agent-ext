@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Agents</title>
+    <link rel="stylesheet" href="tourism/style.css">
+</head>    
+	<style>
+        body {
+            background-image: url('agent/photo_team.jpg');
+        }        
+		.tiles {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+        h1 {
+            color: Black;
+        }
+        h2 {
+            color: Black;
+        }
+		.tile {
+			margin: 20px;
+			width: 250px;
+			border: 1px solid #ccc;
+			border-radius: 10px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		}
+		.tile img {
+			width: 100%;
+			height: 150px;
+			object-fit: cover;
+			border-top-left-radius: 10px;
+			border-top-right-radius: 10px;
+		}
+		
+		.tile .description {
+			padding: 20px;
+		}
+		
+		.tile a {
+			text-decoration: none;
+			color: #666;
+		}
+		
+		.tile a:hover {
+			color: #333;
+		}
+	</style>
+</head>
+<body>
+    <div class="container">
+	<h1>Agent Architecture</h1>
+	<p>Some possible architecture using Agents or Teams of Agents</p>
+	<div class="tiles">
+		<div class="tile">
+			<a href="chat.html?agent=agent_simple">
+				<img src="agent/agent.png" alt="Agent">
+				<div class="description">
+					<h2>Agent</h2>
+					<p>A single agent that calls Tools or Data</p>
+				</div>
+			</a>
+		</div>
+		<div class="tile">
+			<a href="chat.html?agent=human_in_the_loop">
+				<img src="agent/human_in_the_loop.png" alt="Agent">
+				<div class="description">
+					<h2>Human in the loop</h2>
+					<p>An agent asking human approval</p>
+				</div>
+			</a>
+		</div>        
+		<div class="tile">
+			<a href="chat.html?agent=agent_rag">
+				<img src="agent/react.png" alt="React">
+				<div class="description">
+					<h2>React</h2>
+					<p>A single react agent that calls Tools or Data via MCP</p>
+					<p>MCP Tools: RAG</p>
+				</div>
+			</a>
+		</div>
+		<div class="tile">
+			<a href="chat.html?agent=agent">
+				<img src="agent/ras.png" alt="Application Security">
+				<div class="description">
+					<h2>Real Application Security</h2>
+					<p>A single agent that calls Tools or Data</p>
+					<p>MCP Tools: RAG + Database (+Oracle Real Application Security)</p>
+				</div>
+			</a>
+		</div>
+		<div class="tile">
+			<a href="chat.html?agent=reflection">
+				<img src="agent/reflection.png" alt="Reflection">
+				<div class="description">
+					<h2>Reflection</h2>
+					<p>A team of 2 agents that collaborate to write a document</p>
+				</div>
+			</a>
+		</div>
+		<div class="tile">
+			<a href="chat.html?agent=router">
+				<img src="agent/router.png" alt="Router">
+				<div class="description">
+					<h2>Router</h2>
+					<p>A router agent sending a task to a specialized agent.</p>
+				</div>
+			</a>
+		</div>        
+		<div class="tile">
+			<a href="chat.html?agent=supervisor">
+				<img src="agent/supervisor.png" alt="Supervisor">
+				<div class="description">
+					<h2>Supervisor</h2>
+					<p>A team of agents working together to react a common goal</p>
+				</div>
+			</a>
+		</div>
+	</div>
+	<p>List of demos.</p>
+    </div>
+</body>
+</html>

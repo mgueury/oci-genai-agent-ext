@@ -12,6 +12,9 @@ export TF_VAR_prefix="##TF_VAR_prefix##"
 export TF_VAR_namespace="##TF_VAR_namespace##"
 export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o/"
 
+# IDCS
+export IDCS_URL="##IDCS_URL##"
+
 # OCI Stream
 export STREAM_OCID="##STREAM_OCID##"
 export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"

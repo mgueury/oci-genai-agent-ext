@@ -45,12 +45,16 @@ async def inject_user_context(
     handler,
 ):
     """Inject user credentials into MCP tool calls."""
-    # print( "--- request ----" )
-    # pprint.pprint( request )
+    print( "--- request ----" )
+    pprint.pprint( request )
     runtime = request.runtime
     user_id = runtime.config["configurable"]["user_id"]
+    auth_user = runtime.config["configurable"]["langgraph_auth_user"]
+    auth_header = auth_user.dict().get("auth_header")
     print( f"<inject_user_context> user_id={user_id}", flush=True )
-    modified_request = request.override( headers = { "Authorization": f"User {user_id}" } )
+    # print( f"<inject_user_context> auth_header={auth_header}", flush=True )
+    # modified_request = request.override( headers = { "Authorization": f"User {user_id}" } )
+    modified_request = request.override( headers = { "Authorization": auth_header } )
     return await handler(modified_request)
 
 async def init( agent_name, prompt, tools_list, callback_handler=None ) -> StateGraph:

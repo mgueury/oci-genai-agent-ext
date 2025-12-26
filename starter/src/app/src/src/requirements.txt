@@ -57,5 +57,8 @@ oci-openai
 langgraph-cli[inmem]
 langchain_mcp_adapters
 
+# OAuth Caching 
+aiocache
+
 # LangFuse
 langfuse
