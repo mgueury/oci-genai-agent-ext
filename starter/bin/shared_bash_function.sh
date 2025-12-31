@@ -213,7 +213,7 @@ get_output_from_tfstate () {
 
 append_tf_env() {
   echo "$1"
-  echo "$1" > $TARGET_DIR/tf_env.sh
+  echo "$1" >> $TARGET_DIR/tf_env.sh
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
