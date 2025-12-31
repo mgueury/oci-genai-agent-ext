@@ -14,12 +14,7 @@ function download()
 sudo dnf install -y poppler-utils mesa-libGL
 
 # Python 
-sudo dnf install -y python3.12 python3.12-pip python3-devel wget
-sudo update-alternatives --set python /usr/bin/python3.12
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv myenv
-source myenv/bin/activate
-uv pip install -r src/requirements.txt
+install_python
 
 # PDFKIT
 download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
@@ -28,23 +23,9 @@ mv *.rpm /tmp
 
 # LibreOffice (convert docx to PDF)
 if [ "${INSTALL_LIBREOFFICE}" != "no" ]; then
-    sudo dnf group install -y "Server with GUI"
-    cd /tmp
-    export STABLE_VERSIONS=`curl -s https://download.documentfoundation.org/libreoffice/stable/`
-    export LIBREOFFICE_VERSION=`echo $STABLE_VERSIONS | sed 's/.*<td valign="top">//' | sed 's/\/<\/a>.*//' | sed 's/.*\/">//'`
-    echo LIBREOFFICE_VERSION=$LIBREOFFICE_VERSION
-
-    download https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
-    tar -xzvf LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz
-    cd LibreOffice*/RPMS
-    sudo dnf install *.rpm -y
-    export LIBRE_OFFICE_EXE=`find ${PATH//:/ } -maxdepth 1 -executable -name 'libreoffice*' | grep "libreoffice"`
-    echo LIBRE_OFFICE_EXE=$LIBRE_OFFICE_EXE
-
+    install_libreoffice
     # Chrome + Selenium to get webpage
-    cd /tmp
-    download https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
-    sudo dnf localinstall -y google-chrome-stable_current_x86_64.rpm
+    install_chrome
 fi 
 cd $SCRIPT_DIR
 
