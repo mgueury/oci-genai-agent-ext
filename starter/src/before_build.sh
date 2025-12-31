@@ -32,5 +32,4 @@ else
     export TF_VAR_genai_embed_model="cohere.embed-multilingual-v3.0"
     # export TF_VAR_genai_embed_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
     append_tf_env "export TF_VAR_genai_embed_model=""$TF_VAR_genai_embed_model"""
-    append_tf_env "export TF_VAR_object_storage_url=""https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${OBJECT_STORAGE_NAMESPACE}/b/${TF_VAR_prefix}-public-bucket/o/"""
 fi

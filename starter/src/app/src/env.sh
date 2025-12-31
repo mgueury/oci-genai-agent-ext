@@ -17,7 +17,6 @@
 # # OCI Stream
 # export STREAM_OCID="##STREAM_OCID##"
 # export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
-# export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${OBJECT_STORAGE_NAMESPACE}/b/${TF_VAR_prefix}-public-bucket/o/"
 
 # # OCI GenAI Agent
 # export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
