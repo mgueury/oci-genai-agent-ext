@@ -1,36 +1,39 @@
-# Database
+. $HOME/compute/tf_env.sh
+
+# export DB_PASSWORD="##TF_VAR_db_password##"
+# export DB_URL="##DB_URL##"
+# export JDBC_URL="##JDBC_URL##"
+# export APIGW_HOSTNAME="##APIGW_HOSTNAME##"
+
+# # Generic
+# export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
+# export TF_VAR_region="##TF_VAR_region##"
+# export TF_VAR_prefix="##TF_VAR_prefix##"
+# export TF_VAR_namespace="##TF_VAR_namespace##"
+
+# # IDCS
+# export IDCS_URL="##IDCS_URL##"
+
+# # OCI Stream
+# export STREAM_OCID="##STREAM_OCID##"
+# export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
+# export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o/"
+
+# # OCI GenAI Agent
+# export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
+# export TF_VAR_agent_datasource_ocid="##OPTIONAL/TF_VAR_agent_datasource_ocid##"
+# export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
+# export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
+# export TF_VAR_genai_embed_model="##TF_VAR_genai_embed_model##"
+
+
 export DB_USER="apex_app"
-export DB_PASSWORD="##TF_VAR_db_password##"
-export DB_URL="##DB_URL##"
-export JDBC_URL="##JDBC_URL##"
-export APIGW_HOSTNAME="##APIGW_HOSTNAME##"
-
-# Generic
-export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
-export TF_VAR_region="##TF_VAR_region##"
-export TF_VAR_prefix="##TF_VAR_prefix##"
-export TF_VAR_namespace="##TF_VAR_namespace##"
-export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o/"
-
-# IDCS
-export IDCS_URL="##IDCS_URL##"
-
-# OCI Stream
-export STREAM_OCID="##STREAM_OCID##"
-export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
-
-# OCI GenAI Agent
-export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
-export TF_VAR_agent_datasource_ocid="##OPTIONAL/TF_VAR_agent_datasource_ocid##"
-export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
-export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
-export TF_VAR_genai_embed_model="##TF_VAR_genai_embed_model##"
 export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 
 # LibreOffice
 export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
 
-# LangGraph
+# ORCL_DB_SEE / LangGraph
 export LANGGRAPH_URL="http://127.0.0.1:2024"
 export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
 

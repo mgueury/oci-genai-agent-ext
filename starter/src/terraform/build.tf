@@ -39,6 +39,7 @@ resource "null_resource" "tf_env" {
     echo_export "IDCS_URL" "${local.local_idcs_url}"
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
     echo_export "OCIR_HOST" "${local.local_ocir_host}"
+    echo_export "OCIR_NAMESPACE" "${local.local_ocir_namespace}"
     echo_export "ORDS_URL" "${local.local_ords_url}" 
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"
@@ -46,6 +47,9 @@ resource "null_resource" "tf_env" {
     echo_export "TF_VAR_deploy_type" "private_compute"
     echo_export "TF_VAR_language" "python"
     echo_export "TF_VAR_ui_type" "html" 
+    echo "# Synonym" >> $ENV_FILE
+    echo_export "DB_USER" "${coalesce(var.db_user,"-")}"
+    echo_export "DB_PASSWORD" "${coalesce(var.db_password,"-")}"
     # echo_export "OCI_STARTER_CREATION_DATE" "2025-10-05-13-59-33-174669"
     # echo_export "OCI_STARTER_VERSION" "4.1"
     # echo_export "OCI_STARTER_PARAMS" "prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,security,deploy_type,language"

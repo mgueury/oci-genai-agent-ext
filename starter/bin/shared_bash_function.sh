@@ -44,6 +44,31 @@ build_ui() {
   fi 
 }
 
+build_rsync() {
+  if [ "$1" == "" ]; then
+    error_exit "Missing src parameter"
+  fi
+
+  # In Java, copy the src/*.sh to target 
+  if [ -d target ]; then
+    cp src/*.sh target/.
+  fi
+
+  # Copy all the app files in $TARGET_DIR/compute/$APP_DIR
+  mkdir -p $TARGET_DIR/compute/$APP_DIR
+  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_DIR --exclude starter --exclude terraform.tfvars
+
+  # Replace the user and password in start.sh
+  if [ -f $TARGET_DIR/compute/$APP_DIR/start.sh ]; then
+    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_DIR/start.sh
+  fi
+
+  # Replace variables in env.sh
+  if [ -f $TARGET_DIR/compute/$APP_DIR/env.sh ]; then 
+    file_replace_variables $TARGET_DIR/compute/$APP_DIR/env.sh
+  fi 
+}
+
 docker_login() {
   oci raw-request --region $TF_VAR_region --http-method GET --target-uri "https://${OCIR_HOST}/20180419/docker/token" | jq -r .data.token | docker login -u BEARER_TOKEN --password-stdin ${OCIR_HOST}
   exit_on_error "Docker Login"
@@ -184,6 +209,11 @@ get_output_from_tfstate () {
     RESULT=`jq -r '.outputs."'$2'".value' $STATE_FILE | sed "s/ //"`
     set_if_not_null $1 $RESULT
   fi
+}
+
+append_tf_env() {
+  echo "$1"
+  echo "$1" > $TARGET_DIR/tf_env.sh
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
@@ -709,11 +739,13 @@ file_replace_variables() {
 
   echo "Replace variables in file: $1"
   while IFS= read -r line; do
-    while [[ $line =~ (.*)##(.*)##(.*) ]]; do
+    if [[ $line =~ (.*)##(.*)##(.*) ]]; then
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
 
-      if [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
+      if [ "$var_name" == "xxx" ]; then
+         var_value="##xxx##"
+      elif [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
          var_name2="${BASH_REMATCH[1]}"
          var_value="${!var_name2}"
          if [ "$var_value" == "" ]; then
@@ -727,7 +759,7 @@ file_replace_variables() {
         fi
       fi
       line=${line/"##${var_name}##"/${var_value}}
-    done
+    fi
 
     echo "$line" >> "$temp_file"
   done < "$file"

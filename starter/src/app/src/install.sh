@@ -14,15 +14,7 @@ function download()
 sudo dnf install -y poppler-utils mesa-libGL
 
 # Python 
-sudo dnf install -y python3.12 python3.12-pip python3-devel wget
-sudo update-alternatives --set python /usr/bin/python3.12
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv myenv
-source myenv/bin/activate
-uv pip install -r src/requirements.txt
-
-# WA langchain_oci
-uv pip install "langchain>=1.0"
+install_python
 
 # PDFKIT
 download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm
@@ -61,36 +53,6 @@ export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25
 cd src/tika
 mvn package
 cd -
-
-# Install SQLCL (Java program)
-cd $HOME/db
-wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
-rm -Rf sqlcl
-unzip sqlcl-latest.zip
-cd -
-
-# Store the config in APEX
-$HOME/db/sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB <<EOF
-begin
-  APEX_APP.AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
-  APEX_APP.AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
-  APEX_APP.AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
-  APEX_APP.AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
-  APEX_APP.AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
-  APEX_APP.AI_CONFIG_UPDATE( 'object_storage_url',  '$TF_VAR_object_storage_url' );
-  APEX_APP.AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
-  -- AI_EVAL
-  APEX_APP.AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );
-  APEX_APP.AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
-  -- AI_LANGGRAPH
-  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/threads' );
-  APEX_APP.AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
-  APEX_APP.AI_CONFIG_UPDATE( 'idcs_url', '$IDCS_URL' );
-  commit;
-end;
-/
-exit;
-EOF
 
 # MCP 
 sudo firewall-cmd --zone=public --add-port=2025/tcp --permanent
