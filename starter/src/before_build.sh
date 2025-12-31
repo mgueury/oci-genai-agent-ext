@@ -12,16 +12,16 @@ else
     get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
     get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
 
-    append_tf_env "-- STREAMING CONNECTION -----------------------------"
+    append_tf_env "# STREAMING CONNECTION"
     append_tf_env "export STREAM_MESSAGE_ENDPOINT=""$STREAM_MESSAGE_ENDPOINT"""
     append_tf_env "export STREAM_OCID=""$STREAM_OCID"""
     append_tf_env "export STREAM_USERNAME=""$TENANCY_NAME/$TF_VAR_username/$STREAM_OCID"""
     append_tf_env
-    append_tf_env "-- AGENT (OPTIONAL) ---------------------------------"
+    append_tf_env "# AGENT (OPTIONAL)"
     append_tf_env "export TF_VAR_agent_datasource_ocid=""$TF_VAR_agent_datasource_ocid"""
     append_tf_env "export TF_VAR_agent_endpoint_ocid=""$TF_VAR_agent_endpoint_ocid"""
     append_tf_env
-    append_tf_env "-- GENERATIVE AI MODEL ------------------------------"
+    append_tf_env "# GENERATIVE AI MODEL"
     oci generative-ai model-collection list-models --compartment-id $TF_VAR_compartment_ocid --all > $TARGET_DIR/genai_models.json 
     export TF_VAR_genai_meta_model=$(jq -r '.data.items[]|select(.vendor=="meta" and (.capabilities|index("CHAT")))|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
     append_tf_env "export TF_VAR_genai_meta_model=""$TF_VAR_genai_meta_model"""
