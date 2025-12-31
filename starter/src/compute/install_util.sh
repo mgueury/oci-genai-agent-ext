@@ -69,7 +69,7 @@ install_sqlcl() {
     install_java
     install_tnsname
     cd $HOME/db
-    if[ ! -f sqlcl-latest.zip ]; then
+    if [ ! -f sqlcl-latest.zip ]; then
         wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
         rm -Rf sqlcl
         unzip sqlcl-latest.zip
@@ -85,10 +85,10 @@ install_python() {
     curl -LsSf https://astral.sh/uv/install.sh | sh
     uv venv myenv
     source myenv/bin/activate
-    if[ -f requirements.txt ]; then 
+    if [ -f requirements.txt ]; then 
       uv pip install -r requirements.txt
     fi 
-    if[ -f src/requirements.txt ]; then 
+    if [ -f src/requirements.txt ]; then 
       uv pip install -r src/requirements.txt
     fi 
 }
@@ -100,7 +100,7 @@ install_libreoffice() {
     echo LIBREOFFICE_VERSION=$LIBREOFFICE_VERSION
     cd /tmp
     export LIBREOFFICE_TGZ="LibreOffice_${LIBREOFFICE_VERSION}_Linux_x86-64_rpm.tar.gz"
-    if[ ! -f $LIBREOFFICE_TGZ ]; then
+    if [ ! -f $LIBREOFFICE_TGZ ]; then
         sudo dnf group install -y "Server with GUI"
 
         download https://download.documentfoundation.org/libreoffice/stable/${LIBREOFFICE_VERSION}/rpm/x86_64/$LIBREOFFICE_TGZ
@@ -117,7 +117,7 @@ install_libreoffice() {
 install_chrome() {
     cd /tmp
     export CHROME_RPM="google-chrome-stable_current_x86_64.rpm"
-    if[ ! -f $CHROME_RPM ]; then
+    if [ ! -f $CHROME_RPM ]; then
       cd /tmp
       download https://dl.google.com/linux/direct/$CHROME_RPM
       sudo dnf localinstall -y $CHROME_RPM
