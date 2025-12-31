@@ -1,8 +1,6 @@
 if grep -q 'STREAM_OCID' $TARGET_DIR/tf_env.sh; then
     echo "tf_env.sh already modified"
 else 
-
-
     ## Set env variables needed for env.sh
     get_attribute_from_tfstate "STREAM_OCID" "starter_stream" "id"
     get_attribute_from_tfstate "TENANCY_NAME" "tenant_details" "name"

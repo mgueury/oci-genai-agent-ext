@@ -1,13 +1,9 @@
-# Object Storage
-variable "namespace" {
-  description = "OCI Object Storage Namespace"
-}
 
 # -- Object Storage ---------------------------------------------------------
 
 resource "oci_objectstorage_bucket" "starter_bucket" {
   compartment_id = local.lz_serv_cmp_ocid
-  namespace      = var.namespace
+  namespace      = local.local_object_storage_namespace
   name           = "${var.prefix}-public-bucket"
   access_type    = "ObjectReadWithoutList"
   object_events_enabled = true
@@ -17,7 +13,7 @@ resource "oci_objectstorage_bucket" "starter_bucket" {
 
 resource "oci_objectstorage_bucket" "starter_agent_bucket" {
   compartment_id = local.lz_serv_cmp_ocid
-  namespace      = var.namespace
+  namespace      = local.local_object_storage_namespace
   name           = "${var.prefix}-agent-bucket"
   object_events_enabled = true
 
@@ -25,7 +21,7 @@ resource "oci_objectstorage_bucket" "starter_agent_bucket" {
 }
 
 locals {
-  bucket_url = "https://objectstorage.${var.region}.oraclecloud.com/n/${var.namespace}/b/${var.prefix}-public-bucket/o"
+  bucket_url = "https://objectstorage.${var.region}.oraclecloud.com/n/${local.local_object_storage_namespace}/b/${var.prefix}-public-bucket/o"
 }  
 
 # -- Agent ------------------------------------------------------------------

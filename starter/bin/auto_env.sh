@@ -206,8 +206,8 @@ else
   DATE_POSTFIX=`date '+%Y%m%d-%H%M%S'`
 
   # Namespace
-  export TF_VAR_namespace=`oci os ns get | jq -r .data`
-  auto_echo TF_VAR_namespace=$TF_VAR_namespace
+  export OBJECT_STORAGE_NAMESPACE=`oci os ns get | jq -r .data`
+  auto_echo OBJECT_STORAGE_NAMESPACE=$OBJECT_STORAGE_NAMESPACE
 
   # Kubernetes and OCIR
   if [ "$TF_VAR_deploy_type" == "kubernetes" ] || [ "$TF_VAR_deploy_type" == "function" ] || [ "$TF_VAR_deploy_type" == "container_instance" ] || [ -f $PROJECT_DIR/src/terraform/oke.tf ]; then
@@ -295,14 +295,14 @@ if [ -f $STATE_FILE ]; then
   # Docker
   if [ "$TF_VAR_deploy_type" == "kubernetes" ] || [ "$TF_VAR_deploy_type" == "function" ] || [ "$TF_VAR_deploy_type" == "container_instance" ] || [ -f $PROJECT_DIR/src/terraform/oke.tf ]; then
     export DOCKER_PREFIX_NO_OCIR=${CONTAINER_PREFIX}
-    export DOCKER_PREFIX=${OCIR_HOST}/${TF_VAR_namespace}/${DOCKER_PREFIX_NO_OCIR}
+    export DOCKER_PREFIX=${OCIR_HOST}/${OBJECT_STORAGE_NAMESPACE}/${DOCKER_PREFIX_NO_OCIR}
     auto_echo DOCKER_PREFIX=$DOCKER_PREFIX
   fi
 
   # Functions
   if [ "$TF_VAR_deploy_type" == "function" ]; then
     # OBJECT Storage URL
-    export BUCKET_URL="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o"
+    export BUCKET_URL="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${OBJECT_STORAGE_NAMESPACE}/b/${TF_VAR_prefix}-public-bucket/o"
 
     # Function OCID
     get_attribute_from_tfstate "FN_FUNCTION_OCID" "starter_fn_function" "id"
@@ -379,8 +379,8 @@ if [ -f $STATE_FILE ]; then
     fi 
   fi
 
-  if [ -f $PROJECT_DIR/src/after_auto_env.sh ]; then
-    .  $PROJECT_DIR/src/after_auto_env.sh
+  if [ -f $PROJECT_DIR/src/before_build.sh ]; then
+    .  $PROJECT_DIR/src/before_build.sh
   fi
 fi
 

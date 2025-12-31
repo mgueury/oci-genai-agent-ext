@@ -36,7 +36,7 @@ build_ui() {
     mkdir -p ../../target/compute/ui
     cp -r ui/* ../../target/compute/ui/.
   elif [ "$TF_VAR_deploy_type" == "function" ]; then 
-    oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-bucket --src-dir ui --overwrite --content-type auto
+    oci os object bulk-upload -ns $OBJECT_STORAGE_NAMESPACE -bn ${TF_VAR_prefix}-public-bucket --src-dir ui --overwrite --content-type auto
   else
     # Kubernetes and Container Instances
     docker image rm ${TF_VAR_prefix}-ui:latest

@@ -39,7 +39,7 @@ resource "null_resource" "tf_env" {
     echo_export "IDCS_URL" "${local.local_idcs_url}"
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
     echo_export "OCIR_HOST" "${local.local_ocir_host}"
-    echo_export "OCIR_NAMESPACE" "${local.local_ocir_namespace}"
+    echo_export "OBJECT_STORAGE_NAMESPACE" "${local.local_object_storage_namespace}"
     echo_export "ORDS_URL" "${local.local_ords_url}" 
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"

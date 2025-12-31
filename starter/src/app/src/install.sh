@@ -14,7 +14,12 @@ function download()
 sudo dnf install -y poppler-utils mesa-libGL
 
 # Python 
-install_python
+sudo dnf install -y python3.12 python3.12-pip python3-devel wget
+sudo update-alternatives --set python /usr/bin/python3.12
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv myenv
+source myenv/bin/activate
+uv pip install -r src/requirements.txt
 
 # PDFKIT
 download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm

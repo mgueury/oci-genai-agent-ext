@@ -9,7 +9,7 @@
 # export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
 # export TF_VAR_region="##TF_VAR_region##"
 # export TF_VAR_prefix="##TF_VAR_prefix##"
-# export TF_VAR_namespace="##TF_VAR_namespace##"
+# export OBJECT_STORAGE_NAMESPACE="##OBJECT_STORAGE_NAMESPACE##"
 
 # # IDCS
 # export IDCS_URL="##IDCS_URL##"
@@ -17,7 +17,7 @@
 # # OCI Stream
 # export STREAM_OCID="##STREAM_OCID##"
 # export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
-# export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o/"
+# export TF_VAR_object_storage_url="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${OBJECT_STORAGE_NAMESPACE}/b/${TF_VAR_prefix}-public-bucket/o/"
 
 # # OCI GenAI Agent
 # export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
