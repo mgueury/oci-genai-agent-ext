@@ -76,5 +76,5 @@ resource "oci_objectstorage_bucket" "starter_bucket" {
 }
 
 locals {
-  bucket_url = "https://objectstorage.${var.region}.oraclecloud.com/n/${local.local_object_storage_namespace}/b/${var.prefix}-public-bucket/o"
+  bucket_url = "https://objectstorage.${var.region}.oraclecloud.com/n/${local.local_object_storage_namespace}/b/${var.prefix}-public-bucket/o/"
 }  

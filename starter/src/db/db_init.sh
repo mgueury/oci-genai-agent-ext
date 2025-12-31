@@ -189,7 +189,7 @@ begin
   AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
   AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
   AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
-  AI_CONFIG_UPDATE( 'object_storage_url',  '$TF_VAR_object_storage_url' );
+  AI_CONFIG_UPDATE( 'bucket_url',  '$BUCKET_URL' );
   AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
   -- AI_EVAL
   AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );

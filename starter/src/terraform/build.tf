@@ -33,6 +33,7 @@ resource "null_resource" "tf_env" {
     echo_export "TF_VAR_compartment_ocid" "${coalesce(var.compartment_ocid,"-")}"  
     echo "# Terraform Locals" >> $ENV_FILE
     echo_export "BASTION_IP" "${local.local_bastion_ip}"
+    echo_export "BUCKET_URL" "${local.local_bucket_url}"
     echo_export "COMPUTE_IP" "${local.local_compute_ip}"    
     echo_export "CONTAINER_PREFIX" "${local.local_container_prefix}"
     echo_export "DB_URL" "${local.local_db_url}"
