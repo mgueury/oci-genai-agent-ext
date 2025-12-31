@@ -12,9 +12,6 @@ import httpx
 import oci_openai 
 
 COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
-OPENAI_BASE_URL = os.getenv("TF_VAR_openai_base_url")
-OPENAI_MODEL = os.getenv("TF_VAR_openai_model")
-OPENAI_API_KEY = os.getenv("TF_VAR_openai_api_key")
 REGION = os.getenv("TF_VAR_region")
 
 # auth = oci_openai.OciInstancePrincipalAuth()

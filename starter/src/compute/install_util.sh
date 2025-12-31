@@ -64,13 +64,20 @@ EOT
 }
 export -f install_tnsname
 
+# Download
+function download()
+{
+   echo "Downloading - $1"
+   wget -nv $1
+}
+
 # Install SQLCL 
 install_sqlcl() {
     install_java
     install_tnsname
     cd $HOME/db
     if [ ! -f sqlcl-latest.zip ]; then
-        wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+        download https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
         rm -Rf sqlcl
         unzip sqlcl-latest.zip
     fi 

@@ -36,7 +36,7 @@ build_ui() {
     mkdir -p ../../target/compute/ui
     cp -r ui/* ../../target/compute/ui/.
   elif [ "$TF_VAR_deploy_type" == "function" ]; then 
-    oci os object bulk-upload -ns $OBJECT_STORAGE_NAMESPACE -bn ${TF_VAR_prefix}-public-bucket --src-dir ui --overwrite --content-type auto
+    oci os object bulk-upload -ns $TF_VAR_namespace -bn ${TF_VAR_prefix}-public-bucket --src-dir ui --overwrite --content-type auto
   else
     # Kubernetes and Container Instances
     docker image rm ${TF_VAR_prefix}-ui:latest
@@ -123,13 +123,15 @@ ocir_docker_push () {
   echo DOCKER_PREFIX=$DOCKER_PREFIX
 
   # Push image in registry
-  if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-    docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
-    oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-app 2>/dev/null
-    docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
-    exit_on_error "docker push APP"
-    echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest" > $TARGET_DIR/docker_image_app.txt
-  fi
+  for APP_DIR in `app_dir_list`; do
+    if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
+      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest
+      oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_DIR} 2>/dev/null
+      docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest
+      exit_on_error "docker push APP"
+      echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest" > $TARGET_DIR/docker_image_${APP_DIR}.txt
+    fi
+  done
 
   # Push image in registry
   if [ -d $PROJECT_DIR/src/ui ]; then
@@ -211,9 +213,27 @@ get_output_from_tfstate () {
   fi
 }
 
+# Append a line in tf_env.sh (typically used in before_build.sh to add custom variable to pass to bastion/compute/...)
 append_tf_env() {
   echo "$1"
-  echo "$1" >> $TARGET_DIR/tf_env.sh
+  echo "$1" > $TARGET_DIR/tf_env.sh
+}
+
+# Convert tf_env.sh to configmap
+tf_env_configmap() {
+  echo "apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tf_env_configmap
+data:" > $TARGET_DIR/tf_env_configmap.yaml
+
+  grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
+    VAR=$(echo $line | sed 's/export //')
+    KEY=$(echo $VAR | cut -d= -f1)
+    VALUE=$(echo $VAR | cut -d= -f2-)
+    echo "  $KEY: \"$VALUE\"" >> $TARGET_DIR/tf_env_configmap.yaml
+  done
+  echo "$TARGET_DIR/tf_env_configmap.yaml created."
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
