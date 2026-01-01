@@ -11,7 +11,7 @@ function wait_ingress() {
   kubectl wait --namespace ingress-nginx --for=condition=Complete job/ingress-nginx-admission-patch  
 }
 
-# Call build_common to push the ${TF_VAR_prefix}-app:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
+# Call build_common to push the ${TF_VAR_prefix}-${APP_NAME}:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
 ocir_docker_push
 
 # One time configuration
@@ -86,37 +86,47 @@ if [ "$TF_VAR_auth_token" == "" ]; then
   echo "TOKEN=$TOKEN" | cut -c 1-50
   kubectl create secret docker-registry ocirsecret --docker-server=$OCIR_HOST --docker-username="BEARER_TOKEN" --docker-password="$TOKEN" --docker-email="$TF_VAR_email"
 else
-  kubectl create secret docker-registry ocirsecret --docker-server=$OCIR_HOST --docker-username="$OBJECT_STORAGE_NAMESPACE/$TF_VAR_username" --docker-password="$TF_VAR_auth_token" --docker-email="$TF_VAR_email"
+  kubectl create secret docker-registry ocirsecret --docker-server=$OCIR_HOST --docker-username="$TF_VAR_namespace/$TF_VAR_username" --docker-password="$TF_VAR_auth_token" --docker-email="$TF_VAR_email"
 fi  
 
+
+# Delete the old pod, just to be sure a new image is pulled (not the best idea in the world...XXXX)
+# Replaced by :latest in the docker image value.
+# kubectl delete pod ${TF_VAR_prefix}-ui --ignore-not-found=true
+# kubectl delete deployment ${TF_VAR_prefix}-dep --ignore-not-found=true
+# Wait to be sure that the deployment is deleted before to recreate
+# kubectl wait --for=delete deployment/${TF_VAR_prefix}-dep --timeout=30s
+
+# Kubectl apply
 # Using & as separator
-sed "s&##DOCKER_PREFIX##&${DOCKER_PREFIX}&" src/app/app.yaml > $TARGET_DIR/app.yaml
+
+# APP
+for APP_NAME in `app_name_list`; do
+  APP_YAML="k8s_${APP_NAME}.yaml"
+  sed "s&##DOCKER_PREFIX##&${DOCKER_PREFIX}&" src/app/${APP_YAML} > $TARGET_DIR/${APP_YAML}
+  # If present, replace the ORDS URL
+  if [ "$ORDS_URL" != "" ]; then
+    ORDS_HOST=`basename $(dirname $ORDS_URL)`
+    sed -i "s&##ORDS_HOST##&$ORDS_HOST&" $TARGET_DIR/${APP_YAML}
+  fi 
+  kubectl apply -f $TARGET_DIR/${APP_YAML}
+done
+
+# UI
 sed "s&##DOCKER_PREFIX##&${DOCKER_PREFIX}&" src/ui/ui.yaml > $TARGET_DIR/ui.yaml
+kubectl apply -f $TARGET_DIR/ui.yaml
+
+# Ingress
 cp src/oke/ingress-app.yaml $TARGET_DIR/ingress-app.yaml
 cp src/oke/ingress-ui.yaml $TARGET_DIR/ingress-ui.yaml
-
 # TLS - Domain Name
 if [ "$TF_VAR_tls" == "new_http_01" ]; then
   sed -i "s&##DNS_NAME##&$TF_VAR_dns_name&" $TARGET_DIR/ingress-app.yaml
   sed -i "s&##DNS_NAME##&$TF_VAR_dns_name&" $TARGET_DIR/ingress-ui.yaml
 fi
-
-# If present, replace the ORDS URL
 if [ "$ORDS_URL" != "" ]; then
-  ORDS_HOST=`basename $(dirname $ORDS_URL)`
-  sed -i "s&##ORDS_HOST##&$ORDS_HOST&" $TARGET_DIR/app.yaml
   sed -i "s&##ORDS_HOST##&$ORDS_HOST&" $TARGET_DIR/ingress-app.yaml
-fi 
-
-# delete the old pod, just to be sure a new image is pulled
-kubectl delete pod ${TF_VAR_prefix}-ui --ignore-not-found=true
-kubectl delete deployment ${TF_VAR_prefix}-dep --ignore-not-found=true
-# Wait to be sure that the deployment is deleted before to recreate
-kubectl wait --for=delete deployment/${TF_VAR_prefix}-dep --timeout=30s
-
-# Create objects in Kubernetes
-kubectl apply -f $TARGET_DIR/app.yaml
-kubectl apply -f $TARGET_DIR/ui.yaml
+fi
 kubectl apply -f $TARGET_DIR/ingress-app.yaml
 kubectl apply -f $TARGET_DIR/ingress-ui.yaml
 

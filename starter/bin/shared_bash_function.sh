@@ -7,9 +7,9 @@ title() {
   echo  
 }
 
-# Used in for loop for APP_DIR
-app_dir_list() {
-  ls -d $PROJECT_DIR/src/app* | sort -g | sed "s/.*src\///g"
+# Used in for loop for APP_NAME
+app_name_list() {
+  ls -d $PROJECT_DIR/src/app/build_*.sh | sort -g | sed "s#.*src/app/build_##g" | sed "s/\.sh$//"
 }
 
 # Java Build Common
@@ -54,18 +54,18 @@ build_rsync() {
     cp src/*.sh target/.
   fi
 
-  # Copy all the app files in $TARGET_DIR/compute/$APP_DIR
-  mkdir -p $TARGET_DIR/compute/$APP_DIR
-  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_DIR --exclude starter --exclude terraform.tfvars
+  # Copy all the app files in $TARGET_DIR/compute/$APP_NAME
+  mkdir -p $TARGET_DIR/compute/$APP_NAME
+  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_NAME --exclude starter --exclude terraform.tfvars
 
   # Replace the user and password in start.sh
-  if [ -f $TARGET_DIR/compute/$APP_DIR/start.sh ]; then
-    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_DIR/start.sh
+  if [ -f $TARGET_DIR/compute/$APP_NAME/start.sh ]; then
+    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_NAME/start.sh
   fi
 
   # Replace variables in env.sh
-  if [ -f $TARGET_DIR/compute/$APP_DIR/env.sh ]; then 
-    file_replace_variables $TARGET_DIR/compute/$APP_DIR/env.sh
+  if [ -f $TARGET_DIR/compute/$APP_NAME/env.sh ]; then 
+    file_replace_variables $TARGET_DIR/compute/$APP_NAME/env.sh
   fi 
 }
 
@@ -123,13 +123,13 @@ ocir_docker_push () {
   echo DOCKER_PREFIX=$DOCKER_PREFIX
 
   # Push image in registry
-  for APP_DIR in `app_dir_list`; do
+  for APP_NAME in `app_name_list`; do
     if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest
-      oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_DIR} 2>/dev/null
-      docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest
+      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+      oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_NAME} 2>/dev/null
+      docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       exit_on_error "docker push APP"
-      echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_DIR}:latest" > $TARGET_DIR/docker_image_${APP_DIR}.txt
+      echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest" > $TARGET_DIR/docker_image_${APP_NAME}.txt
     fi
   done
 
