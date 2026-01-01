@@ -32,12 +32,10 @@ fi
 cd $SCRIPT_DIR
 
 # Java
-sudo dnf install -y graalvm-25-jdk maven
-sudo update-alternatives --set java /usr/lib64/graalvm/graalvm-java25/bin/java
-echo "export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25" >> $HOME/.bashrc
+install_java
 
 # Build Tika
-export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25
 cd src/tika
+sudo dnf install -y maven
 mvn package
 cd -
