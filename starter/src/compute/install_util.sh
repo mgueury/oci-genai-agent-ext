@@ -3,26 +3,30 @@
 install_java() {
   # Install the JVM (jdk or graalvm)
   if [ "$TF_VAR_java_vm" == "graalvm" ]; then
+    if grep -q 'export JAVA_HOME' $HOME/.bashrc; then
+      echo "Java already installed " 
+      return
+    fi
     # GraalVM
     if [ "$TF_VAR_java_version" == 8 ]; then
       sudo dnf install -y graalvm21-ee-8-jdk 
-      sudo update-alternatives --set java /usr/lib64/graalvm/graalvm22-ee-java8/bin/java
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm22-ee-java8
     elif [ "$TF_VAR_java_version" == 11 ]; then
       sudo dnf install -y graalvm22-ee-11-jdk
-      sudo update-alternatives --set java /usr/lib64/graalvm/graalvm22-ee-java11/bin/java
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm22-ee-java11
     elif [ "$TF_VAR_java_version" == 17 ]; then
       sudo dnf install -y graalvm22-ee-17-jdk 
-      sudo update-alternatives --set java /usr/lib64/graalvm/graalvm22-ee-java17/bin/java
-      # sudo update-alternatives --set native-image /usr/lib64/graalvm/graalvm22-ee-java17/lib/svm/bin/native-image
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm22-ee-java17
     elif [ "$TF_VAR_java_version" == 21 ]; then
       sudo dnf install -y graalvm-21-jdk
-      sudo update-alternatives --set java /usr/lib64/graalvm/graalvm-java21/bin/java
-      # sudo update-alternatives --set native-image /usr/lib64/graalvm/graalvm-java21/lib/svm/bin/native-image
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm-java21
     else
       sudo dnf install -y graalvm-25-jdk
-      sudo update-alternatives --set java /usr/lib64/graalvm/graalvm-java25/bin/java
-      # sudo update-alternatives --set native-image /usr/lib64/graalvm/graalvm-java21/lib/svm/bin/native-image
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm-java25    
+      # sudo update-alternatives --set native-image $JAVA_HOME/lib/svm/bin/native-image
     fi   
+    sudo update-alternatives --set java $JAVA_HOME/bin/java
+    echo "export JAVA_HOME=${JAVA_HOME}" >> $HOME/.bashrc
   else
     # JDK 
     # Needed due to concurrency

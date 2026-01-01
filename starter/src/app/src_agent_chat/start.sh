@@ -3,7 +3,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 export PATH=~/.local/bin/:$PATH
 
-cd src/agent-chat-app/apps/web
+cd agent-chat-app/apps/web
 
 # Start only the user interface
 # REACT2SHELL DO NOT START BEFORE FIXED
