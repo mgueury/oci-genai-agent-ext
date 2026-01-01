@@ -92,7 +92,7 @@ resource "null_resource" "build_deploy" {
         # Build all apps
         for APP_NAME in `app_name_list`; do
             title "Build App $APP_NAME"
-            src/app/build_${APP_NAME}.sh
+            src/app/build_$APP_NAME.sh
             exit_on_error "Build App $APP_NAME"
         done
 
