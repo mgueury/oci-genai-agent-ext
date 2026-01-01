@@ -55,17 +55,17 @@ build_rsync() {
   fi
 
   # Copy all the app files in $TARGET_DIR/compute/$APP_NAME
-  mkdir -p $TARGET_DIR/compute/$APP_NAME
-  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_NAME --exclude starter --exclude terraform.tfvars
+  mkdir -p $TARGET_DIR/compute/$APP_COMPUTE_DIR
+  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_COMPUTE_DIR --exclude starter --exclude terraform.tfvars
 
   # Replace the user and password in start.sh
-  if [ -f $TARGET_DIR/compute/$APP_NAME/start.sh ]; then
-    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_NAME/start.sh
+  if [ -f $TARGET_DIR/compute/$APP_COMPUTE_DIR/start.sh ]; then
+    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_COMPUTE_DIR/start.sh
   fi
 
   # Replace variables in env.sh
-  if [ -f $TARGET_DIR/compute/$APP_NAME/env.sh ]; then 
-    file_replace_variables $TARGET_DIR/compute/$APP_NAME/env.sh
+  if [ -f $TARGET_DIR/compute/$APP_COMPUTE_DIR/env.sh ]; then 
+    file_replace_variables $TARGET_DIR/compute/$APP_COMPUTE_DIR/env.sh
   fi 
 }
 

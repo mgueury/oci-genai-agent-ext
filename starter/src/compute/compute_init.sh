@@ -43,10 +43,10 @@ for APP_DIR in `ls -d app* | sort -g`; do
 done
 
 # -- app/start*.sh -----------------------------------------------------------
-for APP_DIR in `ls -d app* | sort -g`; do
-#   if [ -f $APP_DIR/restart.sh ]; then
-#    echo "$APP_DIR/restart.sh exists already"
-#  else
+for APP_DIR in `ls -d ls -d app app/* 2>/dev/null | sort -g`; do
+  if [ -f $APP_DIR/restart.sh ]; then
+    echo "$APP_DIR/restart.sh exists already"
+  else
     echo "#!/usr/bin/env bash" > $APP_DIR/restart.sh 
     for START_SH in `ls $APP_DIR/start*.sh | sort -g`; do
       echo "-- $START_SH ---------------------------------------"
@@ -85,7 +85,7 @@ EOT
       sudo systemctl enable $APP_NAME.service
       echo "sudo systemctl restart $APP_NAME" >> $APP_DIR/restart.sh 
     done  
-#  fi  
+  fi  
   chmod +x $APP_DIR/restart.sh  
   $APP_DIR/restart.sh
 done 
