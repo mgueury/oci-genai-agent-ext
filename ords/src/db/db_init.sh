@@ -20,10 +20,14 @@ export TNS_ADMIN=$SCRIPT_DIR
 export NLS_LANG=AMERICAN_AMERICA.UTF8
 
 # Install SQLCL (Java program)
-wget https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
-rm -Rf sqlcl
-unzip sqlcl-latest.zip
-sudo dnf install -y java-17 
+if [ ! -f sqlcl-latest.zip ]; then 
+  wget https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+  rm -Rf sqlcl
+  unzip sqlcl-latest.zip
+  sudo dnf install -y java-17 
+else 
+  echo "sqlcl already installed"
+fi  
 
 # Create the script to install the APEX Application
 cat > import_application.sql << EOF 

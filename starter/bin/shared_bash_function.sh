@@ -216,7 +216,7 @@ get_output_from_tfstate () {
 # Append a line in tf_env.sh (typically used in before_build.sh to add custom variable to pass to bastion/compute/...)
 append_tf_env() {
   echo "$1"
-  echo "$1" > $TARGET_DIR/tf_env.sh
+  echo "$1" >> $TARGET_DIR/tf_env.sh
 }
 
 # Convert tf_env.sh to configmap
