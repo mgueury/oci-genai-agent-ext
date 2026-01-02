@@ -90,10 +90,10 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       methods = [ "GET" ]
       backend {
         type = "OAUTH2_LOGOUT_BACKEND"
-        allowed_post_logout_uris = [ "/logout_html", "https://www.oracle.com" ]
+        allowed_post_logout_uris = [ "/logout_html", "https://www.oracle.com", "https://${local.apigw_hostname}/" ]
       }
     }
-    # https://xxxxxx.apigateway.eu-frankfurt-1.oci.customer-oci.com/openid/logout?postLogoutUrl=http://www.oracle.com
+    # https://xxxxxx.apigateway.eu-frankfurt-1.oci.customer-oci.com/openid/logout?postLogoutUrl=/logout_html
     routes {
       path    = "/logout_html"
       methods = [ "GET" ]
@@ -264,9 +264,9 @@ resource "oci_identity_domains_app" "starter_confidential_app" {
   is_unmanaged_app         = "false"
   is_web_tier_policy       = "false"
   login_mechanism = "OIDC"
-  logout_uri = "https://${local.apigw_hostname}/${var.prefix}/"
+  logout_uri = "https://${local.apigw_hostname}/openid/logout"
   post_logout_redirect_uris = [
-    "https://${local.apigw_hostname}/${var.prefix}/",
+    "https://${local.apigw_hostname}/",
   ]
   redirect_uris = [
     "https://${local.apigw_hostname}/openid/chat.html"
