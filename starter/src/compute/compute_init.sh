@@ -59,7 +59,7 @@ for APP_DIR in `app_dir_list`; do
       echo "-- $START_SH ---------------------------------------"
       if [[ "$START_SH" =~ start_(.*).sh ]]; then
         APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/start_([a-zA-Z0-9_]+)\.sh$/\1_\2/')
-      elif [[ "$START_SH" =~ app/(.*)/start.sh ]];
+      elif [[ "$START_SH" =~ app/(.*)/start.sh ]]; then
         APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/([a-zA-Z0-9_]+)/start\.sh$/\1_\2/')
       else
         APP_NAME=${APP_DIR}
