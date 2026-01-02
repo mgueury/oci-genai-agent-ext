@@ -143,6 +143,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
           use_cookies_for_session = true
           use_pkce = true
           fallback_redirect_path = "/fallback"
+          logout_path = "/logout"
           source_uri_details {
             // Use the same discovery URI as the validation policy above.
             type = "VALIDATION_BLOCK"
