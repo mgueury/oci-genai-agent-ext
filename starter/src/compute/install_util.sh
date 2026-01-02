@@ -74,6 +74,7 @@ function download()
    echo "Downloading - $1"
    wget -nv $1
 }
+export -f download
 
 # Install SQLCL 
 install_sqlcl() {
@@ -103,6 +104,7 @@ install_python() {
       uv pip install -r src/requirements.txt
     fi 
 }
+export -f install_python
 
 # Install LibreOffice
 install_libreoffice() {
@@ -122,7 +124,8 @@ install_libreoffice() {
     export LIBRE_OFFICE_EXE=`find ${PATH//:/ } -maxdepth 1 -executable -name 'libreoffice*' | grep "libreoffice"`
     echo LIBRE_OFFICE_EXE=$LIBRE_OFFICE_EXE
     cd -
-}    
+} 
+export -f install_libreoffice   
 
 # Install Chrome
 install_chrome() {
@@ -135,6 +138,7 @@ install_chrome() {
     fi
     cd -
 } 
+export -f install_chrome   
 
 # Install InstantClient (including SqlPlus)
 install_instant_client() {
@@ -156,3 +160,4 @@ install_instant_client() {
         cd -
     fi
 }
+export -f install_instant_client   
