@@ -89,10 +89,14 @@ input[type="text"] {
 }
 
 button {
-    padding: 14px 14px;
+    padding: 10px 10px;
     border-radius: 18px;
     border: 1px lightgray solid;
     background-color: lightgray;
+}
+
+button img {
+    height: 25px;
 }
 
 .tool-calls {
