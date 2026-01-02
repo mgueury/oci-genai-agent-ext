@@ -77,7 +77,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       methods = [ "GET" ]
       backend {
         type = "OAUTH2_LOGOUT_BACKEND"
-        allowed_post_logout_uris = [ "/logout_html" ]
+        allowed_post_logout_uris = [ "logout_html", "https://www.oracle.com" ]
       }
     }
     routes {
@@ -88,7 +88,8 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
         body = "Logout Error: OAUTH2 Token could not be revoked."
         status = 200
       }
-    }             
+    }         
+    https://fe56ccggt6m5qaqjzv6ld37yeq.apigateway.eu-frankfurt-1.oci.customer-oci.com/openid/logout?postLogoutUrl=%2Flogout_html    
     request_policies {
       authentication {
         type = "TOKEN_AUTHENTICATION"
