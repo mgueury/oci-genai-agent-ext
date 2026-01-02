@@ -94,7 +94,7 @@ EOT
       echo "sudo systemctl restart $APP_NAME" >> $APP_DIR/restart.sh 
     done  
   # fi  
-  if[ -f $APP_DIR/restart.sh ]; then
+  if [ -f $APP_DIR/restart.sh ]; then
     chmod +x $APP_DIR/restart.sh  
     $APP_DIR/restart.sh
   fi
