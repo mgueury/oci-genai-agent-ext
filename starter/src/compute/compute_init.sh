@@ -55,6 +55,7 @@ for APP_DIR in `app_dir_list`; do
   # if [ -f $APP_DIR/restart.sh ]; then
   #  echo "$APP_DIR/restart.sh exists already"
   # else
+    rm $APP_DIR/restart.sh 
     for START_SH in `ls $APP_DIR/start*.sh | sort -g`; do
       echo "-- $START_SH ---------------------------------------"
       if [[ "$START_SH" =~ start_(.*).sh ]]; then
