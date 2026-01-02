@@ -86,6 +86,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       backend {
         type = "STOCK_RESPONSE_BACKEND"
         body = "Token could not be revoked."
+        status = 200
       }
       request_policies {
         authorization {
