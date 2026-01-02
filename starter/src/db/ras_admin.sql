@@ -6,7 +6,6 @@ BEGIN
 END;
 /
 
-
 exec sys.xs_principal.create_role(name => 'employee_role', enabled => true);
 exec sys.xs_principal.create_role(name => 'customer_role', enabled => true);
 

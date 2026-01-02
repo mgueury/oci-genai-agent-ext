@@ -63,6 +63,19 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
           }
         }  
       }    
+      response_policies {
+        header_transformations {
+          set_headers {
+            items {
+              if_exists = "OVERWRITE"
+              name      = "	X-CSRF-TOKEN"
+              values = [
+                "${request.auth[apigw_csrf_token]}",
+              ]
+            }
+          }
+        }  
+      }    
     }     
     routes {
       path    = "/{pathname*}"

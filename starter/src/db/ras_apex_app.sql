@@ -10,24 +10,6 @@ end;
 
 CREATE VECTOR INDEX APEX_APP.SUPPORT_SR_HNSW_IDX ON APEX_APP.SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
-
-exec sys.xs_principal.create_role(name => 'employee_role', enabled => true);
-exec sys.xs_principal.create_role(name => 'customer_role', enabled => true);
-
-create role ras_role;
-grant select on apex_app.support_sr to ras_role;
-grant execute on apex_app.ai_plsql to ras_role;
-grant ras_role to employee_role;
-grant ras_role to customer_role;
-
-exec sys.xs_principal.create_user(name => 'employee', schema => 'APEX_APP');
-exec sys.xs_principal.set_password('employee', 'Not__Used1234');
-exec sys.xs_principal.create_user(name => 'customer', schema => 'APEX_APP');
-exec sys.xs_principal.set_password('customer', 'Not__Used1234');
-
-exec  sys.xs_principal.grant_roles('employee', 'employee_role');
-exec  sys.xs_principal.grant_roles('customer', 'customer_role');
-
 begin
     sys.xs_security_class.create_security_class(
     name => 'SUPPORT_SR_SEC_CLASS',

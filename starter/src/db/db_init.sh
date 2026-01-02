@@ -3,26 +3,13 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
 . ./tf_env.sh
+. ./compute_shared.sh
 
-# Install SQLCL (Java program)
-wget -nv https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
-rm -Rf sqlcl
-unzip sqlcl-latest.zip
-sudo dnf install -y java-17 
+# Install SQLCL
+install_sqlcl
 
-# Install SQL*Plus
-if [[ `arch` == "aarch64" ]]; then
-  sudo dnf install -y oracle-release-el8 
-  sudo dnf install -y oracle-instantclient19.19-basic oracle-instantclient19.19-sqlplus oracle-instantclient19.19-tools
-else
-  export INSTANT_VERSION=23.26.0.0.0-1
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm
-  wget -nv https://download.oracle.com/otn_software/linux/instantclient/2326000/oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
-  sudo dnf install -y oracle-instantclient-basic-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-sqlplus-${INSTANT_VERSION}.el8.x86_64.rpm oracle-instantclient-tools-${INSTANT_VERSION}.el8.x86_64.rpm
-  mv *.rpm /tmp
-fi
-
+# Install SQL*Plus / SQL*Loader
+install_instant_client
 
 # Create the script to install the APEX Application
 cat > import_application.sql << EOF 
@@ -94,13 +81,6 @@ end;
 quit
 EOF
 
-# Run sqlcl
-# Install the tables
-cat > tnsnames.ora <<EOT
-DB  = $DB_URL
-EOT
-
-export TNS_ADMIN=$HOME/db
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @import_application.sql
 
 # Install DocChunks 

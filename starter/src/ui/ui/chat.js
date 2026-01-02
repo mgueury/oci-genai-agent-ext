@@ -322,7 +322,7 @@ async function fetchUserInfo() {
         method: 'GET',
         credentials: 'include'
     });
-    if (!response.ok) throw new Error('Failed to fetch agents');
+    if (!response.ok) throw new Error('Failed to fetch UserInfo');
     csrfToken = response.headers.get('x-csrf-token');
     console.log( `Found x-csrf-token ${csrfToken}` )    
     let data = await response.json();
