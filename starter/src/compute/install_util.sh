@@ -61,10 +61,11 @@ export -f install_java
 install_tnsname() {
     # Run SQLCl
     # Install the tables
-    cat > $HOME/db/tnsnames.ora <<EOT
+    export TNS_ADMIN=$HOME/db
+    mkdir -p $TNS_ADMIN
+    cat > $TNS_ADMIN/tnsnames.ora <<EOT
 DB = $DB_URL
 EOT
-    export TNS_ADMIN=$HOME/db
 }
 export -f install_tnsname
 
