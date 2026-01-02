@@ -1,5 +1,5 @@
 begin
-  update SUPPORT_SR set EMBEDDING=ai_plsql.genai_embed( question || chr(13) || answer  );
+  update APEX_APP.SUPPORT_SR set EMBEDDING=ai_plsql.genai_embed( question || chr(13) || answer  );
   commit;
 end;
 /
@@ -8,7 +8,7 @@ end;
 -- EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_QUESTION_IDX');
 -- EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_ANSWER_IDX');
 
-CREATE VECTOR INDEX SUPPORT_SR_HNSW_IDX ON APEX_APP.SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
+CREATE VECTOR INDEX APEX_APP.SUPPORT_SR_HNSW_IDX ON APEX_APP.SUPPORT_SR(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 
 exec sys.xs_principal.create_role(name => 'employee_role', enabled => true);

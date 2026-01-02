@@ -35,13 +35,6 @@ grant execute on DBMS_CLOUD to APEX_APP;
 grant execute on DBMS_CLOUD_AI to APEX_APP;
 grant execute on CTX_DDL to APEX_APP;
 grant execute on DBMS_SCHEDULER to APEX_APP;
-grant xs_session_admin, create session to APEX_APP;
-grant execute on DBMS_XS_SESSIONS to apex_app;
-BEGIN
-    -- Grant system privileges
-    SYS.XS_ADMIN_CLOUD_UTIL.GRANT_SYSTEM_PRIVILEGE('ADMIN_ANY_SEC_POLICY','APEX_APP',SYS.XS_ADMIN_UTIL.PTYPE_DB,NULL);
-END;
-/
 grant create any job to APEX_APP;
 /
 begin
@@ -133,8 +126,10 @@ CREATE TABLE SUPPORT_SR (
     last_update_date DATE DEFAULT SYSTIMESTAMP NOT NULL,
     owner_id NUMBER,
     embedding VECTOR,
-    internal NUMBER
-    FOREIGN KEY (owner_id) REFERENCES SUPPORT_OWNER(id)
+    internal NUMBER,
+    CONSTRAINT FK_SUPPORT_OWNER 
+       FOREIGN KEY (owner_id) 
+       REFERENCES SUPPORT_OWNER(id)
 );
 exit;
 EOF
@@ -146,7 +141,8 @@ sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_table.sql
 /usr/lib/oracle/23/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=support_sr.ctl
 /usr/lib/oracle/23/client64/bin/sqlldr APEX_APP/$DB_PASSWORD@DB CONTROL=ai_eval_question_answer.ctl
 
-sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_index.sql
+sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @ras_admin.sql
+sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @ras_apex_app.sql
 
 
 # ORCL_DB_SSE (Micronaut)
@@ -189,7 +185,7 @@ begin
   AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
   AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
   AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
-  AI_CONFIG_UPDATE( 'bucket_url',  '$BUCKET_URL' );
+  AI_CONFIG_UPDATE( 'bucket_url',          '$BUCKET_URL' );
   AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
   -- AI_EVAL
   AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );
