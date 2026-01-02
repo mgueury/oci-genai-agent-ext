@@ -57,9 +57,10 @@ for APP_DIR in `app_dir_list`; do
   # else
     for START_SH in `ls $APP_DIR/start*.sh | sort -g`; do
       echo "-- $START_SH ---------------------------------------"
-      START_SH2=$(basename "$START_SH")
-      if [[ "$START_SH2" =~ start_(.*).sh ]]; then
-        APP_NAME=$(echo "$START_SH2" | sed -E 's/(.*)\/start_([a-zA-Z0-9_]+)\.sh$/\1_\2/')
+      if [[ "$START_SH" =~ start_(.*).sh ]]; then
+        APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/start_([a-zA-Z0-9_]+)\.sh$/\1_\2/')
+      elif [[ "$START_SH" =~ app/(.*)/start.sh ]];
+        APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/([a-zA-Z0-9_]+)/start\.sh$/\1_\2/')
       else
         APP_NAME=${APP_DIR}
       fi
