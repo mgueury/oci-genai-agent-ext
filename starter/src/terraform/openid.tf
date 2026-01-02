@@ -71,7 +71,29 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
         type = "HTTP_BACKEND"
         url    = "http://${local.apigw_dest_private_ip}/$${request.path[pathname]}"
       } 
-    }           
+    }  
+    routes {
+      path    = "/logout"
+      methods = [ "GET" ]
+      backend = {
+        type = "OAUTH2_LOGOUT"
+        allowed_post_logout_uris = [ "/logout_html" ]
+        post_logout_state = request.query[region]
+      }
+    }
+    routes {
+      path    = "/logout_html"
+      methods = [ "GET" ]
+      backend = {
+        type = "STOCK_RESPONSE_BACKEND",
+        body = "Token could not be revoked."
+      }
+      request_policies = {
+        authorization = {
+          type = "ANONYMOUS"
+        }
+      }
+    }             
     request_policies {
       authentication {
         type = "TOKEN_AUTHENTICATION"
