@@ -40,9 +40,13 @@ app_dir_list() {
 for APP_DIR in `app_dir_list`; do
   if [ -f $APP_DIR/install.sh ]; then
     echo "-- $APP_DIR: Install -----------------------------------------"
-    chmod +x ${APP_DIR}/install.sh
-    chmod +x ${APP_DIR}/env.sh
-    ${APP_DIR}/install.sh
+    if [ -f ${APP_DIR}/env.sh ]; then
+      chmod +x ${APP_DIR}/env.sh
+    fi
+    if [ -f ${APP_DIR}/install.sh ]; then
+      chmod +x ${APP_DIR}/install.sh
+      ${APP_DIR}/install.sh
+    fi
   fi  
 done
 
@@ -90,8 +94,10 @@ EOT
       echo "sudo systemctl restart $APP_NAME" >> $APP_DIR/restart.sh 
     done  
   # fi  
-  chmod +x $APP_DIR/restart.sh  
-  $APP_DIR/restart.sh
+  if[ -f $APP_DIR/restart.sh ]; then
+    chmod +x $APP_DIR/restart.sh  
+    $APP_DIR/restart.sh
+  fi
 done 
 
 # -- Helper --------------------------------------------------------------------

@@ -8,5 +8,5 @@ export PATH=~/.local/bin/:$PATH
 cd langfuse
 
 # Start LangGraph CompiledStateGraph on port 2024
-podman compose up | tee ../langfuse.log
+podman compose up | tee ../../langfuse.log
 
