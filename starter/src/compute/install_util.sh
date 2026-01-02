@@ -62,7 +62,7 @@ install_tnsname() {
     # Run SQLCl
     # Install the tables
     cat > $HOME/db/tnsnames.ora <<EOT
-    DB  = $DB_URL
+DB = $DB_URL
 EOT
     export TNS_ADMIN=$HOME/db
 }
