@@ -82,16 +82,17 @@ form {
 
 input[type="text"] {
     flex: 1;
-    padding: 14px;
-    border-radius: 8px;
-    border: 2px lightgray solid;
-    outline: 1px lightgray solid;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px lightgray solid;
+    outline: 0px #eee solid;
 }
 
 button {
     padding: 14px 14px;
-    border-radius: 8px;
-    border: 2px lightgray solid;
+    border-radius: 18px;
+    border: 1px lightgray solid;
+    background-color: lightgray;
 }
 
 .tool-calls {
