@@ -6,5 +6,6 @@ export PATH=~/.local/bin/:$PATH
 . $HOME/compute/tf_env.sh
 
 # Start LangGraph CompiledStateGraph on port 2024
+source myenv/bin/activate
 langgraph dev --host 0.0.0.0 2>&1 | tee ../langgraph.log
 
