@@ -88,11 +88,6 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
         body = "Logout Error: OAUTH2 Token could not be revoked."
         status = 200
       }
-      request_policies {
-        authorization {
-          type = "ANONYMOUS"
-        }
-      }
     }             
     request_policies {
       authentication {
