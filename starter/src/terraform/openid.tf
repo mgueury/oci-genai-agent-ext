@@ -85,7 +85,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       path    = "/logout_html"
       methods = [ "GET" ]
       backend {
-        type = "STOCK_RESPONSE_BACKEND",
+        type = "STOCK_RESPONSE_BACKEND"
         body = "Token could not be revoked."
       }
       request_policies {
