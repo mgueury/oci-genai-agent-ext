@@ -75,7 +75,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
     routes {
       path    = "/logout"
       methods = [ "GET" ]
-      backend = {
+      backend {
         type = "OAUTH2_LOGOUT"
         allowed_post_logout_uris = [ "/logout_html" ]
         post_logout_state = request.query[region]
@@ -84,12 +84,12 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
     routes {
       path    = "/logout_html"
       methods = [ "GET" ]
-      backend = {
+      backend {
         type = "STOCK_RESPONSE_BACKEND",
         body = "Token could not be revoked."
       }
-      request_policies = {
-        authorization = {
+      request_policies {
+        authorization {
           type = "ANONYMOUS"
         }
       }
