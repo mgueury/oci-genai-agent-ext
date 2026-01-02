@@ -1,4 +1,4 @@
-# -- Shared Install functions ------------------------------------------------
+# -- Shared Compute Functions ------------------------------------------------
 
 title() {
   line='-------------------------------------------------------------------------'
@@ -7,8 +7,7 @@ title() {
   echo "-- $NAME ${line:${#NAME}}"
   echo  
 }
-export title
-
+export -f title
 
 install_java() {
   # Install the JVM (jdk or graalvm)

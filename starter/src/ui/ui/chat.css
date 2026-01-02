@@ -206,7 +206,7 @@ nav {
     position: absolute;
     top: 0;
     left: -250px;
-    height: 100vh;
+    height: calc(100vh - 70px);
     width: 220px;
     background: white;
     box-shadow: 2px 0 8px rgba(0,0,0,0.1);
