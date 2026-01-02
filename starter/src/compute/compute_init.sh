@@ -17,7 +17,7 @@ echo "ARCH=$ARCH"
 if ! grep -q "export LC_CTYPE" $HOME/.bashrc; then
   # Set VI and NANO in utf8
   echo "export LC_CTYPE=en_US.UTF-8" >> $HOME/.bashrc
-  shopt -s direxpand
+  echo "shopt -s direxpand" >> $HOME/.bashrc
 
   # Disable SELinux
   # XXXXXX Since OL8, the service does not start if SELINUX=enforcing XXXXXX
@@ -29,7 +29,7 @@ if ! grep -q "export LC_CTYPE" $HOME/.bashrc; then
 fi
 
 # Shared Install Funciton
-. ./install_util.sh
+. ./shared_compute.sh
 
 # -- App --------------------------------------------------------------------
 # Application Specific installation
@@ -42,7 +42,7 @@ app_dir_list() {
 
 for APP_DIR in `app_dir_list`; do
   if [ -f $APP_DIR/install.sh ]; then
-    echo "-- $APP_DIR: Install -----------------------------------------"
+    title "$APP_DIR: Install"
     if [ -f ${APP_DIR}/env.sh ]; then
       chmod +x ${APP_DIR}/env.sh
     fi
@@ -60,7 +60,7 @@ for APP_DIR in `app_dir_list`; do
   # else
     rm -f $APP_DIR/restart.sh 
     for START_SH in `ls $APP_DIR/start*.sh 2>/dev/null | sort -g`; do
-      echo "-- $START_SH ---------------------------------------"
+      title "$START_SH"
       if [[ "$START_SH" =~ start_(.*).sh ]]; then
         APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/start_([a-zA-Z0-9_]+)\.sh$/\1_\2/')
       elif [[ "$START_SH" =~ app/(.*)/start.sh ]]; then
@@ -111,6 +111,7 @@ mv helper.sh $HOME
 
 # -- UI --------------------------------------------------------------------
 # Install NGINX
+title "NGINX"
 sudo dnf install nginx -y > /tmp/dnf_nginx.log
 
 # Default: location /app/ { proxy_pass http://localhost:8080 }

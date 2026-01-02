@@ -1,5 +1,15 @@
 # -- Shared Install functions ------------------------------------------------
 
+title() {
+  line='-------------------------------------------------------------------------'
+  NAME=$1
+  echo
+  echo "-- $NAME ${line:${#NAME}}"
+  echo  
+}
+export title
+
+
 install_java() {
   # Install the JVM (jdk or graalvm)
   if [ "$TF_VAR_java_vm" != "jdk" ]; then
