@@ -14,16 +14,19 @@ fi
 export ARCH=`rpm --eval '%{_arch}'`
 echo "ARCH=$ARCH"
 
-# Disable SELinux
-# XXXXXX Since OL8, the service does not start if SELINUX=enforcing XXXXXX
-sudo setenforce 0
-sudo sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
+if ! grep -q "export LC_CTYPE" $HOME/.bashrc; then
+  # Set VI and NANO in utf8
+  echo "export LC_CTYPE=en_US.UTF-8" >> $HOME/.bashrc
+  shopt -s direxpand
 
-# Resize the boot volume (if >47GB)
-sudo /usr/libexec/oci-growfs -y
+  # Disable SELinux
+  # XXXXXX Since OL8, the service does not start if SELINUX=enforcing XXXXXX
+  sudo setenforce 0
+  sudo sed -i s/^SELINUX=.*$/SELINUX=permissive/ /etc/selinux/config
 
-# Set VI and NANO in utf8
-echo "export LC_CTYPE=en_US.UTF-8" >> $HOME/.bashrc
+  # Resize the boot volume (if >47GB)
+  sudo /usr/libexec/oci-growfs -y
+fi
 
 # Shared Install Funciton
 . ./install_util.sh
@@ -55,8 +58,8 @@ for APP_DIR in `app_dir_list`; do
   # if [ -f $APP_DIR/restart.sh ]; then
   #  echo "$APP_DIR/restart.sh exists already"
   # else
-    rm $APP_DIR/restart.sh 
-    for START_SH in `ls $APP_DIR/start*.sh | sort -g`; do
+    rm -f $APP_DIR/restart.sh 
+    for START_SH in `ls $APP_DIR/start*.sh 2>/dev/null | sort -g`; do
       echo "-- $START_SH ---------------------------------------"
       if [[ "$START_SH" =~ start_(.*).sh ]]; then
         APP_NAME=$(echo "$START_SH" | sed -E 's/(.*)\/start_([a-zA-Z0-9_]+)\.sh$/\1_\2/')
