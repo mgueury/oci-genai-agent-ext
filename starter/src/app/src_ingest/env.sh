@@ -48,15 +48,11 @@ export LANGFUSE_HOST=http://localhost:3000
 # export LANGSMITH_WORKSPACE_ID=agext
 
 # Python VirtualEnv
-if [ -d $HOME/app/myenv ]; then
-  source $HOME/app/myenv/bin/activate
+if [ -d myenv ]; then
+  source myenv/bin/activate
 fi
 
 # TNS_ADMIN
-mkdir -p $HOME/db
-cat > $HOME/db/tnsnames.ora <<EOT
-DB  = $DB_URL
-EOT
 export TNS_ADMIN=$HOME/db
 
 # During Initialisation - Store the env db in the database

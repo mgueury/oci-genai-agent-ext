@@ -7,4 +7,4 @@ export PATH=~/.local/bin/:$PATH
 
 export PYTHONPATH=$HOME/app_ingest/src
 # Default port is 2025
-python mcp_server_rag.py 2>&1 | tee mcp_server_rag.log
+python mcp_server_rag.py 2>&1 | tee ../mcp_server_rag.log
