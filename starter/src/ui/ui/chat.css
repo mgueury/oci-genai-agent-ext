@@ -211,7 +211,7 @@ nav {
     background: white;
     box-shadow: 2px 0 8px rgba(0,0,0,0.1);
     transition: left .3s;
-    padding-top: 60px;
+    border-top: solid 70px black;
 }
 nav.open {
     left: 0;
