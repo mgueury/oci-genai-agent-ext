@@ -2,7 +2,7 @@
 
 install_java() {
   # Install the JVM (jdk or graalvm)
-  if [ "$TF_VAR_java_vm" == "graalvm" ]; then
+  if [ "$TF_VAR_java_vm" != "jdk" ]; then
     if grep -q 'export JAVA_HOME' $HOME/.bashrc; then
       echo "Java already installed " 
       return
