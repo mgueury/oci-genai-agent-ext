@@ -94,6 +94,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment-openid" {
       }
     }
     # https://xxxxxx.apigateway.eu-frankfurt-1.oci.customer-oci.com/openid/logout?postLogoutUrl=/logout_html
+    # https://loqe4ar2tlraggzjmuel7ehslm.apigateway.eu-frankfurt-1.oci.customer-oci.com/openid/logout?postLogoutUrl=https://loqe4ar2tlraggzjmuel7ehslm.apigateway.eu-frankfurt-1.oci.customer-oci.com/
     routes {
       path    = "/logout_html"
       methods = [ "GET" ]
@@ -267,6 +268,7 @@ resource "oci_identity_domains_app" "starter_confidential_app" {
   logout_uri = "https://${local.apigw_hostname}/openid/logout"
   post_logout_redirect_uris = [
     "https://${local.apigw_hostname}/",
+    "https://${local.apigw_hostname}/openid/chat.html",
   ]
   redirect_uris = [
     "https://${local.apigw_hostname}/openid/chat.html"
