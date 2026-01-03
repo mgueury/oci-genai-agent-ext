@@ -237,21 +237,23 @@ document.addEventListener('keydown', function (e) {
 function renderUserList() {
     const userList = document.getElementById('userList');
     userList.innerHTML = '';
-    users.forEach(user => {
+    if( csrfToken=="" ) {
+        users.forEach(user => {
+            const li = document.createElement('li');
+            li.textContent = user;
+            li.tabIndex = 0;
+            li.setAttribute('aria-current', user === currentUser ? 'true' : 'false');
+            li.addEventListener('click', () => setCurrentUser(user));
+            userList.appendChild(li);
+        });
+    } else {
         const li = document.createElement('li');
-        li.textContent = user;
-        li.tabIndex = 0;
-        li.setAttribute('aria-current', user === currentUser ? 'true' : 'false');
-
-        li.addEventListener('click', () => setCurrentUser(user));
-        li.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                setCurrentUser(user);
-                e.preventDefault();
-            }
+        li.textContent = "Logout";
+        li.addEventListener('click', () => { 
+            window.location.href = '/openid/logout?postLogoutUrl='+window.location.origin+'/openid/chat.html'; 
         });
         userList.appendChild(li);
-    });
+    }
 }
 
 // Agents section
@@ -281,14 +283,7 @@ function renderAgentList(agents) {
         li.textContent = agent.graph_id;
         li.tabIndex = 0;
         li.setAttribute('aria-current', agent.graph_id === currentAgent ? 'true' : 'false');
-
         li.addEventListener('click', () => setCurrentAgent(agent.graph_id));
-        li.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                setCurrentAgent(agent.graph_id);
-                e.preventDefault();
-            }
-        });
         agentList.appendChild(li);
     });
 }
