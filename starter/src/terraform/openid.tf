@@ -266,6 +266,7 @@ resource "oci_identity_domains_app" "starter_confidential_app" {
   login_mechanism = "OIDC"
   logout_uri = "https://${local.apigw_hostname}/openid/logout"
   post_logout_redirect_uris = [
+    "https://www.oracle.com",
     "https://${local.apigw_hostname}/",
     "https://${local.apigw_hostname}/openid/chat.html",
   ]

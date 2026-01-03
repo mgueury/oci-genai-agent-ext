@@ -250,7 +250,8 @@ function renderUserList() {
         const li = document.createElement('li');
         li.textContent = "Logout";
         li.addEventListener('click', () => { 
-            window.location.href = '/openid/logout?postLogoutUrl='+window.location.origin+'/openid/chat.html'; 
+            /* window.location.href = '/openid/logout?postLogoutUrl='+window.location.origin+'/openid/chat.html'; */
+            window.location.href = '/openid/logout?postLogoutUrl=https://www.oracle.com';
         });
         userList.appendChild(li);
     }
