@@ -143,9 +143,10 @@ function startSSE(reqBody, onMessage, onDone) {
                         let json = safeParse(data);
                         if (json?.messages) {
                             for (const id in json.messages) {
-                                if (id > last_message_id) {
+                                let nid = Number(id)
+                                if (nid > last_message_id) {
                                     onMessage(json.messages[id]);
-                                    last_message_id = id
+                                    last_message_id = nid
                                 }
                             }
                         }
