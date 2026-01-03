@@ -78,8 +78,11 @@ CREATE INDEX APEX_APP.docs_langchain_ctx_index on APEX_APP.docs_langchain( text 
 CREATE INDEX APEX_APP.docs_langchain_category1_index on APEX_APP.docs_langchain( category1 );  
 -- This should work, but I get sometimes ORA-51928: Data Manipulation Language (DML) on tables with in-memory neighbor graph vector index is not supported
 CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE COSINE WITH TARGET ACCURACY 95;
--- WA 
--- CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) ORGANIZATION NEIGHBOR PARTITIONS DISTANCE COSINE WITH TARGET ACCURACY 95;
+-- WA - XXXX
+-- ORA-51978: Creating a vector index with covering columns is supported only on IVF indexes.
+-- DROP INDEX docs_langchain_hnsw_idx;
+-- WAIT
+-- CREATE VECTOR INDEX APEX_APP.docs_langchain_hnsw_idx ON APEX_APP.docs_langchain(embedding) INCLUDE (category1) ORGANIZATION NEIGHBOR PARTITIONS DISTANCE COSINE WITH TARGET ACCURACY 95;
 
 -- Helper view for debugging
 create view APEX_APP.V_DOCS_LANGCHAIN as
@@ -137,22 +140,36 @@ begin
     -- Simple Vector query 
     select value into g_rag_search_type from AI_AGENT_RAG_CONFIG where key='rag_search_type'; 
     if g_rag_search_type='vector' then 
-      OPEN v_results FOR
-        select 
-            JSON_VALUE(metadata,'$.doc_id') as DOCID, 
-            text as BODY, 
-            vector_distance(embedding, to_vector(ai_plsql.genai_embed( p_query ))) AS SCORE,
-            id as CHUNKID, 
-            JSON_VALUE(metadata,'$.file_name') as TITLE, 
-            JSON_VALUE(metadata,'$.path') as URL,
-            '[' || JSON_VALUE(metadata,'$.page_label') || ']' as PAGE_NUMBERS    
-            -- NUMBER_TT( TO_NUMBER(JSON_VALUE(metadata,'$.page_label')) ) as PAGE_NUMBERS   
-            -- TO_NUMBER(1) as PAGE_NUMBERS   
-        from docs_langchain
-        where p_filter_category1 is null 
-           or p_filter_category1 = JSON_VALUE(metadata,'$.category1')
-        order by score 
-        fetch first top_k rows only;
+      if p_filter_category1 is null then    
+        OPEN v_results FOR
+          select 
+              JSON_VALUE(metadata,'$.doc_id') as DOCID, 
+              text as BODY, 
+              vector_distance(embedding, to_vector(ai_plsql.genai_embed( p_query ))) AS SCORE,
+              id as CHUNKID, 
+              JSON_VALUE(metadata,'$.file_name') as TITLE, 
+              JSON_VALUE(metadata,'$.path') as URL,
+              '[' || JSON_VALUE(metadata,'$.page_label') || ']' as PAGE_NUMBERS    
+          from docs_langchain
+          order by score 
+          fetch first top_k rows only;
+      else
+        -- Include 
+        OPEN v_results FOR
+          select 
+              JSON_VALUE(metadata,'$.doc_id') as DOCID, 
+              text as BODY, 
+              vector_distance(embedding, to_vector(ai_plsql.genai_embed( p_query ))) AS SCORE,
+              id as CHUNKID, 
+              JSON_VALUE(metadata,'$.file_name') as TITLE, 
+              JSON_VALUE(metadata,'$.path') as URL,
+              '[' || JSON_VALUE(metadata,'$.page_label') || ']' as PAGE_NUMBERS    
+          from docs_langchain
+          where p_filter_category1 is null 
+             or p_filter_category1 = JSON_VALUE(metadata,'$.category1')
+          order by score 
+          fetch first top_k rows only;      
+      end if;
     else 
       -- Hybrid Search query (30 Lexical/ 70 Vector)
       -- Oracle Text score: 0 - 100.0 (higher is better)
@@ -189,6 +206,7 @@ begin
     end if;
     RETURN v_results;
 end retrieval_func;
+/
 /
 
 -- Admin function 
