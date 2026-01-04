@@ -1,4 +1,4 @@
-FROM python:3-trixie
+FROM python:3-13-trixie
 
 # Install uv / no venv
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
