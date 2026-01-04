@@ -1,9 +1,9 @@
 FROM python:3-trixie
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
+RUN echo "$HOME/.local/bin"
 WORKDIR /app
-ENV PATH="/app/.local/bin:${PATH}"
+ENV PATH="/app/.local/bin:$HOME/.local/bin:${PATH}"
 COPY src_ingest/* /app/
 RUN uv pip install -r requirements.txt
 
