@@ -1,11 +1,17 @@
-FROM python:3-bookworm
-
-RUN pip install --upgrade pip
+FROM python:3.13-trixie
 
 WORKDIR /app
-ENV PATH="/app/.local/bin:${PATH}"
+
+# Install uv / no venv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV UV_SYSTEM_PYTHON=1
+ENV PATH="/root/.local/bin:/app/.local/bin:${PATH}"
+
+# Cache the requirements if possible
+COPY src_mcp_server/src/requirements.txt /app/.
+RUN uv pip install -r requirements.txt
+
+# Copy the APP
 COPY src_mcp_server/* /app/
-RUN pip3 install -r requirements.txt
 
-ENTRYPOINT ["python3","app.py"]
-
+ENTRYPOINT ["python3", "mcp_server.py"]

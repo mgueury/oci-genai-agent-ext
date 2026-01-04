@@ -1,11 +1,21 @@
-FROM python:3-trixie
+FROM python:3.13-trixie
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-RUN echo "$HOME/.local/bin"
 WORKDIR /app
-ENV PATH="/app/.local/bin:$HOME/.local/bin:${PATH}"
-COPY src_ingest/* /app/
+
+# Install uv / no venv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV UV_SYSTEM_PYTHON=1
+ENV PATH="/root/.local/bin:/app/.local/bin:${PATH}"
+
+# Java for Tika
+RUN apt install -y openjdk-25-jdk
+
+# Cache the requirements if possible
+COPY src_ingest/src/requirements.txt /app/.
 RUN uv pip install -r requirements.txt
 
-ENTRYPOINT ["python3","app.py"]
+# Copy the APP
+COPY src_ingest/* /app/
+
+ENTRYPOINT ["python3","ingest.py"]
 
