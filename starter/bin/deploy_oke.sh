@@ -4,7 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . $BIN_DIR/build_common.sh
 cd $SCRIPT_DIR/..
 
-export TARGET_OKE=$TARGET/oke
+export TARGET_OKE=$TARGET_DIR/oke
 mkdir -p $TARGET_OKE
 
 function wait_ingress() {
