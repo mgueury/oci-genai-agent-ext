@@ -20,6 +20,7 @@ else
     append_tf_env "# AGENT (OPTIONAL)"
     append_tf_env "export TF_VAR_agent_datasource_ocid=""$TF_VAR_agent_datasource_ocid"""
     append_tf_env "export TF_VAR_agent_endpoint_ocid=""$TF_VAR_agent_endpoint_ocid"""
+    append_tf_env "export TF_VAR_rag_storage=""$TF_VAR_rag_storage"""
     append_tf_env
     append_tf_env "# GENERATIVE AI MODEL"
     oci generative-ai model-collection list-models --compartment-id $TF_VAR_compartment_ocid --all > $TARGET_DIR/genai_models.json 
