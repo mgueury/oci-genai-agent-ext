@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ##TF_VAR_prefix##-##APP_NAME##-dep
+  name: mcp-server-dep
   labels:
-      app: ##TF_VAR_prefix##-##APP_NAME##
+      app: mcp-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ##TF_VAR_prefix##-##APP_NAME##
+      app: mcp-server
   template:
     metadata:
       labels:
-        app: ##TF_VAR_prefix##-##APP_NAME##
+        app: mcp-server
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
+        image: ##DOCKER_PREFIX##/mcp-server
         ports:
         - containerPort: 2025
           name: app-port
@@ -29,10 +29,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ##TF_VAR_prefix##-##APP_NAME##-service
+  name: mcp-server-service
 spec:
   selector:
-    app: ##TF_VAR_prefix##-##APP_NAME##
+    app: mcp-server
   ports:
   - name: http-service-port
     protocol: TCP
