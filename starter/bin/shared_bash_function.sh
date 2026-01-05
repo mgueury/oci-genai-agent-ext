@@ -225,15 +225,15 @@ tf_env_configmap() {
 kind: ConfigMap
 metadata:
   name: tf_env_configmap
-data:" > $TARGET_OKE/tf_env_configmap.yaml
+data:" > $TARGET_DIR/oke/tf_env_configmap.yaml
 
   grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
     VAR=$(echo $line | sed 's/export //')
     KEY=$(echo $VAR | cut -d= -f1)
     VALUE=$(echo $VAR | cut -d= -f2-)
-    echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
+    echo "  $KEY: \"$VALUE\"" >> $TARGET_DIR/oke/tf_env_configmap.yaml
   done
-  echo "$TARGET_OKE/tf_env_configmap.yaml created."
+  echo "$TARGET_DIR/oke/tf_env_configmap.yaml created."
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
