@@ -19,6 +19,6 @@ spec:
         image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
         envFrom:
           - configMapRef:
-              name: tf_env_configmap        
+              name: tf-env-configmap
       imagePullSecrets:
       - name: ocirsecret        

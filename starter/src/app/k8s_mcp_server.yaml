@@ -22,7 +22,7 @@ spec:
           name: app-port
         envFrom:
           - configMapRef:
-              name: tf_env_configmap        
+              name: tf-env-configmap        
       imagePullSecrets:
       - name: ocirsecret        
 ---
