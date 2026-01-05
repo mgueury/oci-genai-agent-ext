@@ -94,6 +94,7 @@ fi
 
 # TF_ENV
 tf_env_configmap
+kubectl apply -f $TARGET_OKE/tf_env_configmap.yaml
 
 # Delete the old pod, just to be sure a new image is pulled (not the best idea in the world...XXXX)
 # Replaced by :latest in the docker image value.
@@ -108,7 +109,7 @@ tf_env_configmap
 # APP
 for APP_NAME in `app_name_list`; do
   APP_YAML="k8s_${APP_NAME}.yaml"
-  sed "s&##DOCKER_PREFIX##&${DOCKER_PREFIX}&" src/app/${APP_YAML} > $TARGET_OKE/${APP_YAML}
+  file_replace_variables $TARGET_OKE/${APP_YAML}
   # If present, replace the ORDS URL
   if [ "$ORDS_URL" != "" ]; then
     ORDS_HOST=`basename $(dirname $ORDS_URL)`
@@ -118,7 +119,7 @@ for APP_NAME in `app_name_list`; do
 done
 
 # UI
-sed "s&##DOCKER_PREFIX##&${DOCKER_PREFIX}&" src/ui/ui.yaml > $TARGET_OKE/ui.yaml
+file_replace_variables $TARGET_OKE/ui.yaml
 kubectl apply -f $TARGET_OKE/ui.yaml
 
 # Ingress

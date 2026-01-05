@@ -233,7 +233,7 @@ data:" > $TARGET_OKE/tf_env_configmap.yaml
     VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/') 
     echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
   done
-  echo "$TARGET_OKE/tf_env_configmap.yaml created."
+  echo "tf_env_configmap.yaml created."
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
