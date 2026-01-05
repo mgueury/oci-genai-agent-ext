@@ -230,7 +230,7 @@ data:" > $TARGET_OKE/tf_env_configmap.yaml
   grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
     VAR=$(echo $line | sed 's/export //')
     KEY=$(echo $VAR | cut -d= -f1)
-    VALUE=$(echo $VAR | cut -d= -f2-)
+    VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/') 
     echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
   done
   echo "$TARGET_OKE/tf_env_configmap.yaml created."
