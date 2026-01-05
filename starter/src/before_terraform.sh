@@ -7,3 +7,7 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
     mv src/terraform/genai_kb_os.tf src/terraform/genai_kb_os._tf
   fi
 fi
+
+if [ "$TF_VAR_advanced" == "true" ]; then
+  cp -R ../advanced/src/* src/. 
+fi
