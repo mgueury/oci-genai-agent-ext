@@ -109,16 +109,15 @@ kubectl apply -f $TARGET_OKE/tf_env_configmap.yaml
 # APP
 for APP_NAME in `app_name_list`; do
   APP_YAML="k8s_${APP_NAME}.yaml"
-  file_replace_variables $TARGET_OKE/${APP_YAML}
+  cp src/app/${APP_YAML} $TARGET_OKE/${APP_YAML}
   # If present, replace the ORDS URL
-  if [ "$ORDS_URL" != "" ]; then
-    ORDS_HOST=`basename $(dirname $ORDS_URL)`
-    sed -i "s&##ORDS_HOST##&$ORDS_HOST&" $TARGET_OKE/${APP_YAML}
-  fi 
+  ORDS_HOST=`basename $(dirname $ORDS_URL)`
+  file_replace_variables $TARGET_OKE/${APP_YAML}
   kubectl apply -f $TARGET_OKE/${APP_YAML}
 done
 
 # UI
+cp src/ui/ui.yaml $TARGET_OKE/${ui.yaml}
 file_replace_variables $TARGET_OKE/ui.yaml
 kubectl apply -f $TARGET_OKE/ui.yaml
 
