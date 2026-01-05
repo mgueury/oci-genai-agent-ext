@@ -759,7 +759,7 @@ file_replace_variables() {
 
   echo "Replace variables in file: $1"
   while IFS= read -r line; do
-    if [[ $line =~ (.*)##(.*)##(.*) ]]; then
+    while [[ $line =~ (.*)##(.*)##(.*) ]]; do
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
 
@@ -779,7 +779,7 @@ file_replace_variables() {
         fi
       fi
       line=${line/"##${var_name}##"/${var_value}}
-    fi
+    done
 
     echo "$line" >> "$temp_file"
   done < "$file"
