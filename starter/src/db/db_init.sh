@@ -81,9 +81,6 @@ EOF
 
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @import_application.sql
 
-
-sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @db26ai.sql
-
 # Install DocChunks 
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @doc_chunck.sql
 
