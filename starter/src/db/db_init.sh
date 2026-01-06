@@ -41,12 +41,10 @@ end;
 /
 declare
     l_workspace_id number;
-    l_group_id     number;
 begin
     apex_application_install.set_workspace('APEX_APP');
     l_workspace_id := apex_util.find_security_group_id('APEX_APP');
     apex_util.set_security_group_id(l_workspace_id);
-    -- l_group_id := apex_util.get_group_id('APEX_APP');
     apex_util.create_user(p_user_name           => 'APEX_APP',
                         p_email_address         => 'spam@oracle.com',
                         p_web_password          => '$DB_PASSWORD',
@@ -82,6 +80,9 @@ quit
 EOF
 
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @import_application.sql
+
+
+sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @db26ai.sql
 
 # Install DocChunks 
 sqlcl/bin/sql ADMIN/$DB_PASSWORD@DB @doc_chunck.sql
@@ -124,6 +125,30 @@ sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @support_table.sql
 sqlcl/bin/sql $DB_USER/$DB_PASSWORD@DB @ras_admin.sql
 sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @ras_apex_app.sql
 
+# Store the config in APEX
+sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB <<EOF
+begin
+  AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
+  AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
+  AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
+  AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
+  AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
+  AI_CONFIG_UPDATE( 'bucket_url',          '$BUCKET_URL' );
+  AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
+  -- AI_EVAL
+  AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );
+  AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
+  -- AI_LANGGRAPH
+  AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/threads' );
+  AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
+  AI_CONFIG_UPDATE( 'idcs_url', '$IDCS_URL' );
+  commit;
+end;
+/
+exit;
+EOF
+
+if [ "$TF_VAR_advanced" == "true" ]; then
 
 # ORCL_DB_SSE (Micronaut)
 cat > orcl_db_sse.sql << EOF 
@@ -157,25 +182,4 @@ EOF
 
 sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB @orcl_db_sse.sql
 
-# Store the config in APEX
-sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB <<EOF
-begin
-  AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
-  AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
-  AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
-  AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
-  AI_CONFIG_UPDATE( 'genai_cohere_model',  '$TF_VAR_genai_cohere_model' );
-  AI_CONFIG_UPDATE( 'bucket_url',          '$BUCKET_URL' );
-  AI_CONFIG_UPDATE( 'rag_search_type',     'vector' );
-  -- AI_EVAL
-  AI_CONFIG_UPDATE( 'qa_url',              'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/runs/wait' );
-  AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
-  -- AI_LANGGRAPH
-  AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/threads' );
-  AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
-  AI_CONFIG_UPDATE( 'idcs_url', '$IDCS_URL' );
-  commit;
-end;
-/
-exit;
-EOF
+fi
