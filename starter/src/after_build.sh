@@ -20,13 +20,6 @@ echo
 # echo "-----------------------------------------------------------------------"
 
 echo "URLs" > $FILE_DONE
-if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
-    append_done "-----------------------------------------------------------------------"
-    append_done "LangGraph Agent Chat:"
-    append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/chat.html"
-    append_done "OLD: http://${NLB_IP}:8080/?apiUrl=http://${NLB_IP}:2024&assistantId=agent"
-    append_done "OLD: http://${NLB_IP}:8080/?apiUrl=http://${NLB_IP}:2024&assistantId=agent_rag"
-fi
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
 append_done
@@ -41,14 +34,18 @@ append_done "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
 append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
+append_done "Streamlit:"
+append_done "http://${NLB_IP}:8080/"
+append_done
+append_done "-----------------------------------------------------------------------"
 append_done "LangGraph Agent Chat:"
 append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/chat.html"
 append_done
-append_done "-----------------------------------------------------------------------"
-append_done "LangGraph OpenID Chat:"
-append_done "https://${APIGW_HOSTNAME}/openid/chat.html"
-append_done
 if [ "$TF_VAR_advanced" == "true" ]; then
+    append_done "-----------------------------------------------------------------------"
+    append_done "LangGraph OpenID Chat:"
+    append_done "https://${APIGW_HOSTNAME}/openid/chat.html"
+    append_done
     append_done "-----------------------------------------------------------------------"
     append_done "LangFuse:"
     append_done "https://${APIGW_HOSTNAME}/langgraph/langfuse"
