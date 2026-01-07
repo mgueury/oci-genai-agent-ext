@@ -2,8 +2,8 @@
 
 locals {
   project_dir = (var.infra_as_code=="from_resource_manager")?".":"../.."
-  # No advanced
-  local_oke_ocid = ""   
+  # When advance!=true, there is no OKE
+  local_oke_ocid = ""
 }
 
 # SSH Keys + tf_env.sh
