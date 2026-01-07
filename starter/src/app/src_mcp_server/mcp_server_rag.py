@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
 
-rag_storage.init()
+rag_storage.createPool()
 
 class DocInfo(BaseModel):
     TITLE: str

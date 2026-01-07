@@ -46,23 +46,27 @@ DOCLING_HYBRID_CHUNK=True #False
 # connection pool
 pool = None
 
+## -- createPool ------------------------------------------------------------------
+
+def createPool():
+    global pool 
+    # Thick driver...
+    # oracledb.init_oracle_client()
+    # Create the pool with the "proxy" user
+    pool = oracledb.SessionPool(
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        dsn=os.getenv('DB_URL'),
+        min=10, max=10, increment=0,
+        encoding="UTF-8",
+        getmode=oracledb.SPOOL_ATTRVAL_WAIT            
+    )
+
 ## -- init ------------------------------------------------------------------
 
 def init():
     if RAG_STORAGE=="db26ai":
-        global pool 
-        # Thick driver...
-        # oracledb.init_oracle_client()
-        # Create the pool with the "proxy" user
-        pool = oracledb.SessionPool(
-            user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASSWORD'),
-            dsn=os.getenv('DB_URL'),
-            min=10, max=10, increment=0,
-            encoding="UTF-8",
-            getmode=oracledb.SPOOL_ATTRVAL_WAIT            
-        )
-        # XXXXXX pool.autocommit = True
+        createPool()
 
 ## -- close -----------------------------------------------------------------
 
