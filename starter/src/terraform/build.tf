@@ -2,6 +2,8 @@
 
 locals {
   project_dir = (var.infra_as_code=="from_resource_manager")?".":"../.."
+  # No advanced
+  local_oke_ocid = ""   
 }
 
 # SSH Keys + tf_env.sh
@@ -42,7 +44,7 @@ resource "null_resource" "tf_env" {
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
     echo_export "OCIR_HOST" "${local.local_ocir_host}"
     echo_export "OBJECT_STORAGE_NAMESPACE" "${local.local_object_storage_namespace}"
-    echo_export "OKE_OCID" "${coalesce(local.local_oke_ocid,"-")}"
+    echo_export "OKE_OCID" "${local.local_oke_ocid}"
     echo_export "ORDS_URL" "${local.local_ords_url}" 
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"
