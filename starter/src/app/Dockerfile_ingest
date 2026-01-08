@@ -4,6 +4,7 @@ WORKDIR /app
 COPY src_ingest .
 RUN chmod +x shared_compute.sh install.sh start.sh
 RUN ./shared_compute.sh && ./install.sh
+RUN ls
 
 ENTRYPOINT ["start.sh"]
 
