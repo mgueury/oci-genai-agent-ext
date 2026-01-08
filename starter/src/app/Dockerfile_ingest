@@ -1,4 +1,5 @@
-FROM python:3.13-trixie
+FROM oraclelinux:8
+WORKDIR /app
 
 # Install uv / no venv
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
@@ -12,7 +13,9 @@ COPY src_ingest/src/requirements.txt /app/.
 RUN uv pip install -r requirements.txt
 
 # Copy the APP
-COPY src_ingest/* /app/
+COPY src_ingest/* .
+COPY ../../bin/shared_compute.sh .
+RUN ./shared_compute.sh;./install.sh
 
-ENTRYPOINT ["python3","app.py"]
+ENTRYPOINT ["python3","ingest.py"]
 
