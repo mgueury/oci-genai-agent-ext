@@ -3,7 +3,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
 if [ -f shared_compute.sh ]; then
+  echo "shared_compute.sh found"
   ./shared_compute.sh
+else
+  echo "shared_compute.sh not found"
 fi
 
 install_sqlcl
