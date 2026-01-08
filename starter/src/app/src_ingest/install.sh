@@ -2,6 +2,10 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
+if [ -f shared_compute.sh ]; then
+  ./shared_compute.sh
+fi
+
 install_sqlcl
 
 . ./env.sh INSTALL
