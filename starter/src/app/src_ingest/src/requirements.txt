@@ -16,7 +16,6 @@ oci
 # HTTP Client
 requests
 
-
 # Sitemap
 pdfkit
 pypdf
