@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/mcp-server
+        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
         ports:
         - containerPort: 2025
           name: app-port

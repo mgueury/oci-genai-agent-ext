@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/##APP_NAME##
+        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
         ports:
         - containerPort: 2024
           name: app-port

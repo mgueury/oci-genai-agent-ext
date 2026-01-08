@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/##APP_NAME##
+        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
         envFrom:
           - configMapRef:
               name: tf-env-configmap
