@@ -105,12 +105,12 @@ install_python() {
     sudo dnf install -y python3.12 python3.12-pip python3-devel wget
     sudo update-alternatives --set python /usr/bin/python3.12
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH=$HOME/.local/bin:$PATH
     uv venv myenv
     source myenv/bin/activate
     if [ -f requirements.txt ]; then 
       uv pip install -r requirements.txt
-    fi 
-    if [ -f src/requirements.txt ]; then 
+    elif [ -f src/requirements.txt ]; then 
       uv pip install -r src/requirements.txt
     fi 
 }
