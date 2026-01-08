@@ -124,8 +124,8 @@ ocir_docker_push () {
 
   # Push image in registry
   for APP_NAME in `app_name_list`; do
-    if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+    if [ -n "$(docker images -q ${TF_VAR_prefix}-${APP_NAME} 2> /dev/null)" ]; then
+      docker tag ${TF_VAR_prefix}-${APP_NAME} ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_NAME} 2>/dev/null
       docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       exit_on_error "docker push APP"
