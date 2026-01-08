@@ -2,7 +2,7 @@ FROM oraclelinux:8
 WORKDIR /app
 
 COPY src_ingest/* .
-RUN chmod +x shared_compute.sh install.sh
+RUN chmod +x shared_compute.sh install.sh start.sh
 RUN ./shared_compute.sh && ./install.sh
 
 ENTRYPOINT ["start.sh"]
