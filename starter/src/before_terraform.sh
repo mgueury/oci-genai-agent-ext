@@ -11,4 +11,5 @@ fi
 if [ "$TF_VAR_advanced" == "true" ]; then
   cp -R ../advanced/src/* src/. 
   sed -i '/local_oke_ocid = ""/d' src/terraform/build.tf 
+  sed -i 's/"TF_VAR_deploy_type" "private_compute"/"TF_VAR_deploy_type" "kubernetes"/' src/terraform/build.tf 
 fi
