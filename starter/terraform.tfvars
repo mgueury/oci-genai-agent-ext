@@ -12,8 +12,8 @@ license_model="__TO_FILL__"
 # Compartment
 compartment_ocid="__TO_FILL__"
 
-# RAG Storage 23ai
-# rag_storage="db23ai"
+# RAG Storage 26ai
+# rag_storage="db26ai"
 # vault_ocid="__TO_FILL__"
 # vault_key_ocid="__TO_FILL__"
 

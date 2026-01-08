@@ -2,6 +2,8 @@
 
 locals {
   project_dir = (var.infra_as_code=="from_resource_manager")?".":"../.."
+  # When advance!=true, there is no OKE
+  local_oke_ocid = ""
 }
 
 # SSH Keys + tf_env.sh
@@ -31,14 +33,18 @@ resource "null_resource" "tf_env" {
     echo_export "TF_VAR_db_password" "${coalesce(var.db_password,"-")}"
     echo_export "TF_VAR_license_model" "${coalesce(var.license_model,"-")}"
     echo_export "TF_VAR_compartment_ocid" "${coalesce(var.compartment_ocid,"-")}"  
+    echo_export "TF_VAR_region" "${coalesce(var.region,"-")}"  
     echo "# Terraform Locals" >> $ENV_FILE
     echo_export "BASTION_IP" "${local.local_bastion_ip}"
+    echo_export "BUCKET_URL" "${local.local_bucket_url}"
     echo_export "COMPUTE_IP" "${local.local_compute_ip}"    
     echo_export "CONTAINER_PREFIX" "${local.local_container_prefix}"
     echo_export "DB_URL" "${local.local_db_url}"
     echo_export "IDCS_URL" "${local.local_idcs_url}"
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
     echo_export "OCIR_HOST" "${local.local_ocir_host}"
+    echo_export "OBJECT_STORAGE_NAMESPACE" "${local.local_object_storage_namespace}"
+    echo_export "OKE_OCID" "${local.local_oke_ocid}"
     echo_export "ORDS_URL" "${local.local_ords_url}" 
     echo "# Fixed" >> $ENV_FILE
     echo_export "TF_VAR_db_type" "autonomous"
@@ -46,6 +52,9 @@ resource "null_resource" "tf_env" {
     echo_export "TF_VAR_deploy_type" "private_compute"
     echo_export "TF_VAR_language" "python"
     echo_export "TF_VAR_ui_type" "html" 
+    echo "# Synonym" >> $ENV_FILE
+    echo_export "DB_USER" "$TF_VAR_db_user"
+    echo_export "DB_PASSWORD" "$TF_VAR_db_password"
     # echo_export "OCI_STARTER_CREATION_DATE" "2025-10-05-13-59-33-174669"
     # echo_export "OCI_STARTER_VERSION" "4.1"
     # echo_export "OCI_STARTER_PARAMS" "prefix,java_framework,java_vm,java_version,ui_type,db_type,license_model,mode,infra_as_code,db_password,oke_type,security,deploy_type,language"
@@ -83,11 +92,11 @@ resource "null_resource" "build_deploy" {
             cp -r src/compute target/compute/.
         fi
 
-        # Build all app* directories
-        for APP_DIR in `app_dir_list`; do
-            title "Build App $APP_DIR"
-            src/$APP_DIR/build_app.sh
-            exit_on_error "Build App $APP_DIR"
+        # Build all apps
+        for APP_NAME in `app_name_list`; do
+            title "Build App $APP_NAME"
+            src/app/build_$APP_NAME.sh
+            exit_on_error "Build App $APP_NAME"
         done
 
         if [ -f src/ui/build_ui.sh ]; then
@@ -128,17 +137,6 @@ resource "null_resource" "build_deploy" {
   triggers = {
     always_run = "${timestamp()}"
   }      
-}
-# PART2
-#
-# In case like instance_pool, oke, function, container_instance, ...
-# More terraform resources need to be created after build_deploy.
-# Reread the env variables
-data "external" "env_part2" {
-  program = ["cat", "${local.project_dir}/target/resource_manager_variables.json"]
-  depends_on = [
-    null_resource.build_deploy
-  ]
 }
 
 ## AFTER_BUILD

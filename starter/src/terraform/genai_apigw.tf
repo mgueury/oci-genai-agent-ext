@@ -2,102 +2,11 @@ locals {
   db_root_url = replace(data.oci_database_autonomous_database.starter_atp.connection_urls[0].apex_url, "/ords/apex", "" )
 }
 
-resource "oci_apigateway_deployment" "starter_apigw_deployment_api" {   
-  compartment_id = local.lz_web_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
-  gateway_id     = local.apigw_ocid
-  path_prefix    = "/app2"
-  specification {
-    logging_policies {
-      access_log {
-        is_enabled = true
-      }
-      execution_log {
-        #Optional
-        is_enabled = true
-      }
-    }
-    routes {
-      path    = "/query"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}/app/query"
-        connect_timeout_in_seconds = 10
-        read_timeout_in_seconds = 30
-        send_timeout_in_seconds = 30        
-      }
-    }    
-    routes {
-      path    = "/generate"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}:8080/generate"
-        connect_timeout_in_seconds = 10
-        read_timeout_in_seconds = 30
-        send_timeout_in_seconds = 30        
-      }
-    }      
-    routes {
-      path    = "/cohere_chat"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}:8080/cohere_chat"
-        connect_timeout_in_seconds = 10
-        read_timeout_in_seconds = 30
-        send_timeout_in_seconds = 30        
-      }
-    }    
-    routes {
-      path    = "/generic_chat"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}:8080/generic_chat"
-        connect_timeout_in_seconds = 10
-        read_timeout_in_seconds = 30
-        send_timeout_in_seconds = 30        
-      }
-    }            
-    routes {
-      path    = "/info"
-      methods = [ "ANY" ]
-      backend {
-        type = "STOCK_RESPONSE_BACKEND"
-        body   = "Function Java"
-        status = 200
-      }
-    }    
-    routes {
-      path    = "/"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}/"
-        connect_timeout_in_seconds = 10
-        read_timeout_in_seconds = 30
-        send_timeout_in_seconds = 30
-      }
-    }    
-    routes {
-      path    = "/{pathname*}"
-      methods = [ "ANY" ]
-      backend {
-        type = "HTTP_BACKEND"
-        url    = "http://${local.local_compute_ip}/$${request.path[pathname]}"
-      }
-    }
-  }
-  freeform_tags = local.api_tags
-}
-
 # One single entry "/" would work too. 
 # The reason of the 3 entries is to allow to make it work when the APIGW is shared with other URLs (ex: testsuite)
 resource "oci_apigateway_deployment" "starter_apigw_deployment_ords" {
   compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
+  display_name   = "${var.prefix}-apigw-deployment-ords"
   gateway_id     = local.apigw_ocid
   path_prefix    = "/ords"
   specification {
@@ -129,7 +38,7 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_ords" {
 
 resource "oci_apigateway_deployment" "starter_apigw_deployment_i" {
   compartment_id = local.lz_app_cmp_ocid
-  display_name   = "${var.prefix}-apigw-deployment"
+  display_name   = "${var.prefix}-langgraph-deployment-i"
   gateway_id     = local.apigw_ocid
   path_prefix    = "/i"
   specification {
@@ -158,3 +67,58 @@ resource "oci_apigateway_deployment" "starter_apigw_deployment_i" {
   }
   freeform_tags = local.api_tags
 }
+
+resource "oci_apigateway_deployment" "starter_apigw_deployment_langgraph" {
+  compartment_id = local.lz_app_cmp_ocid
+  display_name   = "${var.prefix}-apigw-deployment-langgraph"
+  gateway_id     = local.apigw_ocid
+  path_prefix    = "/langgraph"
+  specification {
+    # Route the COMPUTE_PRIVATE_IP 
+    routes {
+      path    = "/chatui/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:8080/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    } 
+    routes {
+      path    = "/server/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:2024/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    }     
+    routes {
+      path    = "/orcldbsse/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:8081/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    }    
+    routes {
+      path    = "/langfuse/{pathname*}"
+      methods = [ "ANY" ]
+      backend {
+        type = "HTTP_BACKEND"
+        url    = "http://${local.apigw_dest_private_ip}:3000/$${request.path[pathname]}"
+        connect_timeout_in_seconds = 60
+        read_timeout_in_seconds = 120
+        send_timeout_in_seconds = 120              
+      }
+    }              
+  }
+  freeform_tags = local.api_tags
+}  

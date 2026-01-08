@@ -43,5 +43,25 @@
         "metadataAttributes": {
             "type": "Oracle"
         }
+    },
+    "ords/oracle-rest-data-services-developers-guide.pdf" : {
+        "metadataAttributes": {
+            "type": "ords"
+        }
+    },
+    "ords/oracle-rest-data-services-installation-and-configuration-guide.pdf" : {
+        "metadataAttributes": {
+            "type": "ords"
+        }
+    },
+    "ords/oracle-rest-data-services-quick-start-guide.pdf" : {
+        "metadataAttributes": {
+            "type": "ords"
+        }
+    },
+    "ords/ords-faq.pdf" : {
+        "metadataAttributes": {
+            "type": "ords"
+        }
     }
 }
