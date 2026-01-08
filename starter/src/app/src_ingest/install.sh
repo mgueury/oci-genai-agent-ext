@@ -4,7 +4,7 @@ cd $SCRIPT_DIR
 
 if [ -f shared_compute.sh ]; then
   echo "shared_compute.sh found"
-  ./shared_compute.sh
+  . ./shared_compute.sh
 else
   echo "shared_compute.sh not found"
 fi
