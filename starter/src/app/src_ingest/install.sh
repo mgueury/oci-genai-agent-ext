@@ -13,6 +13,8 @@ install_sqlcl
 
 . ./env.sh INSTALL
 
+echo "INSTALL_LIBREOFFICE=$INSTALL_LIBREOFFICE"
+
 function download()
 {
    echo "Downloading - $1"
@@ -27,9 +29,10 @@ install_python
 
 # PDFKIT
 if [ ! -f /tmp/wkhtmltox-0.12.6-1.centos8.x86_64.rpm ]; then
-    download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm 
-    sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
-    mv *.rpm /tmp
+    echo "INSTALL_LIBREOFFICE=$INSTALL_LIBREOFFICE"
+    # download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm 
+    # sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
+    # mv *.rpm /tmp
 fi
 
 # LibreOffice (convert docx to PDF)
