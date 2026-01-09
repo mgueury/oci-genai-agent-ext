@@ -47,4 +47,8 @@ if [ "$TF_VAR_openid" == "true" ]; then
     append_done "https://${APIGW_HOSTNAME}/openid/chat.html"
     append_done
 fi
-
+if [ "$TF_VAR_kubernetes" == "true" ]; then
+    append_done "-----------------------------------------------------------------------"
+    append_done "Kubernetes: $UI_URL/chat.html"
+    append_done
+fi
