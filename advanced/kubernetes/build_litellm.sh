@@ -13,7 +13,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 if is_deploy_compute; then
     build_rsync $APP_SRC_DIR
 else
-    # Create a secret for kubernetes
     OCI_CONFIG="$HOME/demo_user.txt"
 
     # Extract values
@@ -27,19 +26,7 @@ else
     user_ocid_b64=$(printf '%s' "$user_ocid" | base64 | tr -d '\n')
     fingerprint_b64=$(printf '%s' "$fingerprint" | base64 | tr -d '\n')
     key_file_b64=$(printf '%s' "$private_key" | base64 | tr -d '\n')
-
-    # Output Kubernetes Secret manifest
-    cat <<EOF > $TARGET_DIR/oke/litellm-secrets.yaml
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-    name: litellm-secrets
-data:
-    user_ocid: $user_ocid_b64
-    fingerprint: $fingerprint_b64
-    key_file: $key_file_b64
-EOF
-    . $SCRIPT_DIR/../../starter.sh env
-    kubectl apply -f $TARGET_DIR/oke/litellm-secrets.yaml
+    sed -i "s/##user_ocid_b64##/$user_ocid_b64/" k8s_litellm.yaml
+    sed -i "s/##fingerprint_b64##/$fingerprint_b64/" k8s_litellm.yaml
+    sed -i "s/##key_file_b64##/$key_file_b64/" k8s_litellm.yaml
 fi  
