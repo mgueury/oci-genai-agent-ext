@@ -7,13 +7,12 @@ if [ -f shared_compute.sh ]; then
   . ./shared_compute.sh
   export TF_VAR_java_vm="jdk"
   # Do not install LubreOffice, the dependency makes the DockerImage 18GB
+  export INSTALL_LIBREOFFICE="no"
 fi
 
 install_sqlcl
 
 . ./env.sh INSTALL
-
-echo "INSTALL_LIBREOFFICE=$INSTALL_LIBREOFFICE"
 
 function download()
 {
@@ -29,10 +28,9 @@ install_python
 
 # PDFKIT
 if [ ! -f /tmp/wkhtmltox-0.12.6-1.centos8.x86_64.rpm ]; then
-    echo "INSTALL_LIBREOFFICE=$INSTALL_LIBREOFFICE"
-    # download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm 
-    # sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
-    # mv *.rpm /tmp
+    download https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox-0.12.6-1.centos8.x86_64.rpm 
+    sudo dnf localinstall -y wkhtmltox-0.12.6-1.centos8.x86_64.rpm
+    mv *.rpm /tmp
 fi
 
 # LibreOffice (convert docx to PDF)
