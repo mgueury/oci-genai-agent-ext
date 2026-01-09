@@ -109,7 +109,7 @@ ocir_docker_push
 # APP
 for APP_NAME in `app_name_list`; do
   APP_YAML="k8s_${APP_NAME}.yaml"
-  if [ -f $APP_YAML ]; then
+  if [ -f src/app/$APP_YAML ]; then
     cp src/app/${APP_YAML} $TARGET_OKE/.
     # If present, replace the ORDS URL
     ORDS_HOST=`basename $(dirname $ORDS_URL)`
