@@ -14,9 +14,6 @@ function wait_ingress() {
   kubectl wait --namespace ingress-nginx --for=condition=Complete job/ingress-nginx-admission-patch  
 }
 
-# Call build_common to push the ${TF_VAR_prefix}-${APP_NAME}:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
-ocir_docker_push
-
 # One time configuration
 if [ ! -f $KUBECONFIG ]; then
   create_kubeconfig
@@ -105,6 +102,9 @@ kubectl apply -f $TARGET_OKE/tf_env_configmap.yaml
 
 # Kubectl apply
 # Using & as separator
+
+# Call build_common to push the ${TF_VAR_prefix}-${APP_NAME}:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
+ocir_docker_push
 
 # APP
 for APP_NAME in `app_name_list`; do
