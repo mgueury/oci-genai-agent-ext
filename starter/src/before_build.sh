@@ -35,7 +35,7 @@ else
     append_tf_env "export TF_VAR_genai_embed_model=""$TF_VAR_genai_embed_model"""
 
     # ORCL_DB_SEE / LangGraph
-    if [ "$TF_VAR_deploy" == "kubernetes" ]; then
+    if [ "$TF_VAR_deploy_type" == "kubernetes" ]; then
         append_tf_env "export LANGGRAPH_URL=""http://langgraph-service:2024"""
         append_tf_env "export MCP_SERVER_URL=""http://mcp-server-service:2025"""
         append_tf_env "export INSTALL_LIBREOFFICE=""no"""
