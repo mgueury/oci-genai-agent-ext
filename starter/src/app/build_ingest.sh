@@ -14,7 +14,7 @@ if is_deploy_compute; then
   build_rsync $APP_SRC_DIR
 else
   cp ../../bin/shared_compute.sh $APP_SRC_DIR
-  docker image rm ${TF_VAR_prefix}-${APP_NAME}:latest
+  # docker image rm ${TF_VAR_prefix}-${APP_NAME}:latest
   # docker build -f Dockerfile_${APP_NAME} -t ${TF_VAR_prefix}-${APP_NAME}:latest .
   # exit_on_error "docker build"
 fi  
