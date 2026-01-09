@@ -35,10 +35,10 @@ kind: Secret
 type: Opaque
 metadata:
     name: litellm-secrets
-    data:
-        user_ocid: $user_ocid_b64
-        fingerprint: $fingerprint_b64
-        key_file: $key_file_b64
+data:
+    user_ocid: $user_ocid_b64
+    fingerprint: $fingerprint_b64
+    key_file: $key_file_b64
 EOF
     . $SCRIPT_DIR/../../starter.sh env
     kubectl apply -f $TARGET_DIR/oke/litellm-secrets.yaml
