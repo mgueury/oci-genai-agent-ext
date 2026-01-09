@@ -8,8 +8,12 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
   fi
 fi
 
-if [ "$TF_VAR_advanced" == "true" ]; then
-  cp -R ../advanced/src/* src/. 
+if [ "$TF_VAR_kubernetes" == "true" ]; then
+  cp -R ../advanced/kubernetes/src/* src/. 
   sed -i '/local_oke_ocid = ""/d' src/terraform/build.tf 
   sed -i 's/"TF_VAR_deploy_type" "private_compute"/"TF_VAR_deploy_type" "kubernetes"/' src/terraform/build.tf 
+fi
+
+if [ "$TF_VAR_openid" == "true" ]; then
+  cp -R ../advanced/openid/src/* src/. 
 fi

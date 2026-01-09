@@ -41,14 +41,10 @@ append_done "-------------------------------------------------------------------
 append_done "LangGraph Agent Chat:"
 append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/chat.html"
 append_done
-if [ "$TF_VAR_advanced" == "true" ]; then
+if [ "$TF_VAR_openid" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
     append_done "LangGraph OpenID Chat:"
     append_done "https://${APIGW_HOSTNAME}/openid/chat.html"
     append_done
-    append_done "-----------------------------------------------------------------------"
-    append_done "LangFuse:"
-    append_done "https://${APIGW_HOSTNAME}/langgraph/langfuse"
-    append_done 
 fi
 

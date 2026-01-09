@@ -145,7 +145,7 @@ end;
 exit;
 EOF
 
-if [ "$TF_VAR_advanced" == "true" ]; then
+if [ "$TF_VAR_orcl_db_sse" == "true" ]; then
 
 # ORCL_DB_SSE (Micronaut)
 cat > orcl_db_sse.sql << EOF 
