@@ -276,6 +276,7 @@ def insertTableDocs( value ):
         )
     try:
         cur.execute(stmt, data)
+        dbConn.commit()
         # Get generated id
         id = id_var.getvalue()    
         log("<insertTableDocs> returning id=" + str(id[0]) )        
@@ -294,7 +295,7 @@ def insertTableDocs( value ):
 
 def insertTableDocsChunck(value, docs, file_path):  
     
-    log("<langchain insertDocsChunck>")
+    log("<langchain insertTableDocsChunck>")
     log("-- docs --------------------")
     log(pprint.pformat(docs))
 
@@ -377,6 +378,7 @@ def deleteDocByOriginalResourceName( value ):
     # Delete the document record
     try:
         cur.execute("delete from docs where original_resource_name=:1", (originalResourceName,))
+        dbConn.commit()
         log(f"<deleteDocByOriginalResourceName> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByOriginalResourceName> docs: Error deleting: {error}")
@@ -390,6 +392,7 @@ def deleteDocByOriginalResourceName( value ):
     stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.originalResourceName')=:1"
     try:
         cur.execute(stmt, (originalResourceName,))
+        dbConn.commit()
         log(f"<deleteDocByOriginalResourceName> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByOriginalResourceName> docs_langchain: Error deleting: {error}")
@@ -412,6 +415,7 @@ def deleteDocByPath( value ):
     # Delete the document record
     try:
         cur.execute("delete from docs where path=:1", (path,))
+        dbConn.commit()
         log(f"<deleteDocByPath> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByPath> docs: Error deleting: {error}")
@@ -425,6 +429,7 @@ def deleteDocByPath( value ):
     stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.path')=:1"
     try:
         cur.execute(stmt, (path,))
+        dbConn.commit()
         log(f"<deleteDocByPath> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByPath> docs_langchain: Error deleting: {error}")
@@ -679,6 +684,7 @@ def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_na
             )
 
         cur.execute(stmt, data)
+        dbConn.commit()
         # Get generated id
         id = id_var.getvalue()    
         log("<insertTableIngestLog> returning id=" + str(id[0]) )        
