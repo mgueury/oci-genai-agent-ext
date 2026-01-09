@@ -29,9 +29,6 @@
 export DB_USER="apex_app"
 export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 
-# LibreOffice
-export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
-
 # LangFuse
 # export LANGFUSE_PUBLIC_KEY=<your_public_key>
 # export LANGFUSE_SECRET_KEY=<your_secret_key>

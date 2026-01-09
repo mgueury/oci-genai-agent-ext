@@ -38,9 +38,12 @@ else
     if [ "$TF_VAR_deploy" == "kubernetes" ]; then
         append_tf_env "export LANGGRAPH_URL=""http://langgraph-service:2024"""
         append_tf_env "export MCP_SERVER_URL=""http://mcp-server-service:2025"""
+        append_tf_env "export INSTALL_LIBREOFFICE=""no"""
+        export INSTALL_LIBREOFFICE="no"
     else 
         append_tf_env "export LANGGRAPH_URL=""http://127.0.0.1:2024"""
         append_tf_env "export MCP_SERVER_URL=""http://localhost:2025"""
+        append_tf_env "export INSTALL_LIBREOFFICE=""$INSTALL_LIBREOFFICE"""
     fi
     export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
 http://localhost:2025/mcp
