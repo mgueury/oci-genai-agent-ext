@@ -32,10 +32,6 @@ export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 # LibreOffice
 export INSTALL_LIBREOFFICE="##OPTIONAL/TF_VAR_install_libreoffice##"
 
-# ORCL_DB_SEE / LangGraph
-export LANGGRAPH_URL="http://127.0.0.1:2024"
-export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
-
 # LangFuse
 # export LANGFUSE_PUBLIC_KEY=<your_public_key>
 # export LANGFUSE_SECRET_KEY=<your_secret_key>

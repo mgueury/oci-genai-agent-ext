@@ -33,4 +33,16 @@ else
     export TF_VAR_genai_embed_model="cohere.embed-multilingual-v3.0"
     # export TF_VAR_genai_embed_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
     append_tf_env "export TF_VAR_genai_embed_model=""$TF_VAR_genai_embed_model"""
+
+    # ORCL_DB_SEE / LangGraph
+    if [ "$TF_VAR_deploy" == "kubernetes" ]; then
+        append_tf_env "export LANGGRAPH_URL=""http://langgraph-service:2024"""
+        append_tf_env "export MCP_SERVER_URL=""http://mcp-server-service:2025"""
+    else 
+        append_tf_env "export LANGGRAPH_URL=""http://127.0.0.1:2024"""
+        append_tf_env "export MCP_SERVER_URL=""http://localhost:2025"""
+    fi
+    export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
+http://localhost:2025/mcp
+
 fi
