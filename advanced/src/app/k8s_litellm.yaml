@@ -13,7 +13,7 @@ data:
           oci_region: "##TF_VAR_region##"
           oci_tenancy: "##TF_VAR_tenancy_ocid##"
           oci_user: os.environ/user_ocid
-          oci_fingerprint: os.environ/finderprint
+          oci_fingerprint: os.environ/fingerprint
           oci_key_file: "/app/oci_api_key.pem"
           drop_params: True
       - model_name: oci_xai_grok_code
@@ -24,19 +24,9 @@ data:
           oci_region: "us-chicago-1"
           oci_tenancy: "##TF_VAR_tenancy_ocid##"
           oci_user: os.environ/user_ocid
-          oci_fingerprint: os.environ/finderprint
+          oci_fingerprint: os.environ/fingerprint
           oci_key_file: "/app/oci_api_key.pem"
           drop_params: True
----
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: litellm-secrets
-data:
-  user_ocid: xxxxx # your api key in base64
-  finderprint: xxxxx # your api key in base64
-  key_file: xxxxx # your api key in base64
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -67,7 +57,7 @@ spec:
           subPath: config.yaml
         - name: key-volume
           mountPath: /app/oci_api_key.pem
-          subPath: key _file
+          subPath: key_file
         envFrom:
         - secretRef:
             name: litellm-secrets

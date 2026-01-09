@@ -13,12 +13,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 if is_deploy_compute; then
     build_rsync $APP_SRC_DIR
 else
-    cp ../../bin/shared_compute.sh $APP_SRC_DIR
-    docker image rm ${TF_VAR_prefix}-${APP_NAME}:latest
-    docker build -f Dockerfile_${APP_NAME} -t ${TF_VAR_prefix}-${APP_NAME}:latest .
-    exit_on_error "docker build"
-
-    # --- Change this to your OCI config file path ---
+    # Create a secret for kubernetes
     OCI_CONFIG="$HOME/demo_user.txt"
 
     # Extract values
@@ -26,7 +21,7 @@ else
     fingerprint=$(grep '^fingerprint=' "$OCI_CONFIG" | cut -d'=' -f2-)
 
     # Extract the private key block as multiline value
-    private_key=$(awk '/^-----BEGIN PRIVATE KEY-----/,/^OCI_API_KEY' "$OCI_CONFIG")
+    private_key=$(awk '/^-----BEGIN PRIVATE KEY-----/,/^OCI_API_KEY/' "$OCI_CONFIG")
 
     # Base64 encode everything (no line breaks for YAML compatibility)
     user_ocid_b64=$(printf '%s' "$user_ocid" | base64 | tr -d '\n')
@@ -45,5 +40,6 @@ metadata:
         fingerprint: $fingerprint_b64
         key_file: $key_file_b64
 EOF
+    . $SCRIPT_DIR/../../starter.sh env
     kubectl apply -f $TARGET_DIR/oke/litellm-secrets.yaml
 fi  
