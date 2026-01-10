@@ -38,4 +38,4 @@ spec:
     protocol: TCP
     port: 2025
     targetPort: 2025
----cd 
+---
