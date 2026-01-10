@@ -22,7 +22,7 @@ resource "oci_identity_policy" "starter_search_policy" {
         # OpenID
         "allow any-user to read secret-family in compartment id ${local.lz_app_cmp_ocid} where ALL {request.principal.type= 'ApiGateway'}",
         # Kubernetes
-        "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where ALL {request.principal.type='Instance'}",
+        "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where ALL {request.principal.type='instance'}"
 
     ]
 }
