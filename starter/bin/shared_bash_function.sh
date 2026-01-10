@@ -783,6 +783,7 @@ file_replace_variables() {
 
     echo "$line" >> "$temp_file"
   done < "$file"
+  echo >> "$temp_file"
 
   mv "$temp_file" "$file"
 }
