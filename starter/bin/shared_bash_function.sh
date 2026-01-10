@@ -124,8 +124,8 @@ ocir_docker_push () {
 
   # Push image in registry
   for APP_NAME in `app_name_list`; do
-    if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+    if [ -n "$(docker images -q ${TF_VAR_prefix}-${APP_NAME} 2> /dev/null)" ]; then
+      docker tag ${TF_VAR_prefix}-${APP_NAME} ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_NAME} 2>/dev/null
       docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       exit_on_error "docker push APP"
@@ -224,16 +224,16 @@ tf_env_configmap() {
   echo "apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tf_env_configmap
+  name: tf-env-configmap
 data:" > $TARGET_OKE/tf_env_configmap.yaml
 
   grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
     VAR=$(echo $line | sed 's/export //')
     KEY=$(echo $VAR | cut -d= -f1)
-    VALUE=$(echo $VAR | cut -d= -f2-)
+    VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/')
     echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
   done
-  echo "$TARGET_OKE/tf_env_configmap.yaml created."
+  echo "tf_env_configmap.yaml created."
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
@@ -759,7 +759,7 @@ file_replace_variables() {
 
   echo "Replace variables in file: $1"
   while IFS= read -r line || [ -n "$line" ]; do  
-    if [[ $line =~ (.*)##(.*)##(.*) ]]; then
+    while [[ $line =~ (.*)##(.*)##(.*) ]]; do
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
 
@@ -779,7 +779,7 @@ file_replace_variables() {
         fi
       fi
       line=${line/"##${var_name}##"/${var_value}}
-    fi
+    done
 
     echo "$line" >> "$temp_file"
   done < "$file"
