@@ -2,7 +2,6 @@ from fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 from fastmcp.server.dependencies import get_http_request
 import shared
 import rag_storage
-import shared
 import pprint
 from typing import List, TypedDict
 from pydantic import BaseModel
