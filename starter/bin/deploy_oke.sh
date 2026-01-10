@@ -113,7 +113,7 @@ copy_replace_apply_target_oke() {
   echo "-- kubectl apply -- $filename --"
   cp $filepath $TARGET_OKE/${filename}
   file_replace_variables $TARGET_OKE/${filename}
-  kubectl apply -f $TARGET_OKE/${APP_YAML}
+  kubectl apply -f $TARGET_OKE/${filename}
 }
 
 # APP
