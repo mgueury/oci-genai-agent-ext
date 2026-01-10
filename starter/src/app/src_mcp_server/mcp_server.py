@@ -9,4 +9,4 @@ def add(a: int, b: int) -> int:
 
 if __name__ == "__main__":
     # mcp.run(transport="stdio")  # Run the server, using standard input/output for communication
-    mcp.run(transport="http", host="127.0.0.1", port=2025)
+    mcp.run(transport="http", host="0.0.0.0", port=2025)

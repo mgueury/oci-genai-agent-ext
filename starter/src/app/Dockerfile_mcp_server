@@ -15,4 +15,4 @@ RUN uv pip install -r requirements.txt
 # Copy the APP
 COPY src_mcp_server/* /app/
 
-ENTRYPOINT ["python3", "mcp_server.py"]
+ENTRYPOINT ["python3", "mcp_server_rag.py"]
