@@ -61,6 +61,7 @@ spec:
           - "/app/proxy_server_config.yaml"
         ports:
         - containerPort: 4000
+          name: app-port
         volumeMounts:
         - name: config-volume
           mountPath: /app/proxy_server_config.yaml
@@ -78,3 +79,38 @@ spec:
         - name: key-volume
           secret:
             secretName: litellm-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm-service
+spec:
+  selector:
+    app: litellm
+  ports:
+  - name: http-service-port
+    protocol: TCP
+    port: 4000
+    targetPort: app-port
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: litellm-ui-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2   
+    # nginx.ingress.kubernetes.io/affinity: "cookie"   
+    # nginx.ingress.kubernetes.io/session-cookie-path: "/"    
+spec:
+  ingressClassName: nginx    
+  rules:
+    - http:    
+        paths:
+          - path: /litellm(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: litellm-ui-service
+                port:
+                  number: 4000
+                  

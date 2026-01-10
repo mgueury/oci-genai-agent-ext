@@ -13,6 +13,7 @@ import oci_openai
 
 COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
 REGION = os.getenv("TF_VAR_region")
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
 
 # auth = oci_openai.OciInstancePrincipalAuth()
 # llm = ChatOpenAI(
@@ -65,7 +66,7 @@ async def init( agent_name, prompt, tools_list, callback_handler=None ) -> State
                 {
                     "McpServerRag": {
                         "transport": "streamable_http",
-                        "url": "http://localhost:2025/mcp",                     
+                        "url": MCP_SERVER_URL,                     
                     },
                 },
                 tool_interceptors=[inject_user_context],

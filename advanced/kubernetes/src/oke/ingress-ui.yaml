@@ -18,3 +18,4 @@ spec:
                 name: ##TF_VAR_prefix##-ui-service
                 port:
                   number: 80
+                  
