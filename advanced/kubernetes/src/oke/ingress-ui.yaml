@@ -11,7 +11,7 @@ spec:
   rules:
     - http:    
         paths:
-          - path: /##TF_VAR_prefix##(/|$)(.*)
+          - path: /oke(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:

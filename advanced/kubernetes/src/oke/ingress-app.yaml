@@ -12,7 +12,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /##TF_VAR_prefix##/app(/|$)(.*)
+          - path: /server(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
