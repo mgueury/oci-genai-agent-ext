@@ -61,7 +61,6 @@ spec:
           - "/app/proxy_server_config.yaml"
         ports:
         - containerPort: 4000
-          name: app-port
         volumeMounts:
         - name: config-volume
           mountPath: /app/proxy_server_config.yaml
@@ -88,10 +87,9 @@ spec:
   selector:
     app: litellm
   ports:
-  - name: http-service-port
-    protocol: TCP
+  - protocol: TCP
     port: 4000
-    targetPort: app-port
+    targetPort: 4000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -110,7 +108,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: litellm-ui-service
+                name: litellm-service
                 port:
                   number: 4000
                   
