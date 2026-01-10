@@ -17,6 +17,7 @@ spec:
       containers:
       - name: app
         image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
+        imagePullPolicy: Always
         ports:
         - containerPort: 2025
         envFrom:
@@ -37,4 +38,4 @@ spec:
     protocol: TCP
     port: 2025
     targetPort: 2025
----
+---cd 

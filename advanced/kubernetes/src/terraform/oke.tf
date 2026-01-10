@@ -406,6 +406,7 @@ resource "oci_containerengine_node_pool" "starter_node_pool" {
     #Required
     image_id    = local.image_id
     source_type = "IMAGE"
+    boot_volume_size_in_gbs = "120"
   }
 
   node_config_details {
