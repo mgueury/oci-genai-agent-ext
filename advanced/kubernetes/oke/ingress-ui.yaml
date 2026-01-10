@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: agext8-ui-ingress
+  name: ##TF_VAR_prefix##-ui-ingress
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2   
     # nginx.ingress.kubernetes.io/affinity: "cookie"   
@@ -11,10 +11,10 @@ spec:
   rules:
     - http:    
         paths:
-          - path: /agext8(/|$)(.*)
+          - path: /##TF_VAR_prefix##(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
-                name: agext8-ui-service
+                name: ##TF_VAR_prefix##-ui-service
                 port:
                   number: 80
