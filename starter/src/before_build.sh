@@ -43,6 +43,4 @@ else
         append_tf_env "export MCP_SERVER_URL=""http://localhost:2025"""
     fi
     export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
-http://localhost:2025/mcp
-
 fi
