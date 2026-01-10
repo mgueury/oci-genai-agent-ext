@@ -77,7 +77,7 @@ async def init( agent_name, prompt, tools_list, callback_handler=None ) -> State
             # Filter tools.
             tools_filtered = []
             for tool in tools:
-                if tool.name in tools_list:
+                if tools_list==None or tool.name in tools_list:
                     tools_filtered.append( tool )
             print( "-- tools_filtered ---------------------------------------------------")
             pprint.pprint( tools_filtered )
@@ -107,8 +107,7 @@ prompt_rag = """You are a research agent.
             - Respond ONLY with the results of your work, do NOT include ANY other text.
             """
 
-agent_rag = asyncio.run(init("agent_rag", prompt_rag,
-            ["search","list_documents","get_document_summary","get_document_by_path"]))
+agent_rag = asyncio.run(init("agent_rag", prompt_rag, None))
 
 prompt_sr = """You are a support agent.
             INSTRUCTIONS:
