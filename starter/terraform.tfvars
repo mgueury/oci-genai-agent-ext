@@ -17,3 +17,6 @@ compartment_ocid="__TO_FILL__"
 # vault_ocid="__TO_FILL__"
 # vault_key_ocid="__TO_FILL__"
 
+# Uncomment to enable login in LangGraph application using OpenID via API Gateway and Confidential Application 
+# Needs OCI Identity Domain rights.
+# openid="true"

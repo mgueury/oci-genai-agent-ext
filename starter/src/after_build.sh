@@ -48,8 +48,7 @@ if [ "$TF_VAR_openid" == "true" ]; then
     append_done
 fi
 if [ "$TF_VAR_kubernetes" == "true" ]; then
-    get_ui_url
     append_done "-----------------------------------------------------------------------"
-    append_done "Kubernetes: $UI_URL/chat.html"
+    append_done "Kubernetes Chat: http://${TF_VAR_ingress_ip}/oke/chat.html"
     append_done
 fi
