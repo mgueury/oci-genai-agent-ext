@@ -236,3 +236,11 @@ nav li:hover {
     background: #efefef;
     outline: none;
 }
+#reset {
+    position: fixed;
+    top: 10px;
+    right: 10px;    
+}
+#reset:hover {
+    background: #fff;
+}

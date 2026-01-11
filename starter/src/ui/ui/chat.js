@@ -220,6 +220,13 @@ chatForm.addEventListener('submit', function (e) {
     });
 });
 
+// -- Reset Button --------------------------------------------------
+
+const reset = document.getElementById('reset');
+reset.addEventListener('click', () => {
+    window.location.reload();
+});
+
 // -- Hamburger menu logic ------------------------------------------
 const hamburger = document.querySelector('.hamburger');
 const nav = document.getElementById('agentMenu');
