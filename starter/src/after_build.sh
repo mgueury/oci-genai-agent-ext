@@ -30,7 +30,7 @@ append_done "  User: APEX_APP"
 append_done "  Password: $TF_VAR_db_password"
 append_done
 append_done "APEX APP"
-append_done "https://${APIGW_HOSTNAME}/ords/r/apex_app/apex_app/"
+append_done "https://${APIGW_HOSTNAME}/ords/r/apex_app/ai_agent_rag/"
 append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"

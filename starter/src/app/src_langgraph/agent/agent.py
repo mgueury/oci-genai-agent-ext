@@ -28,10 +28,12 @@ MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
 
 llm = ChatOCIGenAI(
     auth_type="INSTANCE_PRINCIPAL",
-    model_id="openai.gpt-oss-120b",
+    # model_id="openai.gpt-oss-120b",
+    model_id="meta.llama-4-scout-17b-16e-instruct",
+    # model_id="cohere.command-a-03-2025",
     service_endpoint="https://inference.generativeai."+REGION+".oci.oraclecloud.com",
-#    model_id="xai.grok-4-fast-reasoning",
-#    service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
+    # model_id="xai.grok-4-fast-reasoning",
+    # service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
     compartment_id=COMPARTMENT_OCID,
     is_stream=True,
     model_kwargs={"temperature": 0}
