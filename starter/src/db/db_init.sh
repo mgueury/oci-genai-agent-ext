@@ -127,8 +127,9 @@ begin
   AI_CONFIG_UPDATE( 'genai_meta_model',    '$TF_VAR_genai_meta_model' );
   -- AI_LANGGRAPH
   AI_CONFIG_UPDATE( 'langgraph_thread_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/langgraph/threads' );
-  AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
   AI_CONFIG_UPDATE( 'idcs_url', '$IDCS_URL' );
+  -- ORCL_DB_SSE
+  -- AI_CONFIG_UPDATE( 'langgraph_startsse_url', 'https://$APIGW_HOSTNAME/$TF_VAR_prefix/orcldbsse/startsse?thread_id=' );
   commit;
 end;
 /
