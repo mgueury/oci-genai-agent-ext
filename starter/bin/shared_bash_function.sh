@@ -481,7 +481,8 @@ livelabs_green_button() {
       export TF_VAR_app_subnet_ocid=$TF_VAR_subnet_ocid
       export TF_VAR_db_subnet_ocid=$TF_VAR_subnet_ocid
     fi  
-    
+    sed -i "s&license_model=\"__TO_FILL__\"&license_model=\"$LICENSE_INCLUDED\"&" $PROJECT_DIR/terraform.tfvars
+
     # LiveLabs support only E4 Shapes
     sed -i '/compartment_ocid=/a\instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/terraform.tfvars
     export TF_VAR_instance_shape=VM.Standard.E4.Flex
