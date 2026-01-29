@@ -22,6 +22,6 @@ fi
 # LiveLabs
 if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
   if ! grep -q 'vcn_id=' $PROJECT_DIR/terraform.tfvars; then
-    cp -R ../advanced/livelabs/src/* src/. 
+    cp -R ../advanced/livelabs/* . 
   fi
 fi
