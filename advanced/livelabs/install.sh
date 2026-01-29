@@ -4,9 +4,9 @@ cd $SCRIPT_DIR
 
 cd ../../starter
 
-cp ../advanced/livelabs/* .
+cp -r ../advanced/livelabs/* .
 rm install.sh
-mv src/apigw.tf src/apigw._tf 
-mv src/genai_apigw.tf src/genai_apigw._tf 
+mv src/terraform/apigw.tf src/terraform/apigw._tf 
+mv src/terraform/genai_apigw.tf src/terraform/genai_apigw._tf 
 sed -i 's/oci_apigateway_/# oci_apigateway_/' src/terraform/build.tf 
 
