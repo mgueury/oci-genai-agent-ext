@@ -8,6 +8,7 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
   fi
 fi
 
+
 if [ "$TF_VAR_kubernetes" == "true" ]; then
   cp -R ../advanced/kubernetes/src/* src/. 
   sed -i '/local_oke_ocid = ""/d' src/terraform/build.tf 
@@ -16,4 +17,9 @@ fi
 
 if [ "$TF_VAR_openid" == "true" ]; then
   cp -R ../advanced/openid/src/* src/. 
+fi
+
+# LiveLabs
+if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
+  cp -R ../advanced/livelabs/src/* src/. 
 fi
