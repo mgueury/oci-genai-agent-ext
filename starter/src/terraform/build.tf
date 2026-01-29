@@ -38,7 +38,6 @@ resource "null_resource" "tf_env" {
     echo_export "BASTION_IP" "${local.local_bastion_ip}"
     echo_export "BUCKET_URL" "${local.local_bucket_url}"
     echo_export "COMPUTE_IP" "${local.local_compute_ip}"    
-    echo_export "CONTAINER_PREFIX" "${local.local_container_prefix}"
     echo_export "DB_URL" "${local.local_db_url}"
     echo_export "IDCS_URL" "${local.local_idcs_url}"
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
