@@ -127,7 +127,6 @@ resource "null_resource" "build_deploy" {
     oci_core_instance.starter_bastion,
     oci_core_instance.starter_compute,
     oci_database_autonomous_database.starter_atp,
-    oci_logging_log_group.starter_log_group,
     oci_objectstorage_bucket.starter_bucket,
     tls_private_key.ssh_key,  
     oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint,

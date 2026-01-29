@@ -8,5 +8,7 @@ cp -r ../advanced/livelabs/* .
 rm install.sh
 mv src/terraform/apigw.tf src/terraform/apigw._tf 
 mv src/terraform/genai_apigw.tf src/terraform/genai_apigw._tf 
+mv src/terraform/genai_streamlit.tf src/terraform/genai_streamlit._tf 
+
 sed -i 's/oci_apigateway_/# oci_apigateway_/' src/terraform/build.tf 
 
