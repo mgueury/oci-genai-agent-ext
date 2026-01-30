@@ -122,7 +122,6 @@ resource "null_resource" "build_deploy" {
   depends_on = [
     oci_apigateway_api.starter_api,
     oci_apigateway_gateway.starter_apigw,
-    oci_artifacts_container_repository.starter_repo_fn,
     oci_core_instance.starter_bastion,
     oci_core_instance.starter_compute,
     oci_database_autonomous_database.starter_atp,
