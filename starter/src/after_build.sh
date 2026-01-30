@@ -21,8 +21,9 @@ echo
 
 if [ "$APIGW_HOSTNAME" = "" ]; then
   # LiveLabs Green Button
-  export BASE_URL="http://${BASTION_IP}"
-  export NLB_IP=$BASTION_IP
+  get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
+  export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
+  export NLB_IP=$COMPUTE_PUBLIC_IP
   export ORDS_EXTERNAL_URL=$ORDS_URL
 else 
   export BASE_URL="https://${APIGW_HOSTNAME}"
