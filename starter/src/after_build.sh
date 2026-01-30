@@ -19,18 +19,30 @@ echo
 # echo "http://${BASTION_IP}:8081/"
 # echo "-----------------------------------------------------------------------"
 
+if [ "$APIGW_HOSTNAME" = "" ]; then
+  # LiveLabs Green Button
+  export BASE_URL="http://${BASTION_IP}"
+  export NLB_IP=$BASTION_IP
+  export ORDS_EXTERNAL_URL=$ORDS_URL
+else 
+  export BASE_URL="https://${APIGW_HOSTNAME}"
+  export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
+  echo "NLB_IP=$NLB_IP"
+  export ORDS_EXTERNAL_URL=https://${APIGW_HOSTNAME}/ords
+fi 
+
 echo "URLs" > $FILE_DONE
 append_done "-----------------------------------------------------------------------"
 append_done "APEX login:"
 append_done
 append_done "APEX Workspace"
-append_done "https://${APIGW_HOSTNAME}/ords/_/landing"
+append_done "${ORDS_EXTERNAL_URL}/ords/_/landing"
 append_done "  Workspace: APEX_APP"
 append_done "  User: APEX_APP"
 append_done "  Password: $TF_VAR_db_password"
 append_done
 append_done "APEX APP"
-append_done "https://${APIGW_HOSTNAME}/ords/r/apex_app/ai_agent_rag/"
+append_done "${ORDS_EXTERNAL_URL}/ords/r/apex_app/ai_agent_rag/"
 append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
@@ -39,7 +51,7 @@ append_done "http://${NLB_IP}:8080/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "LangGraph Agent Chat:"
-append_done "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/chat.html"
+append_done "${BASE_URL}/${TF_VAR_prefix}/chat.html"
 append_done
 if [ "$TF_VAR_openid" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
