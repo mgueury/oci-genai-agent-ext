@@ -42,7 +42,7 @@ else
        export NLB_IP=$COMPUTE_PUBLIC_IP
        export ORDS_EXTERNAL_URL=$ORDS_URL
     else 
-       export BASE_URL="https://${APIGW_HOSTNAME}"
+       export BASE_URL="https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"
        export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
        echo "NLB_IP=$NLB_IP"
        export ORDS_EXTERNAL_URL=https://${APIGW_HOSTNAME}/ords

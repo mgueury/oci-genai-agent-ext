@@ -36,7 +36,7 @@ append_done "http://${NLB_IP}:8080/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "LangGraph Agent Chat:"
-append_done "${BASE_URL}/${TF_VAR_prefix}/chat.html"
+append_done "${BASE_URL}/chat.html"
 append_done
 if [ "$TF_VAR_openid" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
