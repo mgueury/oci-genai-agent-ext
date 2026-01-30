@@ -1,31 +1,5 @@
 . $HOME/compute/tf_env.sh
 
-# export DB_PASSWORD="##TF_VAR_db_password##"
-# export DB_URL="##DB_URL##"
-# export JDBC_URL="##JDBC_URL##"
-# export APIGW_HOSTNAME="##APIGW_HOSTNAME##"
-
-# # Generic
-# export TF_VAR_compartment_ocid="##TF_VAR_compartment_ocid##"
-# export TF_VAR_region="##TF_VAR_region##"
-# export TF_VAR_prefix="##TF_VAR_prefix##"
-# export OBJECT_STORAGE_NAMESPACE="##OBJECT_STORAGE_NAMESPACE##"
-
-# # IDCS
-# export IDCS_URL="##IDCS_URL##"
-
-# # OCI Stream
-# export STREAM_OCID="##STREAM_OCID##"
-# export STREAM_MESSAGE_ENDPOINT="##STREAM_MESSAGE_ENDPOINT##"
-
-# # OCI GenAI Agent
-# export TF_VAR_agent_endpoint_ocid="##TF_VAR_agent_endpoint_ocid##"
-# export TF_VAR_agent_datasource_ocid="##OPTIONAL/TF_VAR_agent_datasource_ocid##"
-# export TF_VAR_genai_meta_model="##TF_VAR_genai_meta_model##"
-# export TF_VAR_genai_cohere_model="##TF_VAR_genai_cohere_model##"
-# export TF_VAR_genai_embed_model="##TF_VAR_genai_embed_model##"
-
-
 export DB_USER="apex_app"
 export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 

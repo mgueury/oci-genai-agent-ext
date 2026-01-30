@@ -4,9 +4,6 @@ export ROOT_DIR=${SRC_DIR%/*}
 cd $ROOT_DIR
 
 . ./starter.sh env
-# try(oci_apigateway_gateway.starter_apigw.ip_addresses[0].ip_address,"")
-export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
-echo "NLB_IP=$NLB_IP"
 
 # Upload Sample Files
 sleep 5
@@ -18,19 +15,6 @@ echo
 # echo "(experimental) Cohere with Tools and GenAI Agent:"
 # echo "http://${BASTION_IP}:8081/"
 # echo "-----------------------------------------------------------------------"
-
-if [ "$APIGW_HOSTNAME" = "" ]; then
-  # LiveLabs Green Button
-  get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
-  export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
-  export NLB_IP=$COMPUTE_PUBLIC_IP
-  export ORDS_EXTERNAL_URL=$ORDS_URL
-else 
-  export BASE_URL="https://${APIGW_HOSTNAME}"
-  export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
-  echo "NLB_IP=$NLB_IP"
-  export ORDS_EXTERNAL_URL=https://${APIGW_HOSTNAME}/ords
-fi 
 
 echo "URLs" > $FILE_DONE
 append_done "-----------------------------------------------------------------------"

@@ -34,6 +34,23 @@ else
     # export TF_VAR_genai_embed_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
     append_tf_env "export TF_VAR_genai_embed_model=""$TF_VAR_genai_embed_model"""
 
+    # LiveLabs
+    if [ "$APIGW_HOSTNAME" = "" ]; then
+       # LiveLabs Green Button
+       get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
+       export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
+       export NLB_IP=$COMPUTE_PUBLIC_IP
+       export ORDS_EXTERNAL_URL=$ORDS_URL
+    else 
+       export BASE_URL="https://${APIGW_HOSTNAME}"
+       export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
+       echo "NLB_IP=$NLB_IP"
+       export ORDS_EXTERNAL_URL=https://${APIGW_HOSTNAME}/ords
+    fi 
+    append_tf_env "export BASE_URL=""$BASE_URL"""
+    append_tf_env "export NLB_IP=""$NLB_IP"""
+    append_tf_env "export ORDS_EXTERNAL_URL=""$ORDS_EXTERNAL_URL"""
+
     # Kubernetes
     if [ "$TF_VAR_deploy_type" == "kubernetes" ]; then
         append_tf_env "export LANGGRAPH_URL=""http://langgraph-service:2024"""
