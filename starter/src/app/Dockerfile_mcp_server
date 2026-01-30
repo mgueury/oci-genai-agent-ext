@@ -1,0 +1,14 @@
+FROM python:3.13-trixie
+
+WORKDIR /app
+
+# Install uv / no venv
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin:/app/.local/bin:${PATH}"
+ENV UV_SYSTEM_PYTHON=1
+
+# Copy the APP
+COPY src_mcp_server/* /app/
+
+ENTRYPOINT ["python3", "mcp_server.py"]

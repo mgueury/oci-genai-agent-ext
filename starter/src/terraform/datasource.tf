@@ -131,7 +131,7 @@ locals {
 
   # OCIR
   local_ocir_host = join("", [lower(lookup(data.oci_identity_regions.current_region.regions[0], "key")), ".ocir.io"])
-  ocir_namespace = lookup(data.oci_objectstorage_namespace.ns, "namespace") 
+  local_object_storage_namespace = lookup(data.oci_objectstorage_namespace.ns, "namespace") 
 }
 
 # Random ID
@@ -150,5 +150,5 @@ resource "random_string" "id" {
 # }
 # locals {
 #   username = var.username != null ? var.username : oci_identity_user.user[0].name
-#   ocir_username = join( "/", [ coalesce(local.ocir_namespace, "missing_privilege"), local.username ])
+#   ocir_username = join( "/", [ coalesce(local.object_storage_namespace, "missing_privilege"), local.username ])
 # }

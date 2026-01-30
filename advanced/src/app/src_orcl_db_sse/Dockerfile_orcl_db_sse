@@ -1,0 +1,11 @@
+FROM python:3-trixie
+
+RUN pip install --upgrade pip
+
+WORKDIR /app
+ENV PATH="/app/.local/bin:${PATH}"
+COPY src_orcl_db_sse/* /app/
+RUN pip3 install -r requirements.txt
+
+ENTRYPOINT ["python3","app.py"]
+

@@ -21,7 +21,7 @@ resource "oci_generative_ai_agent_data_source" "starter_agent_ds" {
     data_source_config_type = "OCI_OBJECT_STORAGE"
     object_storage_prefixes {
       bucket = oci_objectstorage_bucket.starter_agent_bucket.name
-      namespace = var.namespace
+      namespace = local.local_object_storage_namespace
     }
   }
   display_name                  = "${var.prefix}-agent-ds"

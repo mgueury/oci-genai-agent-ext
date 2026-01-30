@@ -7,9 +7,9 @@ title() {
   echo  
 }
 
-# Used in for loop for APP_DIR
-app_dir_list() {
-  ls -d $PROJECT_DIR/src/app* | sort -g | sed "s/.*src\///g"
+# Used in for loop for APP_NAME
+app_name_list() {
+  ls -d $PROJECT_DIR/src/app/build_*.sh | sort -g | sed "s#.*src/app/build_##g" | sed "s/\.sh$//"
 }
 
 # Java Build Common
@@ -41,6 +41,31 @@ build_ui() {
     # Kubernetes and Container Instances
     docker image rm ${TF_VAR_prefix}-ui:latest
     docker build -t ${TF_VAR_prefix}-ui:latest .
+  fi 
+}
+
+build_rsync() {
+  if [ "$1" == "" ]; then
+    error_exit "Missing src parameter"
+  fi
+
+  # In Java, copy the src/*.sh to target 
+  if [ -d target ]; then
+    cp src/*.sh target/.
+  fi
+
+  # Copy all the app files in $TARGET_DIR/compute/$APP_NAME
+  mkdir -p $TARGET_DIR/compute/$APP_COMPUTE_DIR
+  rsync -av --progress $1/ $TARGET_DIR/compute/$APP_COMPUTE_DIR --exclude starter --exclude terraform.tfvars
+
+  # Replace the user and password in start.sh
+  if [ -f $TARGET_DIR/compute/$APP_COMPUTE_DIR/start.sh ]; then
+    replace_db_user_password_in_file $TARGET_DIR/compute/$APP_COMPUTE_DIR/start.sh
+  fi
+
+  # Replace variables in env.sh
+  if [ -f $TARGET_DIR/compute/$APP_COMPUTE_DIR/env.sh ]; then 
+    file_replace_variables $TARGET_DIR/compute/$APP_COMPUTE_DIR/env.sh
   fi 
 }
 
@@ -98,13 +123,15 @@ ocir_docker_push () {
   echo DOCKER_PREFIX=$DOCKER_PREFIX
 
   # Push image in registry
-  if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-    docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
-    oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-app 2>/dev/null
-    docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest
-    exit_on_error "docker push APP"
-    echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-app:latest" > $TARGET_DIR/docker_image_app.txt
-  fi
+  for APP_NAME in `app_name_list`; do
+    if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
+      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+      oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_NAME} 2>/dev/null
+      docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+      exit_on_error "docker push APP"
+      echo "${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest" > $TARGET_DIR/docker_image_${APP_NAME}.txt
+    fi
+  done
 
   # Push image in registry
   if [ -d $PROJECT_DIR/src/ui ]; then
@@ -184,6 +211,29 @@ get_output_from_tfstate () {
     RESULT=`jq -r '.outputs."'$2'".value' $STATE_FILE | sed "s/ //"`
     set_if_not_null $1 $RESULT
   fi
+}
+
+# Append a line in tf_env.sh (typically used in before_build.sh to add custom variable to pass to bastion/compute/...)
+append_tf_env() {
+  echo "$1"
+  echo "$1" >> $TARGET_DIR/tf_env.sh
+}
+
+# Convert tf_env.sh to configmap
+tf_env_configmap() {
+  echo "apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tf-env-configmap
+data:" > $TARGET_OKE/tf_env_configmap.yaml
+
+  grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
+    VAR=$(echo $line | sed 's/export //')
+    KEY=$(echo $VAR | cut -d= -f1)
+    VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/') 
+    echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
+  done
+  echo "tf_env_configmap.yaml created."
 }
 
 # Check is the option '$1' is part of the TF_VAR_group_common
@@ -713,7 +763,9 @@ file_replace_variables() {
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"
 
-      if [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
+      if [ "$var_name" == "xxx" ]; then
+         var_value="##xxx##"
+      elif [[ ${var_name} =~ OPTIONAL/(.*) ]]; then
          var_name2="${BASH_REMATCH[1]}"
          var_value="${!var_name2}"
          if [ "$var_value" == "" ]; then

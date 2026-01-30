@@ -12,12 +12,19 @@ resource "oci_identity_policy" "starter_search_policy" {
         "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_compute.id}'",
         "allow any-user to manage stream-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_compute.id}'",
         "allow any-user to manage genai-agent-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_compute.id}'",
+        "allow any-user to manage ai-service-language-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_compute.id}'",
+        "allow any-user to manage ai-service-speech-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_core_instance.starter_compute.id}'",
         "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
         "allow any-user to manage genai-agent-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
-        "allow any-user to read object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
-        "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where ALL { request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}', request.permission = 'PAR_MANAGE' }",
+        "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
         "allow any-user to manage database-tools-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_generative_ai_agent_agent.starter_agent.id}'",
-        "allow any-user to read secret-bundle in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_generative_ai_agent_agent.starter_agent.id}'"
+        "allow any-user to read secret-bundle in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_generative_ai_agent_agent.starter_agent.id}'",
+        # OpenID
+        "allow any-user to read secret-family in compartment id ${local.lz_app_cmp_ocid} where ALL {request.principal.type= 'ApiGateway'}"
     ]
 }
+
+# "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}'",
+# "allow any-user to manage object-family in compartment id ${local.lz_serv_cmp_ocid} where ALL { request.principal.id='${data.oci_database_autonomous_database.starter_atp.autonomous_database_id}', request.permission = 'PAR_MANAGE' }", */
+# allow group xxxx-ai to use generative-ai-family in compartment id xxxxxx
 

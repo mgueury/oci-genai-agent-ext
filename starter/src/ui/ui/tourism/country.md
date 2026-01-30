@@ -41,3 +41,7 @@ United Kingdom - Attracts visitors with its historical landmarks, cultural insti
 These countries are among the most visited due to their unique blend of natural beauty, cultural richness, and modern attractions.
 
 ----
+
+
+Create an image for tourism about France. Cut the image in 3 vertically. And show 3 touristic thing to see of that country in the 3 panels.
+Do not write any text.
