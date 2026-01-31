@@ -33,10 +33,11 @@ else
     export TF_VAR_genai_embed_model="cohere.embed-multilingual-v3.0"
     # export TF_VAR_genai_embed_model=$(jq -r '.data.items[]|select(.vendor=="cohere" and (.capabilities|index("TEXT_EMBEDDINGS")) and ."time-on-demand-retired"==null)|.["display-name"]' $TARGET_DIR/genai_models.json | head -n 1)
     append_tf_env "export TF_VAR_genai_embed_model=""$TF_VAR_genai_embed_model"""
+    append_tf_env
 
     # LiveLabs
     if [ "$APIGW_HOSTNAME" = "" ]; then
-       # LiveLabs Green Button
+       append_tf_env "# LiveLabs Green Button"    
        get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
        append_tf_env "export COMPUTE_PUBLIC_IP=""$COMPUTE_PUBLIC_IP"""
        export BASE_URL="http://${COMPUTE_PUBLIC_IP}"

@@ -46,8 +46,6 @@ read_terraform_tfvars() {
   unset value
 }
 
-
-
 # Environment Variables
 # In 4 places:
 # 1. target/tf_env.sh created by the terraform (created by the first build)
@@ -90,8 +88,6 @@ _starter_completions()
 }
 complete -F _starter_completions ./starter.sh
 
-
-
 # Check the SHAPE
 unset MISMATCH_PLATFORM
 if [ "$TF_VAR_infra_as_code" == "from_resource_manager" ]; then
@@ -130,6 +126,13 @@ if [ "$MISMATCH_PLATFORM" != "" ]; then
   exit 1
 fi
 
+if ! command -v jq &> /dev/null; then
+  error_exit "Unix command jq not found. Please install it."
+fi
+
+if ! command -v rsync &> /dev/null; then
+  error_exit "Unix command rsync not found. Please install it."
+fi
 
 # Enable BASH history for Stack Trace.
 # - Do not store in HISTFILE 
@@ -156,6 +159,12 @@ else
   unset SILENT_MODE
 fi 
 
+# Before First Build (run only once)
+if [ -f $PROJECT_DIR/src/before_first_build.sh ]; then
+  . $PROJECT_DIR/src/before_first_build.sh
+  mv $PROJECT_DIR/src/before_first_build.sh $PROJECT_DIR/src/before_first_build.sh.done
+fi
+
 # Skip if runned from OCI Devops ?
 # if [ "$REPOSITORY_NAME" != "" ]; then
 #   return
@@ -163,10 +172,6 @@ fi
 
 # CONFIG.SH
 . $BIN_DIR/config.sh
-
-if ! command -v jq &> /dev/null; then
-  error_exit "Unix command jq not found. Please install it."
-fi
 
 #-- PRE terraform ----------------------------------------------------------
 # Combination of tvars variables and fixed variables
@@ -206,8 +211,8 @@ else
   DATE_POSTFIX=`date '+%Y%m%d-%H%M%S'`
 
   # Namespace
-  export OBJECT_STORAGE_NAMESPACE=`oci os ns get | jq -r .data`
-  auto_echo OBJECT_STORAGE_NAMESPACE=$OBJECT_STORAGE_NAMESPACE
+  export TF_VAR_namespace=`oci os ns get | jq -r .data`
+  auto_echo TF_VAR_namespace=$TF_VAR_namespace
 
   # Kubernetes and OCIR
   if [ "$TF_VAR_deploy_type" == "kubernetes" ] || [ "$TF_VAR_deploy_type" == "function" ] || [ "$TF_VAR_deploy_type" == "container_instance" ] || [ -f $PROJECT_DIR/src/terraform/oke.tf ]; then
@@ -295,14 +300,14 @@ if [ -f $STATE_FILE ]; then
   # Docker
   if [ "$TF_VAR_deploy_type" == "kubernetes" ] || [ "$TF_VAR_deploy_type" == "function" ] || [ "$TF_VAR_deploy_type" == "container_instance" ] || [ -f $PROJECT_DIR/src/terraform/oke.tf ]; then
     export DOCKER_PREFIX_NO_OCIR=${CONTAINER_PREFIX}
-    export DOCKER_PREFIX=${OCIR_HOST}/${OBJECT_STORAGE_NAMESPACE}/${DOCKER_PREFIX_NO_OCIR}
+    export DOCKER_PREFIX=${OCIR_HOST}/${TF_VAR_namespace}/${DOCKER_PREFIX_NO_OCIR}
     auto_echo DOCKER_PREFIX=$DOCKER_PREFIX
   fi
 
   # Functions
   if [ "$TF_VAR_deploy_type" == "function" ]; then
     # OBJECT Storage URL
-    export BUCKET_URL="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${OBJECT_STORAGE_NAMESPACE}/b/${TF_VAR_prefix}-public-bucket/o/"
+    export BUCKET_URL="https://objectstorage.${TF_VAR_region}.oraclecloud.com/n/${TF_VAR_namespace}/b/${TF_VAR_prefix}-public-bucket/o"
 
     # Function OCID
     get_attribute_from_tfstate "FN_FUNCTION_OCID" "starter_fn_function" "id"
@@ -329,6 +334,7 @@ if [ -f $STATE_FILE ]; then
   fi
 
   # export all OUTPUTS of the terraform file
+  # XXXXXX Still needed ? local_xx takes care of this ? 
   if [ "$IDCS_URL" == "" ]; then
     LIST_OUTPUT=`cat $STATE_FILE| jq .outputs | jq -r 'keys[]'`
     for output in $LIST_OUTPUT; do
@@ -383,8 +389,8 @@ if [ -f $STATE_FILE ]; then
     export ORDS_HOST=`basename $(dirname $ORDS_URL)`
   fi
 
-  if [ -f $PROJECT_DIR/src/before_build.sh ]; then
-    .  $PROJECT_DIR/src/before_build.sh
-  fi
+  # after_auto_env.sh
+  if [ -f $PROJECT_DIR/src/after_auto_env.sh ]; then
+    .  $PROJECT_DIR/src/after_auto_env.sh
+  fi  
 fi
-
