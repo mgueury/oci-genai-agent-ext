@@ -21,13 +21,13 @@ append_done "-------------------------------------------------------------------
 append_done "APEX login:"
 append_done
 append_done "APEX Workspace"
-append_done "${ORDS_EXTERNAL_URL}/ords/_/landing"
+append_done "${ORDS_EXTERNAL_URL}/_/landing"
 append_done "  Workspace: APEX_APP"
 append_done "  User: APEX_APP"
 append_done "  Password: $TF_VAR_db_password"
 append_done
 append_done "APEX APP"
-append_done "${ORDS_EXTERNAL_URL}/ords/r/apex_app/ai_agent_rag/"
+append_done "${ORDS_EXTERNAL_URL}/r/apex_app/ai_agent_rag/"
 append_done "  User: APEX_APP / $TF_VAR_db_password"
 append_done 
 append_done "-----------------------------------------------------------------------"
