@@ -49,8 +49,8 @@ EOF
 
 
       # Generate the key and the chain      
-     openssl genrsa -out privkey.pem 2048
-     openssl req -new -key privkey.pem -out server.csr -config san.cnf
-     openssl x509 -req -in server.csr -signkey privkey.pem -out fullchain.pem -days 365 -extensions req_ext -extfile san.cnf
+     openssl genrsa -out server.key 2048
+     openssl req -new -key server.key -out server.csr -config san.cnf
+     openssl x509 -req -in server.csr -signkey server.key -out server.crt -days 365 -extensions req_ext -extfile san.cnf
    fi
 fi
