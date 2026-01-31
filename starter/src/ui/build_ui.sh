@@ -25,7 +25,7 @@ if [ "$APIGW_HOSTNAME" = "" ]; then
       file_replace_variables nginx_tls.conf 
 
       # IP Certificate Request      
-      cat << EOF     
+      cat > san.cnf << EOF     
 [req]
 default_bits = 2048
 prompt = no
@@ -45,7 +45,9 @@ subjectAltName = @alt_names
 
 [alt_names]
 IP.1 = $COMPUTE_PUBLIC_IP
-EOF > san.cnf
+EOF
+
+
       # Generate the key and the chain      
      openssl genrsa -out privkey.pem 2048
      openssl req -new -key privkey.pem -out server.csr -config san.cnf
