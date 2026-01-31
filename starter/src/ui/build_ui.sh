@@ -19,9 +19,9 @@ if [ "$APIGW_HOSTNAME" = "" ]; then
    cd $TARGET_DIR/compute
    if [ !-f $TARGET_DIR/compute/nginx_tls.conf ]; then
       # Nginx config
-      mkdir -p $TARGET_DIR/compute
-      cp nginx_tls.conf $TARGET_DIR/compute/.
-      cd $TARGET_DIR/compute
+      mkdir -p $TARGET_DIR/compute/compute
+      cp nginx_tls.conf $TARGET_DIR/compute/compute/.
+      cd $TARGET_DIR/compute/compute
       file_replace_variables nginx_tls.conf 
 
       # IP Certificate Request      
