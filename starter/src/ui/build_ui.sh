@@ -17,7 +17,7 @@ build_ui
 # Create a self signed certificate for the IP 
 if [ "$APIGW_HOSTNAME" = "" ]; then
    cd $TARGET_DIR/compute
-   if [ !-f $TARGET_DIR/compute/nginx_tls.conf ]; then
+   if [ ! -f $TARGET_DIR/compute/nginx_tls.conf ]; then
       # Nginx config
       mkdir -p $TARGET_DIR/compute/compute
       cp nginx_tls.conf $TARGET_DIR/compute/compute/.

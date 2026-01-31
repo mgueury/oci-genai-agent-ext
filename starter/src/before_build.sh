@@ -38,6 +38,7 @@ else
     if [ "$APIGW_HOSTNAME" = "" ]; then
        # LiveLabs Green Button
        get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
+       append_tf_env "export COMPUTE_PUBLIC_IP=""$COMPUTE_PUBLIC_IP"""
        export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
        export NLB_IP=$COMPUTE_PUBLIC_IP
        # Using the self sign certificate for the IP
