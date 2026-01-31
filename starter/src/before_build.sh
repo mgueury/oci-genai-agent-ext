@@ -40,7 +40,7 @@ else
        get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
        export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
        export NLB_IP=$COMPUTE_PUBLIC_IP
-       export ORDS_EXTERNAL_URL=$ORDS_URL
+       export ORDS_EXTERNAL_URL="http://${COMPUTE_PUBLIC_IP}/ords"
     else 
        export BASE_URL="https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"
        export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
