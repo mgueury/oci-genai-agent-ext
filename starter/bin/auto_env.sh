@@ -379,6 +379,10 @@ if [ -f $STATE_FILE ]; then
     fi 
   fi
 
+  if [ "$ORDS_URL" != "" ]; then
+    export ORDS_HOST=`basename $(dirname $ORDS_URL)`
+  fi
+
   if [ -f $PROJECT_DIR/src/before_build.sh ]; then
     .  $PROJECT_DIR/src/before_build.sh
   fi
