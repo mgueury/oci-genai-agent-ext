@@ -20,7 +20,7 @@ if [ "$TF_VAR_openid" == "true" ]; then
 fi
 
 # LiveLabs
-if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
+if [ "$LIVELABS" == "true" ]; then
   if ! grep -q 'vcn_id=' $PROJECT_DIR/terraform.tfvars; then
     cp -R ../advanced/livelabs/* . 
   fi

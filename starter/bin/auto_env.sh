@@ -156,10 +156,11 @@ else
   unset SILENT_MODE
 fi 
 
-# Before First Build (run only once)
-if [ -f $PROJECT_DIR/src/before_first_build.sh ]; then
-  . $PROJECT_DIR/src/before_first_build.sh
-  mv $PROJECT_DIR/src/before_first_build.sh $PROJECT_DIR/src/before_first_build.sh.done
+# Before Config (run only once)
+if [ -f $PROJECT_DIR/src/before_config.sh ]; then
+  detect_livelabs
+  . $PROJECT_DIR/src/before_config.sh
+  mv $PROJECT_DIR/src/before_config.sh $PROJECT_DIR/src/before_config.sh.done
 fi
 
 # Skip if runned from OCI Devops ?

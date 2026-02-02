@@ -422,9 +422,7 @@ is_deploy_compute() {
   fi
 }
 
-livelabs_green_button() {
-  # Lot of tests to be sure we are in an Green Button LiveLabs
-  # compartment_ocid still undefined ? 
+detect_livelabs() {
   if grep -q 'compartment_ocid="__TO_FILL__"' $PROJECT_DIR/terraform.tfvars; then
     # vnc_ocid still undefined ? 
     if [ "$TF_VAR_vcn_ocid" != "__TO_FILL__" ]; then
@@ -443,6 +441,15 @@ livelabs_green_button() {
     else
       return
     fi
+    export LIVELABS="true"
+  fi  
+}
+
+livelabs_green_button() {
+  # Lot of tests to be sure we are in an Green Button LiveLabs
+  # compartment_ocid still undefined ? 
+  detect_livelabs
+  if [ "$LIVELABS" == "true" ]; then
     get_user_details
     # OCI User name format ? 
     if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
