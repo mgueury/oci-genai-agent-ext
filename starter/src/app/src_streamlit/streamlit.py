@@ -5,8 +5,20 @@ import json
 from streamlit_spinner import spinner
 import urllib
 
-signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+# OCI Signer
+if os.getenv("FINGERPRINT"):
+    config = oci.config.from_file()
+    # Create a signer object from the config
+    signer = oci.signer.Signer(
+        tenancy=config["tenancy"],
+        user=config["user"],
+        fingerprint=config["fingerprint"],
+        private_key_file_location=config["key_file"]
+    )
+else:     
+    config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+    signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+
 region = os.getenv("TF_VAR_region")
 endpoint = "https://agent-runtime.generativeai."+region+".oci.oraclecloud.com"
 
