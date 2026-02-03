@@ -60,8 +60,8 @@ async def inject_user_context(
 async def init( agent_name, prompt, tools_list, callback_handler=None ) -> StateGraph:
 
     # Waiting is important, since after reboot the MCP server could start afterwards.
-    delay = 5
-    for attempt in range(1, 10):
+    delay = 10
+    for attempt in range(1, 30):
         try:
             print(f"Connecting to MCP {attempt}...")
             client = MultiServerMCPClient(
