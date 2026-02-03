@@ -27,7 +27,7 @@ MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")
 # )
 
 llm = ChatOCIGenAI(
-    auth_type="INSTANCE_PRINCIPAL",
+    auth_type="API_KEY" if "FINGERPRINT" in os.environ else "INSTANCE_PRINCIPAL",
     model_id="openai.gpt-oss-120b",
     # model_id="meta.llama-4-scout-17b-16e-instruct",
     # model_id="cohere.command-a-03-2025",
