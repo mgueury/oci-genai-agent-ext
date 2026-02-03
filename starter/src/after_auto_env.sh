@@ -38,6 +38,13 @@ else
     # LiveLabs
     if [ "$APIGW_HOSTNAME" = "" ]; then
        append_tf_env "# LiveLabs Green Button"    
+       # Instance Principal Replacement
+       get_attribute_from_tfstate "OCI_API_KEY_PEM" "tls_api_key" "private_key_pem"
+       get_attribute_from_tfstate "FINGERPRINT" "oci_api_key" "fingerprint"
+       append_tf_env "export OCI_API_KEY_PEM=""$OCI_API_KEY_PEM"""
+       append_tf_env "export FINGERPRINT=""$FINGERPRINT"""
+       append_tf_env "export TF_VAR_tenancy_ocid=""$TF_VAR_tenancy_ocid"""
+       append_tf_env "export TF_VAR_current_user_ocid=""$TF_VAR_current_user_ocid"""
        get_attribute_from_tfstate "COMPUTE_PUBLIC_IP" "starter_compute" "public_ip"
        append_tf_env "export COMPUTE_PUBLIC_IP=""$COMPUTE_PUBLIC_IP"""
        export BASE_URL="http://${COMPUTE_PUBLIC_IP}"
@@ -45,13 +52,6 @@ else
        # Using the self sign certificate for the IP
        export ORDS_EXTERNAL_URL="https://${COMPUTE_PUBLIC_IP}/ords"
 
-       # Instance Principal Replacement
-       get_attribute_from_tfstate "OCI_API_KEY_PEM" "ssh_key" "private_key_pem"
-       get_attribute_from_tfstate "FINGERPRINT" "oci_api_key" "fingerprint"
-       append_tf_env "export OCI_API_KEY_PEM=""$OCI_API_KEY_PEM"""
-       append_tf_env "export FINGERPRINT=""$FINGERPRINT"""
-       append_tf_env "export TF_VAR_tenancy_ocid=""$TF_VAR_tenancy_ocid"""
-       append_tf_env "export TF_VAR_current_user_ocid=""$TF_VAR_current_user_ocid"""
     else 
        export BASE_URL="https://${APIGW_HOSTNAME}/${TF_VAR_prefix}"
        export NLB_IP=`jq -r '.resources[] | select(.name=="starter_nlb") | .instances[0].attributes.ip_addresses[] | select(.is_public==true) | .ip_address' $STATE_FILE`
