@@ -171,3 +171,27 @@ install_instant_client() {
     fi
 }
 export -f install_instant_client   
+
+livelab_oci_config()
+{  
+   if [ "$FINGERPRINT" != "" ]; then
+     sudo dnf install -y python36-oci-cli
+     mkdir -p $HOME/.oci
+     cat > $HOME/.oci/config << EOF
+[DEFAULT]
+user=$TF_VAR_current_user_ocid
+fingerprint=$FINGERPRINT
+tenancy=$TF_VAR_tenancy_ocid
+region=$TF_VAR_region
+key_file=/home/opc/.oci/oci_api_key.pem
+EOF
+
+     cat > $HOME/.oci/oci_api_key.pem << EOF
+$OCI_API_KEY_PEM
+OCI_API_KEY
+
+EOF
+    chmod 600 $HOME/.oci/oci_api_key.pem
+  fi 
+}
+export -f livelab_oci_config  

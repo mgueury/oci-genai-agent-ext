@@ -11,6 +11,7 @@ if [ -f shared_compute.sh ]; then
 fi
 
 install_sqlcl
+livelab_oci_config
 
 . ./env.sh INSTALL
 
