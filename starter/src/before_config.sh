@@ -28,5 +28,6 @@ if [ "$LIVELABS" == "true" ]; then
   if ! grep -q 'vcn_id=' $PROJECT_DIR/terraform.tfvars; then
     echo "before_config.sh: LiveLabs"
     cp -R ../advanced/livelabs/* . 
+    mv src/terraform/search_policies.tf src/terraform/search_policies._tf
   fi
 fi
