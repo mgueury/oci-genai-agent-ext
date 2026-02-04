@@ -7,7 +7,7 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
     mv src/terraform/genai_kb_26ai._tf src/terraform/genai_kb_26ai.tf
     mv src/terraform/genai_kb_os.tf src/terraform/genai_kb_os._tf
     # No Ingestion Job for DB26ai
-    sed -i '/oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job""/d' src/terraform/build.tf 
+    sed -i '/oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job/d' src/terraform/build.tf 
   fi
 fi
 
@@ -32,6 +32,6 @@ if [ "$LIVELABS" == "true" ]; then
     mv src/terraform/search_policy.tf src/terraform/search_policy._tf
     mv src/terraform/apigw.tf src/terraform/apigw._tf
     mv src/terraform/genai_apigw.tf src/terraform/genai_apigw._tf
-    sed -i '/oci_apigateway_gateway.starter_apigw""/d' src/terraform/build.tf 
+    sed -i '/oci_apigateway_gateway.starter_apigw/d' src/terraform/build.tf 
   fi
 fi
