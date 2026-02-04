@@ -92,7 +92,7 @@ else:
     if st.session_state.session_id is None:
 
         genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-            config = {}, 
+            config={}, 
             signer=signer,
             service_endpoint=endpoint,
             retry_strategy=oci.retry.NoneRetryStrategy(),

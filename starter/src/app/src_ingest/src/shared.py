@@ -12,17 +12,12 @@ import mimetypes
 
 # OCI Signer
 if os.getenv("FINGERPRINT"):
-    config = oci.config.from_file()
+    shared_config = oci.config.from_file()
     # Create a signer object from the config
-    signer = oci.signer.Signer(
-        tenancy=config["tenancy"],
-        user=config["user"],
-        fingerprint=config["fingerprint"],
-        private_key_file_location=config["key_file"]
-    )
+    shared_signer = None
 else:     
-    config = {'region': signer.region, 'tenancy': signer.tenancy_id}
-    signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+    shared_config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+    shared_signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
 
 # Log
 log_file_name = None
@@ -353,7 +348,7 @@ def genai_agent_datasource_ingest():
     if datasourceId:
         name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         log( "ingest_job="+name )
-        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
+        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config=shared_config, signer=shared_signer)    
         genai_agent_client.create_data_ingestion_job(
             create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
                 data_source_id=datasourceId,
@@ -372,8 +367,8 @@ def genai_agent_get_session():
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
     region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-        config = {}, 
-        signer=signer,
+        config=shared_config, 
+        signer=shared_signer,
         service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
@@ -395,8 +390,8 @@ def genai_agent_chat( session_id, question ):
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
     region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-        config = {}, 
-        signer=signer,
+        config=shared_config, 
+        signer=shared_signer,
         service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
@@ -427,7 +422,7 @@ def getFileExtension(resourceName):
 def delete_bucket_folder(namespace, bucketName, folder):
     log( "<delete_bucket_folder> "+folder)
     try:
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)    
         response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=folder, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
         for object_file in response.data.objects:
             f = object_file.name

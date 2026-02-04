@@ -7,7 +7,8 @@ import pathlib
 import shared
 from shared import log
 from shared import dictString
-from shared import signer
+from shared import shared_config
+from shared import shared_signer
 import oci
 from oci.object_storage.transfer.constants import MEBIBYTE
 
@@ -122,7 +123,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
         bucketName = value["data"]["additionalDetails"]["bucketName"]
         bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")        
 
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
     log("<upload_file>Uploaded "+object_name + " - " + content_type )
@@ -138,7 +139,7 @@ def delete_file( value, object_name ):
             namespace = value["data"]["additionalDetails"]["namespace"]
             bucketName = value["data"]["additionalDetails"]["bucketName"]
             bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")               
-            os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
+            os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)            
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name)
         except:
            log("Exception: Delete failed: " + object_name)   

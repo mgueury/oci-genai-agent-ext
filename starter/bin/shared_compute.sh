@@ -176,7 +176,6 @@ export -f install_instant_client
 livelab_oci_config()
 {  
    if [ "$FINGERPRINT" != "" ]; then
-  else 
      mkdir -p $HOME/.oci
 
      # OCI Config file
@@ -188,6 +187,7 @@ tenancy=$TF_VAR_tenancy_ocid
 region=$TF_VAR_region
 key_file=/home/opc/.oci/oci_api_key.pem
 EOF
+     echo "livelab_oci_config: .oci/config created"
 
      # oci_api_key.pem
      cat > $HOME/.oci/oci_api_key.pem << EOF
