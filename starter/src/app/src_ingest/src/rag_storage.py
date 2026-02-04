@@ -41,7 +41,7 @@ embeddings = OCIGenAIEmbeddings(
 )
 # db26ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
-EXTERNAL_ORDS_URL = os.getenv("EXTERNAL_ORDS_URL")
+ORDS_EXTERNAL_URL = os.getenv("ORDS_EXTERNAL_URL")
 DOCLING_HYBRID_CHUNK=True #False
 
 # connection pool
@@ -756,7 +756,7 @@ def findServiceRequest(question: str, auth_header: str) -> dict:
     #     ORDER BY score DESC
     #     FETCH FIRST 10 ROWS ONLY;"""    
     query = f"""
-            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS score, '{EXTERNAL_ORDS_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS score, '{ORDS_EXTERNAL_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
             FROM support_sr o
             ORDER BY score ASC
             FETCH FIRST 10 ROWS ONLY"""    
@@ -767,7 +767,7 @@ def findServiceRequest(question: str, auth_header: str) -> dict:
 
 def getServiceRequest( id, auth_header ):
     log(f"<getServiceRequest> id={id} auth_header={auth_header}")    
-    query = f"select ID, '{EXTERNAL_ORDS_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
+    query = f"select ID, '{ORDS_EXTERNAL_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
     return queryFirstRecord( query, (id,), auth_header)
   
   # https://xxxxx/ords/r/apex_app/ai_support/support-sr?p2_id={id}
