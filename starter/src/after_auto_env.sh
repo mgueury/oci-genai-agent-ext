@@ -8,6 +8,8 @@ else
 
     get_id_from_tfstate "TF_VAR_agent_datasource_ocid" "starter_agent_ds" 
     get_id_from_tfstate "TF_VAR_agent_endpoint_ocid" "starter_agent_endpoint" 
+    get_id_from_tfstate "TF_VAR_agent_ocid" "starter_agent" 
+    get_id_from_tfstate "TF_VAR_agent_kb_ocid" "starter_agent_kb" 
 
     get_id_from_tfstate "APP_SUBNET_OCID" "starter_app_subnet" 
     get_id_from_tfstate "DB_SUBNET_OCID" "starter_db_subnet" 
@@ -20,6 +22,8 @@ else
     append_tf_env "# AGENT (OPTIONAL)"
     append_tf_env "export TF_VAR_agent_datasource_ocid=\"$TF_VAR_agent_datasource_ocid\""
     append_tf_env "export TF_VAR_agent_endpoint_ocid=\"$TF_VAR_agent_endpoint_ocid\""
+    append_tf_env "export TF_VAR_agent_ocid=\"$TF_VAR_agent_ocid\""
+    append_tf_env "export TF_VAR_agent_kb_ocid=\"$TF_VAR_agent_kb_ocid\""
     append_tf_env "export TF_VAR_rag_storage=\"$TF_VAR_rag_storage\""
     append_tf_env
     append_tf_env "# GENERATIVE AI MODEL"

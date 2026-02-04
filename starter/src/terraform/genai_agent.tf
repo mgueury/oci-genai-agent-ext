@@ -31,9 +31,10 @@ resource "oci_generative_ai_agent_agent" "starter_agent" {
   display_name                   = "${var.prefix}-agent"
   description                    = "${var.prefix}-agent"
   welcome_message                = "How can I help you ?"
-  knowledge_base_ids = [
-    oci_generative_ai_agent_knowledge_base.starter_agent_kb.id
-  ]  
+  # Added in after_build.sh
+  # knowledge_base_ids = [
+  #   oci_generative_ai_agent_knowledge_base.starter_agent_kb.id
+  # ]  
   freeform_tags = local.freeform_tags
 }
 

@@ -10,6 +10,21 @@ sleep 5
 echo "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html" > ../sample_files/website.crawler
 oci os object bulk-upload -ns $OBJECT_STORAGE_NAMESPACE -bn ${TF_VAR_prefix}-public-bucket --src-dir ../sample_files --overwrite --content-type auto
 
+# AGENT TOOLS
+## RAG-TOOL
+title "Creating RAG-TOOL"
+oci generative-ai-agent tool create-tool-rag-tool-config \
+  --agent-id $TF_VAR_agent_ocid \
+  --compartment-id $TF_VAR_compartment_ocid \
+  --display-name rag-tool \
+  --description "Use for generic questions that other tools can not answer" \
+  --tool-config-knowledge-base-configs "[{
+    \"knowledgeBaseId\": \"${TF_VAR_agent_kb_ocid}\"
+  }]" \
+  --wait-for-state SUCCEEDED --wait-for-state FAILED
+
+
+
 title "INSTALLATION DONE"
 echo
 # echo "(experimental) Cohere with Tools and GenAI Agent:"
