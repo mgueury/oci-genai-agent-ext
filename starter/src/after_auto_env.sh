@@ -39,6 +39,7 @@ else
     if [ "$APIGW_HOSTNAME" = "" ]; then
        append_tf_env "# LiveLabs Green Button"    
        # Instance Principal Replacement
+       append_tf_env "export LIVELABS=\"true\""
        get_attribute_from_tfstate "OCI_API_KEY_PEM" "tls_api_key" "private_key_pem"
        get_attribute_from_tfstate "FINGERPRINT" "oci_api_key" "fingerprint"
        append_tf_env "export OCI_API_KEY_PEM=\"$OCI_API_KEY_PEM\""

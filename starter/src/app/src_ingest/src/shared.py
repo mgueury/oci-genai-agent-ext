@@ -11,7 +11,7 @@ import mimetypes
 # -- globals ----------------------------------------------------------------
 
 # OCI Signer
-if os.getenv("FINGERPRINT"):
+if os.getenv("LIVELABS"):
     shared_config = oci.config.from_file()
     # Create a signer object from the config
     shared_signer = None

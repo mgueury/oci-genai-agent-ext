@@ -37,7 +37,7 @@ embeddings = OCIGenAIEmbeddings(
     model_id=os.getenv("TF_VAR_genai_embed_model"),
     service_endpoint="https://inference.generativeai."+region+".oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
-    auth_type="API_KEY" if "FINGERPRINT" in os.environ else "INSTANCE_PRINCIPAL"
+    auth_type="API_KEY" if "LIVELABS" in os.environ else "INSTANCE_PRINCIPAL"
 )
 # db26ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")

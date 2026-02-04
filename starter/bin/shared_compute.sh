@@ -175,7 +175,7 @@ export -f install_instant_client
 # Create a OCI Config for LiveLab (that does not support instance principal)
 livelab_oci_config()
 {  
-   if [ "$FINGERPRINT" != "" ]; then
+   if [ "$LIVELABS" != "" ]; then
      mkdir -p $HOME/.oci
 
      # OCI Config file

@@ -6,14 +6,13 @@ if [ -f shared_compute.sh ]; then
   # Docker mode
   . ./shared_compute.sh
   export TF_VAR_java_vm="jdk"
-  # Do not install LubreOffice, the dependency makes the DockerImage 18GB
+  # Do not install LibreOffice, the dependency makes the DockerImage 18GB
   export INSTALL_LIBREOFFICE="no"
 fi
 
 install_sqlcl
-livelab_oci_config
-
 . ./env.sh INSTALL
+livelab_oci_config
 
 function download()
 {

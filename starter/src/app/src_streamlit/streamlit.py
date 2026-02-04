@@ -6,7 +6,7 @@ from streamlit_spinner import spinner
 import urllib
 
 # OCI Signer
-if os.getenv("FINGERPRINT"):
+if os.getenv("LIVELABS"):
     config = oci.config.from_file()
     # Create a signer object from the config
     signer = oci.signer.Signer(
