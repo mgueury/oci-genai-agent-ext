@@ -15,9 +15,16 @@ if os.getenv("LIVELABS"):
     shared_config = oci.config.from_file()
     # Create a signer object from the config
     shared_signer = None
+    shared_signer = oci.signer.Signer(
+        tenancy=shared_config["tenancy"],
+        user=shared_config["user"],
+        fingerprint=shared_config["fingerprint"],
+        private_key_file_location=shared_config["key_file"],
+        pass_phrase=shared_config.get("pass_phrase")  # This is optional
+    )
 else:     
-    shared_config = {'region': signer.region, 'tenancy': signer.tenancy_id}
     shared_signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+    shared_config = {'region': shared_signer.region, 'tenancy': shared_signer.tenancy_id}
 
 # Log
 log_file_name = None
@@ -121,7 +128,7 @@ def summarizeContent(value,content):
         }
     }
     try: 
-        resp = requests.post(endpoint, json=body, auth=signer)
+        resp = requests.post(endpoint, json=body, auth=shared_signer)
         resp.raise_for_status()
         log(resp)   
         log_in_file("summarizeContent_resp",str(resp.content)) 
@@ -152,7 +159,7 @@ def embedText(c):
         "truncate" : "START",
         "compartmentId" : compartmentId
     }
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
@@ -205,7 +212,7 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
             }
         )
 
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
@@ -257,7 +264,7 @@ def cohere_chat(prompt, chatHistory, documents):
         }
     }
     log_in_file("cohere_chat_request", json.dumps(body)) 
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
