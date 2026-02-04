@@ -120,7 +120,6 @@ resource "null_resource" "build_deploy" {
         EOT
   }
   depends_on = [
-    oci_apigateway_api.starter_api,
     oci_apigateway_gateway.starter_apigw,
     oci_core_instance.starter_bastion,
     oci_core_instance.starter_compute,
