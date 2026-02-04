@@ -6,10 +6,10 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
     echo "before_config.sh: RAG Storage db26ai"
     mv src/terraform/genai_kb_26ai._tf src/terraform/genai_kb_26ai.tf
     mv src/terraform/genai_kb_os.tf src/terraform/genai_kb_os._tf
-
+    # No Ingestion Job for DB26ai
+    sed -i '/oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job""/d' src/terraform/build.tf 
   fi
 fi
-
 
 if [ "$TF_VAR_kubernetes" == "true" ]; then
   echo "before_config.sh: Kubernetes"
@@ -28,6 +28,10 @@ if [ "$LIVELABS" == "true" ]; then
   if ! grep -q 'vcn_id=' $PROJECT_DIR/terraform.tfvars; then
     echo "before_config.sh: LiveLabs"
     cp -R ../advanced/livelabs/* . 
-    mv src/terraform/search_policies.tf src/terraform/search_policies._tf
+    # No Policy not APIGW for LiveLabs
+    mv src/terraform/search_policy.tf src/terraform/search_policy._tf
+    mv src/terraform/apigw.tf src/terraform/apigw._tf
+    mv src/terraform/genai_apigw.tf src/terraform/genai_apigw._tf
+    sed -i '/oci_apigateway_gateway.starter_apigw""/d' src/terraform/build.tf 
   fi
 fi
