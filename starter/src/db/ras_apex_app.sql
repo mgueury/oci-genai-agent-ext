@@ -33,7 +33,7 @@ begin
                     ace_list  => aces,
                     sec_class => 'SUPPORT_SR_SEC_CLASS');
 
-  aces(1) := xs$ace_type(privilege_list => xs$name_list('select','insert','update','delete','index'),
+  aces(1) := xs$ace_type(privilege_list => xs$name_list('select'),
                              principal_name => 'APEX_APP',
                              principal_type=>XS_ACL.PTYPE_DB);
   sys.xs_acl.create_acl(name => 'apex_app_acl',
