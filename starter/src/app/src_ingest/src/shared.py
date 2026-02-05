@@ -33,11 +33,16 @@ log_file_name = None
 db_env = None
 
 # Create Log directory
-LOG_DIR = '/tmp/app_log'
-if os.path.isdir(LOG_DIR) == False:
-    os.mkdir(LOG_DIR) 
 
 UNIQUE_ID = "ID"
+
+## -- getLogDir -------------------------------------------------------------------
+def getLogDir():
+    LOG_DIR = '/tmp/app_log'
+    # Create Log directory
+    if os.path.isdir(LOG_DIR) == False:
+        os.mkdir(LOG_DIR) 
+    return LOG_DIR
 
 ## -- log_write_in_file -------------------------------------------------------------------
 # Write logs in a file also 
@@ -62,10 +67,7 @@ def log(s):
 
 def log_in_file(prefix, value):
     global UNIQUE_ID
-    # Create Log directory
-    if os.path.isdir(LOG_DIR) == False:
-        os.mkdir(LOG_DIR)     
-    filename = LOG_DIR+"/"+prefix+"_"+UNIQUE_ID+".txt"
+    filename = getLogDir() +"/"+prefix+"_"+UNIQUE_ID+".txt"
     with open(filename, "w", encoding="utf-8") as text_file:
         text_file.write(value)
         text_file.flush() 
