@@ -35,7 +35,7 @@ from shared import log
 from shared import log_in_file
 from shared import dictString
 from shared import dictInt
-from shared import LOG_DIR
+from shared import getLogDir
 from shared import shared_config
 from shared import shared_signer
 from shared import UNIQUE_ID
@@ -433,7 +433,7 @@ def convertChromeSelenium2Pdf(value):
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
         folder = resourceName
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".sitemap"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
@@ -462,14 +462,14 @@ def convertChromeSelenium2Pdf(value):
                         pdf_path = pdf_path+'.pdf'
                         log("<convertChromeSelenium2Pdf>"+full_uri)
                         if os.getenv("INSTALL_LIBREOFFICE")!="no":
-                            chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
+                            chrome_download_url_as_pdf( driver, full_uri, getLogDir()+'/'+pdf_path)
                         else:
-                            pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
+                            pdfkit.from_url(full_uri, getLogDir()+"/"+pdf_path)
     
                         metadata = {'customized_url_source': full_uri, 'source_type': 'HTTP' }
 
                         # Upload to object storage as "site/"+pdf_path
-                        rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
+                        rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=getLogDir()+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
                         fileList.append( folder+"/"+pdf_path )
                       
                     except Exception as e:
@@ -541,7 +541,7 @@ def convertJson(value):
     # Read the JSON file from the object storage
     os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-    file_name = LOG_DIR+"/"+UNIQUE_ID+".json"
+    file_name = getLogDir()+"/"+UNIQUE_ID+".json"
     with open(file_name, 'wb') as f:
         for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
             f.write(chunk)
@@ -626,7 +626,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
         if originalResourceName:
             metadata["originalResourceName"] = originalResourceName 
 
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".tmp"
         if not content:
             contentType = value["contentType"]
             resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
@@ -657,7 +657,7 @@ def convertLibreoffice2Pdf(value):
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         office_file = download_file( namespace, bucketName, resourceName)
         log( f'libreoffice_exe={libreoffice_exe}' )
-        cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
+        cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [getLogDir(), office_file]
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         p.wait(timeout=30)
         stdout, stderr = p.communicate()
@@ -683,7 +683,7 @@ def download_file(namespace,bucketName,resourceName):
     os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
     # Remove the directory name
-    file_name = LOG_DIR+"/"+os.path.basename(resourceName)
+    file_name = getLogDir()+"/"+os.path.basename(resourceName)
     # Download the file
     with open(file_name, 'wb') as f:
         for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
@@ -723,7 +723,7 @@ def convertGrokImage2Text(value, content=None, path=None):
         image_file = download_file( namespace, bucketName, resourceName)     
         text = shared.generic_chat("describe the image", image_path=image_file, a_model="xai.grok-4", a_region="us-chicago-1")
 
-        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"        
+        dest_file = getLogDir()+"/"+UNIQUE_ID+".md"        
         with open(dest_file, 'w', encoding='utf-8') as f_out:
             f_out.write(text)   
 

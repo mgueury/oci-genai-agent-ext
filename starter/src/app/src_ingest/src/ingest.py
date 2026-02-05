@@ -57,7 +57,7 @@ def stream_loop(client, stream_id, initial_cursor):
             updateCount += 1
             status = 'PROCESSING'
             try:
-                log_file_name = shared.LOG_DIR + f"/message_{timeStart.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log"
+                log_file_name = shared.getLogDir() + f"/message_{timeStart.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log"
                 log_write_in_file(log_file_name)
                 log(f"\n\n-- STREAM LOOP - MESSAGE {updateCount} -----------------------------------------------------------------------------------------" )
                 if message.key is None:
