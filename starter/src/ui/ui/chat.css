@@ -183,7 +183,7 @@ button img {
 
 /* Hamburger Menu */
 .hamburger {
-    position: absolute;
+    position: fixed;
     left: 20px;
     top: 20px;
     width: 30px;
@@ -200,10 +200,10 @@ button img {
     border-radius: 18px;
 }
 .hamburger:focus {
-    outline: 2px solid #eee;
+    outline: 1px solid #f44;
 }
 nav {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: -250px;
     height: calc(100vh - 70px);
@@ -235,4 +235,12 @@ nav li:focus,
 nav li:hover {
     background: #efefef;
     outline: none;
+}
+#reset {
+    position: fixed;
+    top: 10px;
+    right: 10px;    
+}
+#reset:hover {
+    background: #fff;
 }

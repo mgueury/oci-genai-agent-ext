@@ -11,8 +11,20 @@ import mimetypes
 # -- globals ----------------------------------------------------------------
 
 # OCI Signer
-signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+if os.getenv("LIVELABS"):
+    shared_config = oci.config.from_file()
+    # Create a signer object from the config
+    shared_signer = None
+    shared_signer = oci.signer.Signer(
+        tenancy=shared_config["tenancy"],
+        user=shared_config["user"],
+        fingerprint=shared_config["fingerprint"],
+        private_key_file_location=shared_config["key_file"],
+        pass_phrase=shared_config.get("pass_phrase")  # This is optional
+    )
+else:     
+    shared_signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+    shared_config = {'region': shared_signer.region, 'tenancy': shared_signer.tenancy_id}
 
 # Log
 log_file_name = None
@@ -116,7 +128,7 @@ def summarizeContent(value,content):
         }
     }
     try: 
-        resp = requests.post(endpoint, json=body, auth=signer)
+        resp = requests.post(endpoint, json=body, auth=shared_signer)
         resp.raise_for_status()
         log(resp)   
         log_in_file("summarizeContent_resp",str(resp.content)) 
@@ -147,7 +159,7 @@ def embedText(c):
         "truncate" : "START",
         "compartmentId" : compartmentId
     }
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
@@ -200,7 +212,7 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
             }
         )
 
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
@@ -252,7 +264,7 @@ def cohere_chat(prompt, chatHistory, documents):
         }
     }
     log_in_file("cohere_chat_request", json.dumps(body)) 
-    resp = requests.post(endpoint, json=body, auth=signer)
+    resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
     log(resp)    
     # Binary string conversion to utf8
@@ -343,7 +355,7 @@ def genai_agent_datasource_ingest():
     if datasourceId:
         name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
         log( "ingest_job="+name )
-        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config = {}, signer=signer)    
+        genai_agent_client = oci.generative_ai_agent.GenerativeAiAgentClient(config=shared_config, signer=shared_signer)    
         genai_agent_client.create_data_ingestion_job(
             create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
                 data_source_id=datasourceId,
@@ -362,8 +374,8 @@ def genai_agent_get_session():
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
     region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-        config = {}, 
-        signer=signer,
+        config=shared_config, 
+        signer=shared_signer,
         service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
@@ -385,8 +397,8 @@ def genai_agent_chat( session_id, question ):
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
     region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-        config = {}, 
-        signer=signer,
+        config=shared_config, 
+        signer=shared_signer,
         service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
@@ -417,7 +429,7 @@ def getFileExtension(resourceName):
 def delete_bucket_folder(namespace, bucketName, folder):
     log( "<delete_bucket_folder> "+folder)
     try:
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)    
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)    
         response = os_client.list_objects( namespace_name=namespace, bucket_name=bucketName, prefix=folder, retry_strategy=oci.retry.DEFAULT_RETRY_STRATEGY, limit=1000 )
         for object_file in response.data.objects:
             f = object_file.name

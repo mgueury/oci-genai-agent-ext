@@ -1,8 +1,3 @@
-begin
-  update APEX_APP.SUPPORT_SR set EMBEDDING=ai_plsql.genai_embed( question || chr(13) || answer  );
-  commit;
-end;
-/
 -- CREATE INDEX SUPPORT_SR_QUESTION_IDX ON SUPPORT_SR(question) INDEXTYPE IS CTXSYS.CONTEXT;    
 -- CREATE INDEX SUPPORT_SR_ANSWER_IDX ON SUPPORT_SR(answer) INDEXTYPE IS CTXSYS.CONTEXT;   
 -- EXEC CTX_DDL.SYNC_INDEX('SUPPORT_SR_QUESTION_IDX');
@@ -24,22 +19,21 @@ declare
   aces xs$ace_list := xs$ace_list();  
 begin 
   aces.extend(1);
-  aces(1) := xs$ace_type(privilege_list => xs$name_list
-                            ('select'),
-                             principal_name => 'customer_role');
+  aces(1) := xs$ace_type(privilege_list => xs$name_list('select'),
+                    principal_name  => 'PUBLIC',
+                    principal_type  => XS_ACL.PTYPE_DB);
+                    -- principal_name => 'customer_role');
   sys.xs_acl.create_acl(name => 'customer_acl',
                     ace_list  => aces,
                     sec_class => 'SUPPORT_SR_SEC_CLASS');
 
-  aces(1) := xs$ace_type(privilege_list => xs$name_list
-                            ('select','internal_sr'),
+  aces(1) := xs$ace_type(privilege_list => xs$name_list('select','internal_sr'),
                              principal_name => 'employee_role');
   sys.xs_acl.create_acl(name => 'employee_acl',
                     ace_list  => aces,
                     sec_class => 'SUPPORT_SR_SEC_CLASS');
 
-  aces(1) := xs$ace_type(privilege_list => xs$name_list
-                            ('select','insert','update','delete','index'),
+  aces(1) := xs$ace_type(privilege_list => xs$name_list('select'),
                              principal_name => 'APEX_APP',
                              principal_type=>XS_ACL.PTYPE_DB);
   sys.xs_acl.create_acl(name => 'apex_app_acl',

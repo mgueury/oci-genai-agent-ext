@@ -5,6 +5,7 @@ cd $ROOT_DIR
 
 . ./starter.sh env
 
+title "Before Destroy"
 get_id_from_tfstate "AGENT_OCID" "starter_agent" 
 
 # TOOLS DESTROY
@@ -14,3 +15,6 @@ do
    echo "Deleting agent tool: $TOOL_OCID"
    oci generative-ai-agent tool delete --tool-id $TOOL_OCID --force --wait-for-state SUCCEEDED --wait-for-state FAILED
 done;
+
+# Double check if all is well deleted.
+oci generative-ai-agent tool list --agent-id $AGENT_OCID --compartment-id $TF_VAR_compartment_ocid --all

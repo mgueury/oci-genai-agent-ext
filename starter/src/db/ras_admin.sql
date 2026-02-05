@@ -1,3 +1,9 @@
+begin
+  update APEX_APP.SUPPORT_SR set EMBEDDING=APEX_APP.ai_plsql.genai_embed( question || chr(13) || answer  );
+  commit;
+end;
+/
+
 grant xs_session_admin, create session to APEX_APP;
 grant execute on DBMS_XS_SESSIONS to apex_app;
 BEGIN

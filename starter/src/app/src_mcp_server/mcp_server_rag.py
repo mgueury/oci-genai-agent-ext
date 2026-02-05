@@ -2,7 +2,6 @@ from fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 from fastmcp.server.dependencies import get_http_request
 import shared
 import rag_storage
-import shared
 import pprint
 from typing import List, TypedDict
 from pydantic import BaseModel
@@ -67,6 +66,6 @@ def get_service_request(id: str) -> dict:
     return rag_storage.getServiceRequest(id, get_auth_header())
 
 if __name__ == "__main__":
-    mcp.run(transport="http", host="127.0.0.1", port=2025)
+    mcp.run(transport="http", host="0.0.0.0", port=2025)
     # print( search( "what is jazz" ) )
     # mcp.run(transport="stdio")  # Run the server, using standard input/output for communication

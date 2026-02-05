@@ -5,8 +5,20 @@ import json
 from streamlit_spinner import spinner
 import urllib
 
-signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+# OCI Signer
+if os.getenv("LIVELABS"):
+    config = oci.config.from_file()
+    # Create a signer object from the config
+    signer = oci.signer.Signer(
+        tenancy=config["tenancy"],
+        user=config["user"],
+        fingerprint=config["fingerprint"],
+        private_key_file_location=config["key_file"]
+    )
+else:     
+    config = {'region': signer.region, 'tenancy': signer.tenancy_id}
+    signer = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+
 region = os.getenv("TF_VAR_region")
 endpoint = "https://agent-runtime.generativeai."+region+".oci.oraclecloud.com"
 
@@ -80,7 +92,7 @@ else:
     if st.session_state.session_id is None:
 
         genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-            config = {}, 
+            config=config, 
             signer=signer,
             service_endpoint=endpoint,
             retry_strategy=oci.retry.NoneRetryStrategy(),
@@ -113,7 +125,7 @@ else:
 
         # Execute session (re-use the existing session)
         genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
-                config = {}, 
+                config=config, 
                 signer=signer, 
                 service_endpoint=endpoint,
                 retry_strategy=oci.retry.NoneRetryStrategy(), 

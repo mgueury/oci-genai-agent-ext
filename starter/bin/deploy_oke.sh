@@ -14,9 +14,6 @@ function wait_ingress() {
   kubectl wait --namespace ingress-nginx --for=condition=Complete job/ingress-nginx-admission-patch  
 }
 
-# Call build_common to push the ${TF_VAR_prefix}-${APP_NAME}:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
-ocir_docker_push
-
 # One time configuration
 if [ ! -f $KUBECONFIG ]; then
   create_kubeconfig
@@ -106,32 +103,30 @@ kubectl apply -f $TARGET_OKE/tf_env_configmap.yaml
 # Kubectl apply
 # Using & as separator
 
+# Call build_common to push the ${TF_VAR_prefix}-${APP_NAME}:latest and ${TF_VAR_prefix}-ui:latest to OCIR Docker registry
+ocir_docker_push
+
+# Append a line in tf_env.sh (typically used in before_build.sh to add custom variable to pass to bastion/compute/...)
+copy_replace_apply_target_oke() {
+  filepath="$1"  
+  filename="${filepath##*/}"
+  echo "-- kubectl apply -- $filename --"
+  cp $filepath $TARGET_OKE/${filename}
+  file_replace_variables $TARGET_OKE/${filename}
+  kubectl apply -f $TARGET_OKE/${filename}
+}
+
 # APP
 for APP_NAME in `app_name_list`; do
   APP_YAML="k8s_${APP_NAME}.yaml"
-  cp src/app/${APP_YAML} $TARGET_OKE/.
-  # If present, replace the ORDS URL
-  ORDS_HOST=`basename $(dirname $ORDS_URL)`
-  file_replace_variables $TARGET_OKE/${APP_YAML}
-  kubectl apply -f $TARGET_OKE/${APP_YAML}
+  if [ -f src/app/$APP_YAML ]; then
+    copy_replace_apply_target_oke src/app/${APP_YAML}
+  fi
 done
 
 # UI
-cp src/ui/ui.yaml $TARGET_OKE/.
-file_replace_variables $TARGET_OKE/ui.yaml
-kubectl apply -f $TARGET_OKE/ui.yaml
+copy_replace_apply_target_oke src/ui/ui.yaml
 
 # Ingress
-cp src/oke/ingress-app.yaml $TARGET_OKE/ingress-app.yaml
-cp src/oke/ingress-ui.yaml $TARGET_OKE/ingress-ui.yaml
-# TLS - Domain Name
-if [ "$TF_VAR_tls" == "new_http_01" ]; then
-  sed -i "s&##DNS_NAME##&$TF_VAR_dns_name&" $TARGET_OKE/ingress-app.yaml
-  sed -i "s&##DNS_NAME##&$TF_VAR_dns_name&" $TARGET_OKE/ingress-ui.yaml
-fi
-if [ "$ORDS_URL" != "" ]; then
-  sed -i "s&##ORDS_HOST##&$ORDS_HOST&" $TARGET_OKE/ingress-app.yaml
-fi
-kubectl apply -f $TARGET_OKE/ingress-app.yaml
-kubectl apply -f $TARGET_OKE/ingress-ui.yaml
-
+copy_replace_apply_target_oke src/oke/ingress-app.yaml
+copy_replace_apply_target_oke src/oke/ingress-ui.yaml

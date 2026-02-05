@@ -156,6 +156,13 @@ else
   unset SILENT_MODE
 fi 
 
+# Before Config (run only once)
+if [ -f $PROJECT_DIR/src/before_config.sh ]; then
+  detect_livelabs
+  . $PROJECT_DIR/src/before_config.sh
+  mv $PROJECT_DIR/src/before_config.sh $PROJECT_DIR/src/before_config.sh.done
+fi
+
 # Skip if runned from OCI Devops ?
 # if [ "$REPOSITORY_NAME" != "" ]; then
 #   return
@@ -379,8 +386,13 @@ if [ -f $STATE_FILE ]; then
     fi 
   fi
 
-  if [ -f $PROJECT_DIR/src/before_build.sh ]; then
-    .  $PROJECT_DIR/src/before_build.sh
+  if [ "$ORDS_URL" != "" ]; then
+    export ORDS_HOST=`basename $(dirname $ORDS_URL)`
   fi
+
+  # after_auto_env.sh
+  if [ -f $PROJECT_DIR/src/after_auto_env.sh ]; then
+    .  $PROJECT_DIR/src/after_auto_env.sh
+  fi    
 fi
 
