@@ -34,7 +34,6 @@ import shared
 from shared import log
 from shared import log_in_file
 from shared import dictString
-from shared import dictInt
 from shared import getLogDir
 from shared import shared_config
 from shared import shared_signer
@@ -753,7 +752,7 @@ def convertImage2Pdf(value, content=None, path=None):
 
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file)
-        pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
+        pdf_file = getLogDir()+"/"+UNIQUE_ID+".pdf"
         save_image_as_pdf( pdf_file, [image] )         
 
         rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
@@ -783,7 +782,7 @@ def convertWebp2Png(value, content=None, path=None):
 
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file).convert("RGB")
-        png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
+        png_file = getLogDir()+"/"+UNIQUE_ID+".png"
         image.save(png_file, "png")   
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
@@ -843,7 +842,7 @@ def convertCrawler(value):
         os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".crawler"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".crawler"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
@@ -921,7 +920,7 @@ def convertDocling(value):
         # Set the original URL source (GenAI Agent)
         metadata = get_metadata_from_resource_id( resourceId )
         orig_file = download_file( namespace, bucketName, resourceName)     
-        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"
+        dest_file = getLogDir()+"/"+UNIQUE_ID+".md"
         loader = DoclingLoader(
             file_path=orig_file,
             export_type=ExportType.MARKDOWN
