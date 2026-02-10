@@ -3,6 +3,8 @@ import os
 import shared
 from shared import log
 from shared import log_in_file
+from shared import shared_config
+from shared import shared_signer
 import file_convert
 from pdf2image import convert_from_path
 from PIL import Image, ImageDraw 
@@ -91,7 +93,7 @@ def entities( images, j ):
             "text": text            
         }
         documents.append( doc )
-    ai_client = oci.ai_language.AIServiceLanguageClient(config = {}, signer=file_convert.signer)  
+    ai_client = oci.ai_language.AIServiceLanguageClient(config = shared_config, signer=shared_signer)  
     details = {
         "documents": documents,
         "compartmentId": compartmentId
