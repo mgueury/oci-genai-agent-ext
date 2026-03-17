@@ -7,8 +7,8 @@ cd $ROOT_DIR
 
 # Upload Sample Files
 sleep 5
-echo "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html" > ../sample_files/website.crawler
-oci os object bulk-upload -ns $OBJECT_STORAGE_NAMESPACE -bn ${TF_VAR_prefix}-public-bucket --src-dir ../sample_files --overwrite --content-type auto
+echo "https://${APIGW_HOSTNAME}/${TF_VAR_prefix}/index.html" > src/sample_files/website.crawler
+oci os object bulk-upload -ns $OBJECT_STORAGE_NAMESPACE -bn ${TF_VAR_prefix}-public-bucket --src-dir src/sample_files --overwrite --content-type auto
 
 # AGENT TOOLS
 ## RAG-TOOL
@@ -22,7 +22,6 @@ oci generative-ai-agent tool create-tool-rag-tool-config \
     \"knowledgeBaseId\": \"${TF_VAR_agent_kb_ocid}\"
   }]" \
   --wait-for-state SUCCEEDED --wait-for-state FAILED
-
 
 
 title "INSTALLATION DONE"
