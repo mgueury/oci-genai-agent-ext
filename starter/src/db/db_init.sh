@@ -24,6 +24,13 @@ grant execute on CTX_DDL to APEX_APP;
 grant execute on DBMS_SCHEDULER to APEX_APP;
 grant create any job to APEX_APP;
 /
+-- Work-around for ADB SSO bug
+begin
+  apex_instance_admin.set_parameter(
+    'APEX_BUILDER_AUTHENTICATION', 'DB');
+  commit;
+end;
+/
 begin
     apex_instance_admin.add_workspace(
      p_workspace_id   => null,
