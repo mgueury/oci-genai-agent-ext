@@ -5,7 +5,7 @@ mermaid.initialize({ startOnLoad: false });
 
 // -- Variables ----------------------------------------------------------------- 
 
-let BASE_URL = '/app';
+let BASE_URL = '/langgraph/server';
 let currentBackend = 'LangGraph';
 const backends = [
     { name: 'LangGraph', baseUrl: '/langgraph/server' }
