@@ -23,7 +23,7 @@ def main() -> None:
     vector_store = cp_client.vector_stores.create(
         name=f"${PREFIX}-vs",
         description=f"${PREFIX} vector store",
-        expires_after={"anchor": "last_active_at", "days": 365}, # 100 YEARS ? 
+        expires_after={"anchor": "last_active_at", "days": 365}, # 1 YEAR ? 
         metadata={"prefix": "${PREFIX}"},
     )
     print(vector_store)
