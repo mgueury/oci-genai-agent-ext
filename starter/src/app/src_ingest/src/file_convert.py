@@ -625,7 +625,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
         if originalResourceName:
             metadata["originalResourceName"] = originalResourceName 
 
-        file_name = getLogDir()+"/"+UNIQUE_ID+".tmp"
+        file_name = getLogDir()+"/"+resourceName
         if not content:
             contentType = value["contentType"]
             resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
@@ -638,6 +638,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
                 f.write(content)
 
         rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=file_name, content_type=contentType, metadata=metadata)
+        os.remove( file_name )
     elif eventType == "com.oraclecloud.objectstorage.deleteobject":
         rag_storage.delete_file( value=value, object_name=resourceGenAI)
     log( "</convertUpload>")                                  
