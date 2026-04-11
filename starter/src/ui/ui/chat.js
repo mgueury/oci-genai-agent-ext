@@ -8,7 +8,7 @@ mermaid.initialize({ startOnLoad: false });
 let BASE_URL = '/app';
 let currentBackend = 'LangGraph';
 const backends = [
-    { name: 'LangGraph', baseUrl: '/app' }
+    { name: 'LangGraph', baseUrl: '/langgraph/server' }
 ];
 let currentAgent = 'agent';
 let currentUser = 'customer';
