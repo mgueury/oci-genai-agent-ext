@@ -49,6 +49,7 @@ if [ "$TF_VAR_rag_storage" == "vector_store" ]; then
     if [ -f responses_env.sh ]; then
         cat "File responses_env.sh exists already."
     else 
+        echo "Vector Store"
         source myenv/bin/activate
         python src/create_vector_store.py
     fi

@@ -3,6 +3,10 @@ fastmcp
 
 #DB26ai
 oracledb
+oci-genai-auth
+
+# OpenAI (Responses)
+openai
 
 # Langgraph
 langchain_oci

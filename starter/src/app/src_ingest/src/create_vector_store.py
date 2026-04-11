@@ -7,7 +7,7 @@ from openai import OpenAI
 def main() -> None:
     COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
     PREFIX = os.getenv("TF_VAR_prefix")
-    REGION = os.getenv("REGION")
+    REGION = os.getenv("TF_VAR_region")
     
     cp_client = OpenAI(
         base_url=f"https://generativeai.{REGION}.oci.oraclecloud.com/20231130/openai/v1",
@@ -23,7 +23,7 @@ def main() -> None:
     vector_store = cp_client.vector_stores.create(
         name=f"${PREFIX}-vs",
         description=f"${PREFIX} vector store",
-        expires_after={"anchor": "last_active_at", "days": 36000}, # 100 YEARS ? 
+        expires_after={"anchor": "last_active_at", "days": 365}, # 100 YEARS ? 
         metadata={"prefix": "${PREFIX}"},
     )
     print(vector_store)
