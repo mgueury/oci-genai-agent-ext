@@ -626,6 +626,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
             metadata["originalResourceName"] = originalResourceName 
 
         file_name = getLogDir()+"/"+resourceName
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
         if not content:
             contentType = value["contentType"]
             resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
