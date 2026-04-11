@@ -22,18 +22,21 @@ def get_auth_header():
 
 @mcp.tool()
 def search(question: str) -> dict:
-    """Search in document."""
-    print("<search>", flush=True)
-    # Create session
-    session_id = shared.genai_agent_get_session()
-    response = shared.genai_agent_chat(session_id, question)
-    source_url = "none"
-    if response.message.content.citations:
-        source_url = response.message.content.citations[0].source_location.url.replace( " ", "%20" )
+    """Search in document repository."""
+    if rag_storage.RAG_STORAGE == "vector_store":
+        return shared.responses_search( question )
+    else: 
+        print("<search>", flush=True)
+        # Create session
+        session_id = shared.genai_agent_get_session()
+        response = shared.genai_agent_chat(session_id, question)
+        source_url = "none"
+        if response.message.content.citations:
+            source_url = response.message.content.citations[0].source_location.url.replace( " ", "%20" )
 
-    d = {"response": response.message.content.text, "citation": source_url}
-    pprint.pprint(d)
-    return d
+        d = {"response": response.message.content.text, "citation": source_url}
+        pprint.pprint(d)
+        return d
 
 @mcp.tool()
 def list_documents() ->  List[DocInfo]:

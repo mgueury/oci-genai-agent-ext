@@ -44,6 +44,16 @@ cd $SCRIPT_DIR
 # Java
 install_java
 
+# Vector Store
+if [ "$TF_VAR_rag_storage" == "vector_store" ]; then
+    if [ -f responses_env.sh ]; then
+        cat "File responses_env.sh exists already."
+    else 
+        source myenv/bin/activate
+        python src/create_vector_store.py
+    fi
+fi    
+
 # Build Tika
 cd src/tika
 sudo dnf install -y maven

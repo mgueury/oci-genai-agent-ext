@@ -19,6 +19,11 @@ if [ -d myenv ]; then
   source myenv/bin/activate
 fi
 
+# Responses
+if [ -f responses_env.sh ]; then
+    . ./responses_env.sh
+fi 
+
 # TNS_ADMIN
 export TNS_ADMIN=$HOME/db
 

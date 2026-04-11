@@ -86,6 +86,8 @@ def updateCount(count):
     ## RAG ObjectStorage - start Ingestion when no new messsage is arriving
     if RAG_STORAGE=="db26ai":
         pass
+    elif RAG_STORAGE=="vector_store":
+        pass    
     else:
         if count>0:
             countUpdate = countUpdate + count 
@@ -118,6 +120,8 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
     if RAG_STORAGE=="db26ai":
         value["metadata"] = metadata
         insertDoc( value, file_path, object_name )
+    elif RAG_STORAGE=="vector_store":
+        shared.responses_upload_file(file_path, metadata)
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
         bucketName = value["data"]["additionalDetails"]["bucketName"]

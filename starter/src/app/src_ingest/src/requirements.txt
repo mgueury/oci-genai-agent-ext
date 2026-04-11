@@ -12,10 +12,13 @@ oracledb
 
 # OCI
 oci
+oci-genai-auth
+
+# OpenAI (Responses)
+openai
 
 # HTTP Client
 requests
-
 
 # Sitemap
 pdfkit

@@ -7,6 +7,11 @@ import pathlib
 import pprint
 import base64
 import mimetypes
+# Responses
+from oci_genai_auth import OciInstancePrincipalAuth
+import httpx
+from openai import OpenAI
+
 
 # -- globals ----------------------------------------------------------------
 
@@ -35,6 +40,14 @@ db_env = None
 # Create Log directory
 
 UNIQUE_ID = "ID"
+
+# Env Variables
+REGION = os.getenv("TF_VAR_region")
+COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
+PROJECT_OCID = os.getenv("TF_VAR_project_ocid")
+VECTOR_STORE_ID = os.getenv("VECTOR_STORE_ID")
+RESPONSES_MODEL_ID = os.getenv("TF_VAR_responses_model_id")
+BUCKET_URL = os.getenv("BUCKET_URL")
 
 ## -- getLogDir -------------------------------------------------------------------
 def getLogDir():
@@ -102,9 +115,8 @@ def image2DataUri(image_path):
 def summarizeContent(value,content):
     log( "<summarizeContent>")
     global signer
-    compartmentId = value["data"]["compartmentId"]
-    region = os.getenv("TF_VAR_region")    
-    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
+    compartmentId = value["data"]["compartmentId"] 
+    endpoint = 'https://inference.generativeai.'+REGION+'.oci.oraclecloud.com/20231130/actions/chat'
     # Avoid Limit of 4096 Tokens
     if len(content) > 12000:
         log( "Truncating to 12000 characters")
@@ -149,9 +161,7 @@ def summarizeContent(value,content):
 def embedText(c):
     global signer
     log( "<embedText>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = os.getenv("TF_VAR_region")
-    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/embedText'
+    endpoint = 'https://inference.generativeai.'+REGION+'.oci.oraclecloud.com/20231130/actions/embedText'
     body = {
         "inputs" : [ c ],
         "servingMode" : {
@@ -159,7 +169,7 @@ def embedText(c):
             "modelId" : os.getenv("TF_VAR_genai_embed_model")
         },
         "truncate" : "START",
-        "compartmentId" : compartmentId
+        "compartmentId" : COMPARTMENT_OCID
     }
     resp = requests.post(endpoint, json=body, auth=shared_signer)
     resp.raise_for_status()
@@ -175,12 +185,10 @@ def embedText(c):
 def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
     global signer
     log( "<generic_chat>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    region = a_region or os.getenv("TF_VAR_region")  
     model = a_model or os.getenv("TF_VAR_genai_meta_model")
-    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
+    endpoint = 'https://inference.generativeai.'+REGION+'.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
-        "compartmentId": compartmentId,
+        "compartmentId": COMPARTMENT_OCID,
         "servingMode": {
             "modelId": model,
             "servingType": "ON_DEMAND"
@@ -239,13 +247,11 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
 def cohere_chat(prompt, chatHistory, documents):
     global signer
     log( "<cohere_chat>")
-    region = os.getenv("TF_VAR_region")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
-    endpoint = 'https://inference.generativeai.'+region+'.oci.oraclecloud.com/20231130/actions/chat'
+    endpoint = 'https://inference.generativeai.'+REGION+'.oci.oraclecloud.com/20231130/actions/chat'
     #         "modelId": "ocid1.generativeaimodel.oc1.us-chicago-1.amaaaaaask7dceyafhwal37hxwylnpbcncidimbwteff4xha77n5xz4m7p6a",
     #         "modelId": os.getenv("TF_VAR_genai_cohere_model"),
     body = { 
-        "compartmentId": compartmentId,
+        "compartmentId": COMPARTMENT_OCID,
         "servingMode": {
             "modelId": os.getenv("TF_VAR_genai_cohere_model"),
             "servingType": "ON_DEMAND"
@@ -352,7 +358,6 @@ def cutInChunks(text):
 def genai_agent_datasource_ingest():
 
     log( "<genai_agent_datasource_ingest>")
-    compartmentId = os.getenv("TF_VAR_compartment_ocid")
     datasourceId = os.getenv("TF_VAR_agent_datasource_ocid")
     if datasourceId:
         name = "AUTO_INGESTION_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -361,7 +366,7 @@ def genai_agent_datasource_ingest():
         genai_agent_client.create_data_ingestion_job(
             create_data_ingestion_job_details=oci.generative_ai_agent.models.CreateDataIngestionJobDetails(
                 data_source_id=datasourceId,
-                compartment_id=compartmentId,
+                compartment_id=COMPARTMENT_OCID,
                 display_name=name,
                 description=name
             ))
@@ -374,11 +379,10 @@ def genai_agent_get_session():
 
     log( "<genai_agent_get_session>")
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
-    region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
         config=shared_config, 
         signer=shared_signer,
-        service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
+        service_endpoint="https://agent-runtime.generativeai."+REGION+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
     )    
@@ -397,11 +401,10 @@ def genai_agent_chat( session_id, question ):
 
     log( "<genai_agent_chat>")
     agent_endpoint_ocid = os.getenv("TF_VAR_agent_endpoint_ocid")
-    region=os.getenv("TF_VAR_region")
     genai_agent_runtime_client = oci.generative_ai_agent_runtime.GenerativeAiAgentRuntimeClient(
         config=shared_config, 
         signer=shared_signer,
-        service_endpoint="https://agent-runtime.generativeai."+region+".oci.oraclecloud.com",
+        service_endpoint="https://agent-runtime.generativeai."+REGION+".oci.oraclecloud.com",
         retry_strategy=oci.retry.NoneRetryStrategy(),
         timeout=(10, 240)
     )    
@@ -442,3 +445,127 @@ def delete_bucket_folder(namespace, bucketName, folder):
         log("\u270B <delete_bucket_folder> Exception: delete_bucket_folder") 
         log(traceback.format_exc())            
     log( "</delete_bucket_folder>" )    
+
+## -- delete_bucket_folder --------------------------------------------------
+
+def responses_get_client():
+    client = OpenAI(
+        base_url=f"https://inference.generativeai.{REGION}.oci.oraclecloud.com/20231130/openai/v1",
+        api_key="unused",
+        http_client=httpx.Client(
+            auth=OciInstancePrincipalAuth(),
+            headers={
+                "opc-compartment-id": COMPARTMENT_OCID,
+            },
+        ),
+    )
+    return client
+
+## -- responses_upload_file --------------------------------------------------
+
+def responses_upload_file( file_path, metadata ):  
+    log("<responses_upload_file>")
+    log(f"file_path={file_path}")
+
+    client = OpenAI(
+        base_url=f"https://inference.generativeai.{REGION}.oci.oraclecloud.com/20231130/openai/v1",
+        api_key="unused",
+        http_client=httpx.Client(
+            auth=OciInstancePrincipalAuth(),
+            headers={
+                "opc-compartment-id": COMPARTMENT_OCID,
+            },
+        ),
+    )
+
+    with open(file_path, "rb") as f:
+        # warning: repeating means you're uploading a new version of the same file
+        # and it will create a new file each time. In production,
+        # you should store the file ID and reuse it.
+        file = client.files.create(
+            file=f,
+            purpose="user_data",
+            extra_headers={"OpenAI-Project": PROJECT_OCID},
+        )
+        print(file)
+        file_id = file.id
+
+    print(file_id)
+    create_result = client.vector_stores.files.create(
+        vector_store_id=VECTOR_STORE_ID,
+        file_id=file_id,
+        attributes=metadata
+    )    
+    log( f"<responses_upload_file>Uploaded ${file_path}" )
+
+
+
+## -- responses_format --------------------------------------------------
+
+def responses_format(response):
+    # 1. Get the assistant message
+    message = next(
+        (o for o in response.output if o.type == "message"),
+        None
+    )
+    
+    if not message:
+        return None
+
+    content = message.content[0]
+
+    # 2. Extract text
+    text = content.text
+
+    # 3. Extract citation (if present)
+    citation = None
+    if content.annotations:
+        ann = content.annotations[0]
+        if ann.type == "file_citation":
+            citation = BUCKET_URL + ann.filename
+    return {
+        "response": text,
+        "citation": citation
+    }
+
+## -- responses_upload_file --------------------------------------------------
+
+def responses_search( question ):  
+    log("<responses_search>")
+
+    provider_name, separator, model_name = RESPONSES_MODEL_ID.partition(".")
+    if provider_name == "google":
+        role_instructions = "user"
+    else:
+        role_instructions = "system"
+
+    response = responses_get_client.responses.create(
+        model=RESPONSES_MODEL_ID,
+        temperature=0.0,
+        input=[
+            {
+                # cannot use system if provider is google
+                "role": role_instructions,
+                "content": (
+                    "Answer using only information from the retrieved documents. "
+                    "You may summarize or synthesize information that is explicitly supported by the retrieved text. "
+                    "Do not use outside knowledge. "
+                    "If the retrieved documents do not contain enough information to answer, say exactly: "
+                    "'I don't have sufficient information in the documents.'"
+                ),
+            },
+            {"role": "user", "content": question},
+        ],
+        tools=[
+            {
+                "type": "file_search",
+                "vector_store_ids": [VECTOR_STORE_ID],
+                "max_num_results": 10,
+            }
+        ],
+        extra_headers={"OpenAI-Project": PROJECT_OCID},
+        tool_choice="required",
+        include=["file_search_call.results"],
+    )
+    return responses_format( response )
+

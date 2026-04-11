@@ -17,6 +17,11 @@ compartment_ocid="__TO_FILL__"
 # vault_ocid="__TO_FILL__"
 # vault_key_ocid="__TO_FILL__"
 
+# Vector Store
+# rag_storage="vector_store"
+# project_ocid="__TO_FILL__"
+# responses_model_id="openai.gpt-oss-120b"
+
 # Uncomment to enable login in LangGraph application using OpenID via API Gateway and Confidential Application 
 # Needs OCI Identity Domain rights.
 # openid="true"

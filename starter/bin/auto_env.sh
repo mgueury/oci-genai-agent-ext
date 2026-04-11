@@ -46,8 +46,6 @@ read_terraform_tfvars() {
   unset value
 }
 
-
-
 # Environment Variables
 # In 4 places:
 # 1. target/tf_env.sh created by the terraform (created by the first build)

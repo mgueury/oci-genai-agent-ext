@@ -76,4 +76,10 @@ else
         append_tf_env "export MCP_SERVER_URL=\"http://localhost:2025/mcp\""
     fi
     export LANGGRAPH_APIKEY="##TF_VAR_db_password##"
+
+    # Vector Store
+    if [ "$TF_VAR_rag_storage" == "vector_store" ]; then
+        append_tf_env "export TF_VAR_responses_model_id=\"$TF_VAR_responses_model_id\""
+        append_tf_env "export TF_VAR_project_ocid=\"$TF_VAR_project_ocid\""
+    fi
 fi

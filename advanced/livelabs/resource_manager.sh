@@ -12,4 +12,5 @@ rm -Rf rm-genai-agent-ext/starter/target
 
 echo "NEXT STEPS"
 echo "cd rm-genai-agent-ext/starter"
+echo "./starter.sh rm create"
 echo "./starter.sh rm build"
