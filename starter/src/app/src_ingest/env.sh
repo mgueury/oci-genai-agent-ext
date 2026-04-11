@@ -1,7 +1,6 @@
 . $HOME/compute/tf_env.sh
 
 export DB_USER="apex_app"
-export TF_VAR_rag_storage="##OPTIONAL/TF_VAR_rag_storage##"
 
 # LangFuse
 # export LANGFUSE_PUBLIC_KEY=<your_public_key>
@@ -20,8 +19,8 @@ if [ -d myenv ]; then
 fi
 
 # Responses
-if [ -f responses_env.sh ]; then
-    . ./responses_env.sh
+if [ -f $HOME/app/ingest/responses_env.sh ]; then
+    . $HOME/app/ingest/responses_env.sh
 fi 
 
 # TNS_ADMIN

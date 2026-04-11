@@ -1,12 +1,14 @@
 from fastmcp import FastMCP  # Import FastMCP, the quickstart server base
 from fastmcp.server.dependencies import get_http_request
 import shared
+import os
 import rag_storage
 import pprint
 from typing import List, TypedDict
 from pydantic import BaseModel
 
 mcp = FastMCP("MCP RAG Server")  # Initialize an MCP server instance with a descriptive name
+RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
 
 rag_storage.createPool()
 
@@ -23,10 +25,11 @@ def get_auth_header():
 @mcp.tool()
 def search(question: str) -> dict:
     """Search in document repository."""
-    if rag_storage.RAG_STORAGE == "vector_store":
+    print(f"<search> question={question}", flush=True)    
+    print(f"<search> RAG_STORAGE={RAG_STORAGE}", flush=True)    
+    if RAG_STORAGE == "vector_store":
         return shared.responses_search( question )
     else: 
-        print("<search>", flush=True)
         # Create session
         session_id = shared.genai_agent_get_session()
         response = shared.genai_agent_chat(session_id, question)

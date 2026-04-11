@@ -1,5 +1,15 @@
-let BASE_URL = '/langgraph/server';
-// State
+// -- Import  --------------------------------------------------------------- 
+
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: false });
+
+// -- Variables ----------------------------------------------------------------- 
+
+let BASE_URL = '/app';
+let currentBackend = 'LangGraph';
+const backends = [
+    { name: 'LangGraph', baseUrl: '/app' }
+];
 let currentAgent = 'agent';
 let currentUser = 'customer';
 const users = ['employee', 'customer'];
@@ -9,17 +19,52 @@ let last_message_id = -1;
 const messagesEl = document.getElementById('messages');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
-const voiceInputButton = document.getElementById('voice-input');
 const spinnerContainer = document.getElementById('spinner-container');
+const micButton = document.getElementById('mic-button');
 
 // See https://docs.oracle.com/en-us/iaas/Content/APIGateway/Tasks/apigatewayusingjwttokens.htm#Using_JSON_Web_Tokens_JWTs_to_Add_Authentication_and_Authorization_to_API_Deployments__section_csrf_protection
 let csrfToken = "";
+
+// -- Code -----------------------------------------------------------------
+
+
+// -- ChatInput ---
+// UX: Enter submits, Shift+Enter inserts newline.
+chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.requestSubmit();
+    }
+});
+function autoGrowTextarea() {
+    if (!chatInput) return;
+    chatInput.style.height = 'auto';
+    chatInput.style.height = `${chatInput.scrollHeight-36}px`;
+}
+chatInput.addEventListener('input', autoGrowTextarea);
+
+
+// -- Rendering ---
 
 // Utility: safely parse JSON
 function safeParse(json) {
     try { return JSON.parse(json); }
     catch (e) { return {}; }
 }
+
+async function renderContent(input) 
+{
+    const MERMAID_FENCE_RE = /```(?:\s*)mermaid\s*\n([\s\S]*?)\n```/i;
+    if (MERMAID_FENCE_RE.test(input)) {
+        const m = input.match(/```mermaid\s*([\s\S]*?)\s*```/i);
+        const m2 = m[1].trim();
+        const value = await mermaid.render("diagram",m2);
+        return value.svg;
+    } else {
+       return renderMarkdown(input);
+    }
+}
+
 function renderMarkdown(md) {
     return marked.parse(md || "");
 }
@@ -61,7 +106,7 @@ function renderJsTable(data) {
     return html;
 }
 
-function renderMessage(msgObj) {
+async function renderMessage(msgObj) {
     const el = document.createElement('div');
     el.classList.add('message');
     el.classList.add(msgObj.type || 'ai');
@@ -69,25 +114,19 @@ function renderMessage(msgObj) {
     // Human message
     if (msgObj.type === 'human') {
         innerHTML = `<div class="bubble"><div class="meta">You</div>${renderMarkdown(msgObj.content)}</div>`;
-    } else if (msgObj.type === 'ai') {
-        if (msgObj.content) {
-            innerHTML = `<div class="bubble"><div class="meta">AI</div>${renderMarkdown(msgObj.content)}`;
-            if (msgObj.tool_calls && msgObj.tool_calls.length > 0) {
+        } else if (msgObj.type === 'ai') {
+            if (msgObj.content) {
+                innerHTML = `<div class="bubble"><div class="meta">AI</div>${await renderContent(msgObj.content)}</div>`;
+            } else if (msgObj.tool_calls && msgObj.tool_calls.length > 0) {
+                const toolNames = msgObj.tool_calls.map(t => t.name).join(' - ');
+                let bubble = `<div class="bubble"><div class="meta">Tool Calls - ${toolNames}</div>`;
                 let tools = msgObj.tool_calls.map(t =>
-                    `<div><b>${t.name}</b> &rarr; <code>${JSON.stringify(t.args)}</code></div>`
+                    `<tr><td>${t.name}</td><td>${JSON.stringify(t.args)}</td></tr>`
                 ).join('');
-                innerHTML += `<div class="tool-calls">${tools}</div>`;
+                bubble += `<table class='tools-table'><thead><tr><th>Name</th><th>Arguments</th></tr></thead><tbody>${tools}</tbody></table>`;
+                innerHTML = bubble;
             }
-            innerHTML += `</div>`;
-        } else if (msgObj.tool_calls && msgObj.tool_calls.length > 0) {
-            let bubble = `<div class="bubble"><div class="meta">Tool Calls</div>`;
-            let tools = msgObj.tool_calls.map(t =>
-                `<tr><td>${t.name}</td><td>${JSON.stringify(t.args)}</td></tr>`
-            ).join('');
-            bubble += `<table class='tools-table'><thead><tr><th>Name</th><th>Arguments</th><tr></thead><tbody>${tools}</tbody></table>`;
-            innerHTML = bubble;
-        }
-    } else if (msgObj.type === 'tool') {
+        } else if (msgObj.type === 'tool') {
         let data = msgObj.artifact?.structured_content ?? {};
         let bubble = "<div class='bubble'><div class='meta'>Tool - " + msgObj.name + "</div>";
         if (data?.response) {
@@ -183,60 +222,11 @@ async function getThreadId() {
     }
 }
 
-function addMessage(msgObj) {
+async function addMessage(msgObj) {
     renderMessage(msgObj);
 }
 
-// -- Voice input (speech-to-text) ---------------------------------
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-let isListening = false;
-
-if (SpeechRecognition && voiceInputButton) {
-    recognition = new SpeechRecognition();
-    recognition.lang = navigator.language || 'en-US';
-    recognition.interimResults = true;
-    recognition.continuous = false;
-
-    recognition.addEventListener('start', () => {
-        isListening = true;
-        voiceInputButton.setAttribute('aria-label', 'Stop voice input');
-        voiceInputButton.setAttribute('title', 'Listening... click to stop');
-        voiceInputButton.textContent = '🔴';
-    });
-
-    recognition.addEventListener('result', (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-        }
-        chatInput.value = transcript.trim();
-    });
-
-    recognition.addEventListener('end', () => {
-        isListening = false;
-        voiceInputButton.setAttribute('aria-label', 'Start voice input');
-        voiceInputButton.setAttribute('title', 'Speak your message');
-        voiceInputButton.innerHTML = '<img src="images/microphone.png">';
-    });
-
-    recognition.addEventListener('error', (event) => {
-        console.log('Speech recognition error:', event.error);
-    });
-
-    voiceInputButton.addEventListener('click', () => {
-        if (isListening) {
-            recognition.stop();
-            return;
-        }
-        recognition.start();
-    });
-} else if (voiceInputButton) {
-    voiceInputButton.disabled = true;
-    voiceInputButton.setAttribute('title', 'Voice input is not supported in this browser');
-}
-
-chatForm.addEventListener('submit', function (e) {
+chatForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     const msg = chatInput.value.trim();
     if (!msg) return;
@@ -292,6 +282,19 @@ document.addEventListener('keydown', function (e) {
 });
 
 // Users section
+function renderBackendList() {
+    const backendList = document.getElementById('backendList');
+    backendList.innerHTML = '';
+    backends.forEach(backend => {
+        const li = document.createElement('li');
+        li.textContent = backend.name;
+        li.tabIndex = 0;
+        li.setAttribute('aria-current', backend.name === currentBackend ? 'true' : 'false');
+        li.addEventListener('click', () => setCurrentBackend(backend.name));
+        backendList.appendChild(li);
+    });
+}
+
 function renderUserList() {
     const userList = document.getElementById('userList');
     userList.innerHTML = '';
@@ -349,8 +352,34 @@ function renderAgentList(agents) {
 
 // Updating display
 function updateDisplay() {
-    document.getElementById('currentDisplay').textContent = `Agent: ${currentAgent} - User: ${currentUser}`;
+    document.getElementById('currentDisplay').textContent = `Backend: ${currentBackend} - Agent: ${currentAgent} - User: ${currentUser}`;
 }
+
+async function setCurrentBackend(backendName) {
+    currentBackend = backendName;
+    const backend = backends.find(b => b.name === backendName);
+    if (backend) {
+        BASE_URL = backend.baseUrl;
+    }
+
+    messagesEl.innerHTML = '';
+    thread_id = await getThreadId();
+    last_message_id = 0;
+    if (!thread_id) {
+        messagesEl.innerHTML = '<div class="message ai">Error: could not get thread_id from backend.</div>';
+        chatInput.disabled = true;
+    } else {
+        chatInput.disabled = false;
+    }
+
+    updateDisplay();
+    nav.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    fetchAgents().then(renderAgentList);
+    renderUserList();
+    renderBackendList();
+}
+
 function setCurrentAgent(agentName) {
     currentAgent = agentName;
     updateDisplay();
@@ -384,6 +413,52 @@ async function fetchUserInfo() {
     updateDisplay();
 }
 
+let recognition = null;
+
+function initRecognition() {
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+        micButton.style.display = 'none';
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+        micButton.classList.add('recording');
+        chatInput.placeholder = 'Listening...';
+    };
+
+    recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+        chatInput.value = transcript;
+        chatInput.focus();
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        micButton.classList.remove('recording');
+        chatInput.placeholder = 'Type your message...';
+    };
+
+    recognition.onend = () => {
+        micButton.classList.remove('recording');
+        chatInput.placeholder = 'Type your message...';
+    };
+}
+
+micButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (recognition) {
+        recognition.start();
+    }
+});
+
 // On page load
 // If the URL is in openid, get the userinfo from IDCS via APIGW
 
@@ -399,9 +474,12 @@ async function fetchUserInfo() {
         messagesEl.innerHTML = '<div class="message ai">Error: could not get thread_id from backend.</div>';
         chatInput.disabled = true;
     }
+    initRecognition();
+    renderBackendList();
     renderUserList();
     fetchAgents()
         .then(renderAgentList)
         .catch(error => alert("Could not load agents: " + error));
+    updateDisplay();
 })();
 

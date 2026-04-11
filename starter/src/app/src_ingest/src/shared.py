@@ -467,16 +467,7 @@ def responses_upload_file( file_path, metadata ):
     log("<responses_upload_file>")
     log(f"file_path={file_path}")
 
-    client = OpenAI(
-        base_url=f"https://inference.generativeai.{REGION}.oci.oraclecloud.com/20231130/openai/v1",
-        api_key="unused",
-        http_client=httpx.Client(
-            auth=OciInstancePrincipalAuth(),
-            headers={
-                "opc-compartment-id": COMPARTMENT_OCID,
-            },
-        ),
-    )
+    client = responses_get_client()
 
     with open(file_path, "rb") as f:
         # warning: repeating means you're uploading a new version of the same file
@@ -498,11 +489,11 @@ def responses_upload_file( file_path, metadata ):
     )    
     log( f"<responses_upload_file>Uploaded ${file_path}" )
 
-
-
 ## -- responses_format --------------------------------------------------
 
 def responses_format(response):
+    log(pprint.pformat( response ))
+                
     # 1. Get the assistant message
     message = next(
         (o for o in response.output if o.type == "message"),
@@ -517,15 +508,24 @@ def responses_format(response):
     # 2. Extract text
     text = content.text
 
-    # 3. Extract citation (if present)
-    citation = None
-    if content.annotations:
-        ann = content.annotations[0]
-        if ann.type == "file_citation":
-            citation = BUCKET_URL + ann.filename
+    citations = []
+
+    for item in response.output:
+        if getattr(item, "type", None) != "file_search_call":
+            continue
+
+        for result in getattr(item, "results", []):
+            entry = {
+                "customized_url_source": result.attributes.get("customized_url_source"),
+                "file_name": getattr(result, "filename", None),
+                "score": getattr(result, "score", None),
+            }
+            citations.append(entry)
+    citations_sorted = sorted(citations, key=lambda x: x["score"] or 0, reverse=True)            
+
     return {
         "response": text,
-        "citation": citation
+        "citation": citations_sorted
     }
 
 ## -- responses_upload_file --------------------------------------------------
@@ -539,7 +539,9 @@ def responses_search( question ):
     else:
         role_instructions = "system"
 
-    response = responses_get_client.responses.create(
+    client = responses_get_client()
+
+    response = client.responses.create(
         model=RESPONSES_MODEL_ID,
         temperature=0.0,
         input=[
