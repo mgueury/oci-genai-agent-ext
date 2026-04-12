@@ -50,16 +50,16 @@ append_done "http://${NLB_IP}:8080/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "LangGraph Agent Chat:"
-append_done "${BASE_URL}/chat.html"
+append_done "${BASE_URL}/index.html"
 append_done
 if [ "$TF_VAR_openid" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
     append_done "LangGraph OpenID Chat:"
-    append_done "https://${APIGW_HOSTNAME}/openid/chat.html"
+    append_done "https://${APIGW_HOSTNAME}/openid/index.html"
     append_done
 fi
 if [ "$TF_VAR_kubernetes" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
-    append_done "Kubernetes Chat: http://${TF_VAR_ingress_ip}/oke/chat.html"
+    append_done "Kubernetes Chat: http://${TF_VAR_ingress_ip}/oke/index.html"
     append_done
 fi
