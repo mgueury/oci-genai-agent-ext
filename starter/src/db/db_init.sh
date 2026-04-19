@@ -123,6 +123,10 @@ EOF
 sqlcl/bin/sql APEX_APP/$DB_PASSWORD@DB <<EOF
 begin
   AI_CONFIG_UPDATE( 'agent_endpoint_ocid', '$TF_VAR_agent_endpoint_ocid' );
+  AI_CONFIG_UPDATE( 'project_ocid',        '$TF_VAR_project_ocid' );
+  AI_CONFIG_UPDATE( 'vector_store',        '$VECTOR_STORE' );
+  AI_CONFIG_UPDATE( 'rag_storage',         '$TF_VAR_rag_storage' );
+  AI_CONFIG_UPDATE( 'responses_model_id',  '$TF_VAR_responses_model_id' );  
   AI_CONFIG_UPDATE( 'region',              '$TF_VAR_region' );
   AI_CONFIG_UPDATE( 'compartment_ocid',    '$TF_VAR_compartment_ocid' );
   AI_CONFIG_UPDATE( 'genai_embed_model',   '$TF_VAR_genai_embed_model' );
