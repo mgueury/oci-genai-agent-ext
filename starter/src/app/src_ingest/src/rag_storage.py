@@ -12,10 +12,6 @@ from shared import shared_signer
 import oci
 from oci.object_storage.transfer.constants import MEBIBYTE
 
-# Unicode
-from urllib.parse import unquote
-import unicodedata
-
 # Langchain
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders.text import TextLoader
@@ -75,20 +71,12 @@ def init():
 
 ## -- close -----------------------------------------------------------------
 
+def close():
     if RAG_STORAGE=="db26ai":
         global pool 
         pool.close()
 
-## -- recompose -------------------------------------------------------------
-# Convert an encoded string (UTF8 NFD format) back to Unicode 
-def recompose(path):
-    # Step 1: percent-decode
-    decoded = unquote(path)
-    # Step 2: recompose accents (NFC)
-    recomposed = unicodedata.normalize("NFC", decoded)
-    return recomposed
-
-## -- updateCount -----------------------------------------------------------
+## -- updateCount ------------------------------------------------------------------
 
 countUpdate = 0
 
@@ -282,7 +270,7 @@ def insertTableDocs( value ):
             dictString(value,"parsed_by"),
             resourceName,                               # resourceName that caused the event to be started (used for deletion, ex: mp3.json for speech) 
             dictString(metadata, "gaas-metadata-filtering-field-originalResourceName"), # originalResourceName (ex: mp3 filename for speech)
-            recompose( value["metadata"]["customized_url_source"] ), # path in unicode
+            value["metadata"]["customized_url_source"], # path
             title,         
             os.getenv("TF_VAR_region"),
             str(dictString(value,"summaryEmbed")),            
@@ -428,12 +416,10 @@ def deleteDocByPath( value ):
     cur = dbConn.cursor()
     path =  value["metadata"]["customized_url_source"]
     log(f"<deleteDocByPath> path={path}")
-    recomposed = recompose( path )
-    log(f"<deleteDocByPath> recomposed={recomposed}")
 
     # Delete the document record
     try:
-        cur.execute("delete from docs where path=:1", (recomposed,))
+        cur.execute("delete from docs where path=:1", (path,))
         dbConn.commit()
         log(f"<deleteDocByPath> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
