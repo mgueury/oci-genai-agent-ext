@@ -124,8 +124,8 @@ ocir_docker_push () {
 
   # Push image in registry
   for APP_NAME in `app_name_list`; do
-    if [ -n "$(docker images -q ${TF_VAR_prefix}-app 2> /dev/null)" ]; then
-      docker tag ${TF_VAR_prefix}-app ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
+    if [ -n "$(docker images -q ${TF_VAR_prefix}-${APP_NAME} 2> /dev/null)" ]; then
+      docker tag ${TF_VAR_prefix}-${APP_NAME} ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       oci artifacts container repository create --compartment-id $TF_VAR_compartment_ocid --display-name ${DOCKER_PREFIX_NO_OCIR}/${TF_VAR_prefix}-${APP_NAME} 2>/dev/null
       docker push ${DOCKER_PREFIX}/${TF_VAR_prefix}-${APP_NAME}:latest
       exit_on_error "docker push APP"
@@ -230,7 +230,7 @@ data:" > $TARGET_OKE/tf_env_configmap.yaml
   grep -v '^#' $TARGET_DIR/tf_env.sh | grep '^export' | while read line; do
     VAR=$(echo $line | sed 's/export //')
     KEY=$(echo $VAR | cut -d= -f1)
-    VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/') 
+    VALUE=$(echo $VAR | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/')
     echo "  $KEY: \"$VALUE\"" >> $TARGET_OKE/tf_env_configmap.yaml
   done
   echo "tf_env_configmap.yaml created."
@@ -309,7 +309,7 @@ get_user_details() {
       export TF_VAR_region=$OCI_REGION
       # Good way to get the home_region is to get it via oci iam tenancy get --tenancy-id xxx -> home_region PREFIX (ex:FRA)
       # That needs then to be converted from prefix to name via the region list (->eu-frankfurt-1). See provider.tf.
-      # export TF_VAR_home_region=`echo $OCI_CS_HOST_OCID | awk -F[/.] '{print $4}'`
+      export TF_VAR_home_region=`echo $OCI_CS_HOST_OCID | sed "s/.*\.oc[0-9]*\.//" | sed "s/\..*//"`      
       if [[ "$OCI_CS_USER_OCID" == *"ocid1.saml2idp"* ]]; then
         # Ex: ocid1.saml2idp.oc1..aaaaaaaaexfmggau73773/user@domain.com -> oracleidentitycloudservice/user@domain.com
         # Split the string in 2 
@@ -422,69 +422,77 @@ is_deploy_compute() {
   fi
 }
 
+detect_livelabs() {
+  # vnc_ocid still undefined ? 
+  if [ "$TF_VAR_vcn_ocid" != "__TO_FILL__" ]; then
+    # Variables already set
+    return
+  fi
+  # In cloud shell ? 
+  if [ -z $OCI_CLI_CLOUD_SHELL ]; then 
+    return
+  fi
+  # Whoami user format ? 
+  W=$(whoami)
+  W=${W^^}
+  if [[ $W =~ ^LL.*_U.* ]]; then
+    echo "LiveLabs - Green Button - whoami format detected"
+  else
+    return
+  fi
+  export LIVELABS="true"
+}
+
 livelabs_green_button() {
   # Lot of tests to be sure we are in an Green Button LiveLabs
   # compartment_ocid still undefined ? 
+  detect_livelabs
   if grep -q 'compartment_ocid="__TO_FILL__"' $PROJECT_DIR/terraform.tfvars; then
-    # vnc_ocid still undefined ? 
-    if [ "$TF_VAR_vcn_ocid" != "__TO_FILL__" ]; then
-      # Variables already set
-      return
+    if [ "$LIVELABS" == "true" ]; then
+        get_user_details
+        # OCI User name format ? 
+        if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
+        echo "LiveLabs - Green Button - OCI User detected"
+        else
+        return
+        fi
+
+        export USER_BASE=`echo "${TF_VAR_username/-USER/}"` 
+        echo USER_BASE=$USER_BASE
+
+        export TF_VAR_compartment_ocid=`oci iam compartment list --compartment-id-in-subtree true --all | jq -c -r '.data[] | select(.name | contains("'$USER_BASE'")) | .id'`
+        echo TF_VAR_compartment_ocid=$TF_VAR_compartment_ocid
+
+        if [ "$TF_VAR_compartment_ocid" != "" ]; then
+        sed -i "s&compartment_ocid=\"__TO_FILL__\"&compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/terraform.tfvars
+        echo "TF_VAR_compartment_ocid stored in terraform.tfvars"
+        fi  
+
+        export TF_VAR_vcn_ocid=`oci network vcn list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
+        echo TF_VAR_vcn_ocid=$TF_VAR_vcn_ocid  
+        if [ "$TF_VAR_vcn_ocid" != "" ]; then
+        sed -i "s&vcn_ocid=\"__TO_FILL__\"&vcn_ocid=\"$TF_VAR_vcn_ocid\"&" $PROJECT_DIR/terraform.tfvars
+        echo "TF_VAR_vcn_ocid stored in terraform.tfvars"
+        fi  
+
+        export TF_VAR_subnet_ocid=`oci network subnet list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
+        echo TF_VAR_subnet_ocid=$TF_VAR_subnet_ocid  
+        if [ "$TF_VAR_subnet_ocid" != "" ]; then
+        sed -i "s&web_subnet_ocid=\"__TO_FILL__\"&web_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+        sed -i "s&app_subnet_ocid=\"__TO_FILL__\"&app_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+        sed -i "s&db_subnet_ocid=\"__TO_FILL__\"&db_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
+        echo "TF_VAR_subnet_ocid stored in terraform.tfvars"
+        # Set the real variables such that the first "build" works too.
+        export TF_VAR_web_subnet_ocid=$TF_VAR_subnet_ocid
+        export TF_VAR_app_subnet_ocid=$TF_VAR_subnet_ocid
+        export TF_VAR_db_subnet_ocid=$TF_VAR_subnet_ocid
+        fi  
+        sed -i "s&license_model=\"__TO_FILL__\"&license_model=\"LICENSE_INCLUDED\"&" $PROJECT_DIR/terraform.tfvars
+
+        # LiveLabs support only E4 Shapes
+        sed -i '/compartment_ocid=/a\instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/terraform.tfvars
+        export TF_VAR_instance_shape=VM.Standard.E4.Flex
     fi
-    # In cloud shell ? 
-    if [ -z $OCI_CLI_CLOUD_SHELL ]; then 
-      return
-    fi
-    # Whoami user format ? 
-    W=$(whoami)
-    W=${W^^}
-    if [[ $W =~ ^LL.*_U.* ]]; then
-      echo "LiveLabs - Green Button - whoami format detected"
-    else
-      return
-    fi
-    get_user_details
-    # OCI User name format ? 
-    if [[ $TF_VAR_username =~ ^LL.*-USER$ ]]; then
-      echo "LiveLabs - Green Button - OCI User detected"
-    else
-      return
-    fi
-
-    export USER_BASE=`echo "${TF_VAR_username/-USER/}"` 
-    echo USER_BASE=$USER_BASE
-
-    export TF_VAR_compartment_ocid=`oci iam compartment list --compartment-id-in-subtree true --all | jq -c -r '.data[] | select(.name | contains("'$USER_BASE'")) | .id'`
-    echo TF_VAR_compartment_ocid=$TF_VAR_compartment_ocid
-
-    if [ "$TF_VAR_compartment_ocid" != "" ]; then
-      sed -i "s&compartment_ocid=\"__TO_FILL__\"&compartment_ocid=\"$TF_VAR_compartment_ocid\"&" $PROJECT_DIR/terraform.tfvars
-      echo "TF_VAR_compartment_ocid stored in terraform.tfvars"
-    fi  
-
-    export TF_VAR_vcn_ocid=`oci network vcn list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
-    echo TF_VAR_vcn_ocid=$TF_VAR_vcn_ocid  
-    if [ "$TF_VAR_vcn_ocid" != "" ]; then
-      sed -i "s&vcn_ocid=\"__TO_FILL__\"&vcn_ocid=\"$TF_VAR_vcn_ocid\"&" $PROJECT_DIR/terraform.tfvars
-      echo "TF_VAR_vcn_ocid stored in terraform.tfvars"
-    fi  
-
-    export TF_VAR_subnet_ocid=`oci network subnet list --compartment-id $TF_VAR_compartment_ocid | jq -c -r '.data[].id'`
-    echo TF_VAR_subnet_ocid=$TF_VAR_subnet_ocid  
-    if [ "$TF_VAR_subnet_ocid" != "" ]; then
-      sed -i "s&web_subnet_ocid=\"__TO_FILL__\"&web_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
-      sed -i "s&app_subnet_ocid=\"__TO_FILL__\"&app_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
-      sed -i "s&db_subnet_ocid=\"__TO_FILL__\"&db_subnet_ocid=\"$TF_VAR_subnet_ocid\"&" $PROJECT_DIR/terraform.tfvars
-      echo "TF_VAR_subnet_ocid stored in terraform.tfvars"
-      # Set the real variables such that the first "build" works too.
-      export TF_VAR_web_subnet_ocid=$TF_VAR_subnet_ocid
-      export TF_VAR_app_subnet_ocid=$TF_VAR_subnet_ocid
-      export TF_VAR_db_subnet_ocid=$TF_VAR_subnet_ocid
-    fi  
-    
-    # LiveLabs support only E4 Shapes
-    sed -i '/compartment_ocid=/a\instance_shape="VM.Standard.E4.Flex"' $PROJECT_DIR/terraform.tfvars
-    export TF_VAR_instance_shape=VM.Standard.E4.Flex
   fi
 }
 
@@ -668,7 +676,7 @@ certificate_dir_before_terraform() {
       mkdir -p target/compute/certificate
       cp $TF_VAR_certificate_dir/* target/compute/certificate/.
       cp src/tls/nginx_tls.conf target/compute/.
-      sed -i "s/##DNS_NAME##/$TF_VAR_dns_name/" target/compute/nginx_tls.conf
+      file_replace_variables target/compute/nginx_tls.conf
     elif [ "$TF_VAR_tls" == "new_http_01" ]; then
       echo "New Certificate will be created after the deployment."      
     else 
@@ -758,7 +766,7 @@ file_replace_variables() {
   local temp_file=$(mktemp)
 
   echo "Replace variables in file: $1"
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do  
     while [[ $line =~ (.*)##(.*)##(.*) ]]; do
       local var_name="${BASH_REMATCH[2]}"
       echo "- variable: ${var_name}"

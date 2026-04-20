@@ -34,9 +34,9 @@ import shared
 from shared import log
 from shared import log_in_file
 from shared import dictString
-from shared import dictInt
-from shared import LOG_DIR
-from shared import signer
+from shared import getLogDir
+from shared import shared_config
+from shared import shared_signer
 from shared import UNIQUE_ID
 
 ## -- find_executable_path --------------------------------------------------
@@ -83,7 +83,7 @@ def convertOciFunctionTika(value):
     resourceName = value["data"]["resourceName"]
     resourceId = value["data"]["resourceId"]
     
-    invoke_client = oci.functions.FunctionsInvokeClient(config = {}, service_endpoint=fnInvokeEndpoint, signer=signer)
+    invoke_client = oci.functions.FunctionsInvokeClient(config=shared_config, service_endpoint=fnInvokeEndpoint, signer=shared_signer)
     # {"bucketName": "xxx", "namespace": "xxx", "resourceName": "xxx"}
     req = '{"bucketName": "' + bucketName + '", "namespace": "' + namespace + '", "resourceName": "' + resourceName + '"}'
     log( "Tika request: " + req)
@@ -153,7 +153,7 @@ def convertOciVision(value):
     compartmentId = value["data"]["compartmentId"]
     resourceId = value["data"]["resourceId"]
 
-    vision_client = oci.ai_vision.AIServiceVisionClient(config = {}, signer=signer)
+    vision_client = oci.ai_vision.AIServiceVisionClient(config=shared_config, signer=shared_signer)
     job = {
         "compartmentId": compartmentId,
         "image": {
@@ -208,7 +208,7 @@ def convertOciVisionBelgianID(value):
     compartmentId = value["data"]["compartmentId"]
     resourceId = value["data"]["resourceId"]
 
-    vision_client = oci.ai_vision.AIServiceVisionClient(config = {}, signer=signer)
+    vision_client = oci.ai_vision.AIServiceVisionClient(config=shared_config, signer=shared_signer)
     job = {
         "compartmentId": compartmentId,
         "image": {
@@ -299,7 +299,7 @@ def convertOciSpeech(value):
                     "SRT"
             ]
         }
-        speech_client = oci.ai_speech.AIServiceSpeechClient(config = {}, signer=signer)
+        speech_client = oci.ai_speech.AIServiceSpeechClient(config=shared_config, signer=shared_signer)
         resp = speech_client.create_transcription_job(job)
         log_in_file("speech_resp",str(resp.data))
 
@@ -352,7 +352,7 @@ def convertOciDocumentUnderstanding(value):
                 "prefix": prefix
             }
         }
-        document_understanding_client = oci.ai_document.AIServiceDocumentClient(config = {}, signer=signer)
+        document_understanding_client = oci.ai_document.AIServiceDocumentClient(config=shared_config, signer=shared_signer)
         resp = document_understanding_client.create_processor_job(job)
         log_in_file("convertOciDocumentUnderstanding_resp",str(resp.data))
     log( "</convertOciDocumentUnderstanding>")
@@ -428,11 +428,11 @@ def convertChromeSelenium2Pdf(value):
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
         folder = resourceName
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".sitemap"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".sitemap"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
@@ -461,14 +461,14 @@ def convertChromeSelenium2Pdf(value):
                         pdf_path = pdf_path+'.pdf'
                         log("<convertChromeSelenium2Pdf>"+full_uri)
                         if os.getenv("INSTALL_LIBREOFFICE")!="no":
-                            chrome_download_url_as_pdf( driver, full_uri, LOG_DIR+'/'+pdf_path)
+                            chrome_download_url_as_pdf( driver, full_uri, getLogDir()+'/'+pdf_path)
                         else:
-                            pdfkit.from_url(full_uri, LOG_DIR+"/"+pdf_path)
+                            pdfkit.from_url(full_uri, getLogDir()+"/"+pdf_path)
     
                         metadata = {'customized_url_source': full_uri, 'source_type': 'HTTP' }
 
                         # Upload to object storage as "site/"+pdf_path
-                        rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=LOG_DIR+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
+                        rag_storage.upload_file(value=value, object_name=folder+"/"+pdf_path, file_path=getLogDir()+"/"+pdf_path, content_type='application/pdf', metadata=metadata)
                         fileList.append( folder+"/"+pdf_path )
                       
                     except Exception as e:
@@ -503,7 +503,7 @@ def convertAnonymPDF(value, originalResourceName, j):
     bucketName = value["data"]["additionalDetails"]["bucketName"]
     anonymizedPdf = CONVERT_PREFIX + originalResourceName.replace(".to_anonymize.pdf", ".anonymized.pdf") 
 
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)            
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:     
         anonym_pdf_file = download_file( namespace, bucketName, originalResourceName)
         pdf_file = anonym_pdf.remove_entities(anonym_pdf_file, j)
@@ -538,9 +538,9 @@ def convertJson(value):
     log(f"<convertJson>bucketName={bucketName}" )
     log(f"<convertJson>resourceName={resourceName}" )
     # Read the JSON file from the object storage
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-    file_name = LOG_DIR+"/"+UNIQUE_ID+".json"
+    file_name = getLogDir()+"/"+UNIQUE_ID+".json"
     with open(file_name, 'wb') as f:
         for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
             f.write(chunk)
@@ -612,7 +612,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
     if content:
         resourceGenAI = resourceGenAI + ".convert.txt"   
 
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
@@ -625,7 +625,7 @@ def convertUpload(value, content=None, path=None, originalResourceName=None):
         if originalResourceName:
             metadata["originalResourceName"] = originalResourceName 
 
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".tmp"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".tmp"
         if not content:
             contentType = value["contentType"]
             resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
@@ -656,7 +656,7 @@ def convertLibreoffice2Pdf(value):
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         office_file = download_file( namespace, bucketName, resourceName)
         log( f'libreoffice_exe={libreoffice_exe}' )
-        cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [LOG_DIR, office_file]
+        cmd = [ libreoffice_exe ] + '--convert-to pdf --outdir'.split() + [getLogDir(), office_file]
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         p.wait(timeout=30)
         stdout, stderr = p.communicate()
@@ -679,10 +679,10 @@ def convertLibreoffice2Pdf(value):
 
 def download_file(namespace,bucketName,resourceName):
     log( "<download_file>")
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
     resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
     # Remove the directory name
-    file_name = LOG_DIR+"/"+os.path.basename(resourceName)
+    file_name = getLogDir()+"/"+os.path.basename(resourceName)
     # Download the file
     with open(file_name, 'wb') as f:
         for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
@@ -713,7 +713,7 @@ def convertGrokImage2Text(value, content=None, path=None):
     resourceId = value["data"]["resourceId"]
     resourceGenAI = resourceName+".txt"
   
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
@@ -722,7 +722,7 @@ def convertGrokImage2Text(value, content=None, path=None):
         image_file = download_file( namespace, bucketName, resourceName)     
         text = shared.generic_chat("describe the image", image_path=image_file, a_model="xai.grok-4", a_region="us-chicago-1")
 
-        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"        
+        dest_file = getLogDir()+"/"+UNIQUE_ID+".md"        
         with open(dest_file, 'w', encoding='utf-8') as f_out:
             f_out.write(text)   
 
@@ -744,7 +744,7 @@ def convertImage2Pdf(value, content=None, path=None):
     resourceId = value["data"]["resourceId"]
     resourceGenAI = resourceName+".pdf"
   
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
@@ -752,7 +752,7 @@ def convertImage2Pdf(value, content=None, path=None):
 
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file)
-        pdf_file = LOG_DIR+"/"+UNIQUE_ID+".pdf"
+        pdf_file = getLogDir()+"/"+UNIQUE_ID+".pdf"
         save_image_as_pdf( pdf_file, [image] )         
 
         rag_storage.upload_file( value=value, object_name=resourceGenAI, file_path=pdf_file, content_type="application/pdf", metadata=metadata)
@@ -774,7 +774,7 @@ def convertWebp2Png(value, content=None, path=None):
     resourceId = value["data"]["resourceId"]
     resourceGenAI = resourceName+".png"
   
-    os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+    os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:
         # Set the original URL source (GenAI Agent)
@@ -782,7 +782,7 @@ def convertWebp2Png(value, content=None, path=None):
 
         image_file = download_file( namespace, bucketName, resourceName)     
         image = Image.open(image_file).convert("RGB")
-        png_file = LOG_DIR+"/"+UNIQUE_ID+".png"
+        png_file = getLogDir()+"/"+UNIQUE_ID+".png"
         image.save(png_file, "png")   
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketName, object_name=resourceGenAI, file_path=png_file, part_size=2 * MEBIBYTE, content_type="image/png", metadata=metadata)
@@ -839,10 +839,10 @@ def convertCrawler(value):
     if eventType in [ "com.oraclecloud.objectstorage.createobject", "com.oraclecloud.objectstorage.updateobject" ]:         
         fileList = []
 
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
 
         resp = os_client.get_object(namespace_name=namespace, bucket_name=bucketName, object_name=resourceName)
-        file_name = LOG_DIR+"/"+UNIQUE_ID+".crawler"
+        file_name = getLogDir()+"/"+UNIQUE_ID+".crawler"
         with open(file_name, 'wb') as f:
             for chunk in resp.data.raw.stream(1024 * 1024, decode_content=False):
                 f.write(chunk)
@@ -920,7 +920,7 @@ def convertDocling(value):
         # Set the original URL source (GenAI Agent)
         metadata = get_metadata_from_resource_id( resourceId )
         orig_file = download_file( namespace, bucketName, resourceName)     
-        dest_file = LOG_DIR+"/"+UNIQUE_ID+".md"
+        dest_file = getLogDir()+"/"+UNIQUE_ID+".md"
         loader = DoclingLoader(
             file_path=orig_file,
             export_type=ExportType.MARKDOWN

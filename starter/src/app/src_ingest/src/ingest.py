@@ -7,6 +7,8 @@ import time
 import traceback
 import shared
 from shared import log
+from shared import shared_config
+from shared import shared_signer
 from shared import log_write_in_file
 from shared import log_in_file
 from shared import UNIQUE_ID
@@ -55,7 +57,7 @@ def stream_loop(client, stream_id, initial_cursor):
             updateCount += 1
             status = 'PROCESSING'
             try:
-                log_file_name = shared.LOG_DIR + f"/message_{timeStart.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log"
+                log_file_name = shared.getLogDir() + f"/message_{timeStart.strftime("%Y_%m_%d_%H_%M_%S_%f")}.log"
                 log_write_in_file(log_file_name)
                 log(f"\n\n-- STREAM LOOP - MESSAGE {updateCount} -----------------------------------------------------------------------------------------" )
                 if message.key is None:
@@ -118,7 +120,7 @@ def stream_loop(client, stream_id, initial_cursor):
 ociMessageEndpoint = os.getenv('STREAM_MESSAGE_ENDPOINT')
 ociStreamOcid = os.getenv('STREAM_OCID')
 
-stream_client = oci.streaming.StreamClient(config = {}, service_endpoint=ociMessageEndpoint, signer=shared.signer)
+stream_client = oci.streaming.StreamClient(config=shared_config, service_endpoint=ociMessageEndpoint, signer=shared_signer)
 while True:
     try:
         while True:

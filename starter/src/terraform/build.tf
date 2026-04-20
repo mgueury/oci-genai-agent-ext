@@ -38,7 +38,6 @@ resource "null_resource" "tf_env" {
     echo_export "BASTION_IP" "${local.local_bastion_ip}"
     echo_export "BUCKET_URL" "${local.local_bucket_url}"
     echo_export "COMPUTE_IP" "${local.local_compute_ip}"    
-    echo_export "CONTAINER_PREFIX" "${local.local_container_prefix}"
     echo_export "DB_URL" "${local.local_db_url}"
     echo_export "IDCS_URL" "${local.local_idcs_url}"
     echo_export "JDBC_URL" "${local.local_jdbc_url}"
@@ -121,16 +120,15 @@ resource "null_resource" "build_deploy" {
         EOT
   }
   depends_on = [
-    oci_apigateway_api.starter_api,
     oci_apigateway_gateway.starter_apigw,
-    oci_artifacts_container_repository.starter_repo_fn,
     oci_core_instance.starter_bastion,
     oci_core_instance.starter_compute,
     oci_database_autonomous_database.starter_atp,
-    oci_logging_log_group.starter_log_group,
     oci_objectstorage_bucket.starter_bucket,
     tls_private_key.ssh_key,  
     oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint,
+    oci_generative_ai_agent_knowledge_base.starter_agent_kb,
+    oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job,
     null_resource.tf_env  
   ]
 

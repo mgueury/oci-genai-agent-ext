@@ -16,10 +16,10 @@ spec:
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/mcp-server
+        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
+        imagePullPolicy: Always
         ports:
         - containerPort: 2025
-          name: app-port
         envFrom:
           - configMapRef:
               name: tf-env-configmap        
@@ -37,5 +37,5 @@ spec:
   - name: http-service-port
     protocol: TCP
     port: 2025
-    targetPort: app-port
+    targetPort: 2025
 ---

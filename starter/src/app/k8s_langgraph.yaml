@@ -16,10 +16,9 @@ spec:
     spec:
       containers:
       - name: app
-        image: ##DOCKER_PREFIX##/##APP_NAME##
+        image: ##DOCKER_PREFIX##/##TF_VAR_prefix##-##APP_NAME##
         ports:
         - containerPort: 2024
-          name: app-port
         envFrom:
           - configMapRef:
               name: tf-env-configmap        
@@ -34,8 +33,7 @@ spec:
   selector:
     app: ##APP_NAME##
   ports:
-  - name: http-service-port
-    protocol: TCP
+  - protocol: TCP
     port: 2024
-    targetPort: app-port
+    targetPort: 2024
 ---

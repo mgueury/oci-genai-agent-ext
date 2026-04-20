@@ -7,7 +7,8 @@ import pathlib
 import shared
 from shared import log
 from shared import dictString
-from shared import signer
+from shared import shared_config
+from shared import shared_signer
 import oci
 from oci.object_storage.transfer.constants import MEBIBYTE
 
@@ -36,11 +37,11 @@ embeddings = OCIGenAIEmbeddings(
     model_id=os.getenv("TF_VAR_genai_embed_model"),
     service_endpoint="https://inference.generativeai."+region+".oci.oraclecloud.com",
     compartment_id=os.getenv("TF_VAR_compartment_ocid"),
-    auth_type="INSTANCE_PRINCIPAL"
+    auth_type="API_KEY" if "LIVELABS" in os.environ else "INSTANCE_PRINCIPAL"
 )
 # db26ai or object_storage
 RAG_STORAGE = os.getenv("TF_VAR_rag_storage")
-APIGW_HOSTNAME = os.getenv("APIGW_HOSTNAME")
+ORDS_EXTERNAL_URL = os.getenv("ORDS_EXTERNAL_URL")
 DOCLING_HYBRID_CHUNK=True #False
 
 # connection pool
@@ -122,7 +123,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
         bucketName = value["data"]["additionalDetails"]["bucketName"]
         bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")        
 
-        os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)
+        os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
         upload_manager.upload_file(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name, file_path=file_path, part_size=2 * MEBIBYTE, content_type=content_type, metadata=metadata)
     log("<upload_file>Uploaded "+object_name + " - " + content_type )
@@ -138,7 +139,7 @@ def delete_file( value, object_name ):
             namespace = value["data"]["additionalDetails"]["namespace"]
             bucketName = value["data"]["additionalDetails"]["bucketName"]
             bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")               
-            os_client = oci.object_storage.ObjectStorageClient(config = {}, signer=signer)            
+            os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)            
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name)
         except:
            log("Exception: Delete failed: " + object_name)   
@@ -276,6 +277,7 @@ def insertTableDocs( value ):
         )
     try:
         cur.execute(stmt, data)
+        dbConn.commit()
         # Get generated id
         id = id_var.getvalue()    
         log("<insertTableDocs> returning id=" + str(id[0]) )        
@@ -294,7 +296,7 @@ def insertTableDocs( value ):
 
 def insertTableDocsChunck(value, docs, file_path):  
     
-    log("<langchain insertDocsChunck>")
+    log("<langchain insertTableDocsChunck>")
     log("-- docs --------------------")
     log(pprint.pformat(docs))
 
@@ -377,6 +379,7 @@ def deleteDocByOriginalResourceName( value ):
     # Delete the document record
     try:
         cur.execute("delete from docs where original_resource_name=:1", (originalResourceName,))
+        dbConn.commit()
         log(f"<deleteDocByOriginalResourceName> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByOriginalResourceName> docs: Error deleting: {error}")
@@ -390,6 +393,7 @@ def deleteDocByOriginalResourceName( value ):
     stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.originalResourceName')=:1"
     try:
         cur.execute(stmt, (originalResourceName,))
+        dbConn.commit()
         log(f"<deleteDocByOriginalResourceName> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByOriginalResourceName> docs_langchain: Error deleting: {error}")
@@ -412,6 +416,7 @@ def deleteDocByPath( value ):
     # Delete the document record
     try:
         cur.execute("delete from docs where path=:1", (path,))
+        dbConn.commit()
         log(f"<deleteDocByPath> docs: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByPath> docs: Error deleting: {error}")
@@ -425,6 +430,7 @@ def deleteDocByPath( value ):
     stmt = "delete FROM docs_langchain WHERE JSON_VALUE(metadata,'$.path')=:1"
     try:
         cur.execute(stmt, (path,))
+        dbConn.commit()
         log(f"<deleteDocByPath> docs_langchain: Successfully {cur.rowcount} deleted")
     except (Exception) as error:
         log(f"<deleteDocByPath> docs_langchain: Error deleting: {error}")
@@ -679,6 +685,7 @@ def insertTableIngestLog( p_status, p_resource_name, p_event_type, p_log_file_na
             )
 
         cur.execute(stmt, data)
+        dbConn.commit()
         # Get generated id
         id = id_var.getvalue()    
         log("<insertTableIngestLog> returning id=" + str(id[0]) )        
@@ -749,7 +756,7 @@ def findServiceRequest(question: str, auth_header: str) -> dict:
     #     ORDER BY score DESC
     #     FETCH FIRST 10 ROWS ONLY;"""    
     query = f"""
-            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS score, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
+            SELECT id, vector_distance(embedding, to_vector(ai_plsql.genai_embed( :1 ))) AS score, '{ORDS_EXTERNAL_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, o.SUBJECT, o.QUESTION, o.ANSWER 
             FROM support_sr o
             ORDER BY score ASC
             FETCH FIRST 10 ROWS ONLY"""    
@@ -760,7 +767,7 @@ def findServiceRequest(question: str, auth_header: str) -> dict:
 
 def getServiceRequest( id, auth_header ):
     log(f"<getServiceRequest> id={id} auth_header={auth_header}")    
-    query = f"select ID, 'https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
+    query = f"select ID, '{ORDS_EXTERNAL_URL}/r/apex_app/ai_support/support-sr?p2_id='||id DEEPLINK, SUBJECT, QUESTION, ANSWER from SUPPORT_SR where id=:1"
     return queryFirstRecord( query, (id,), auth_header)
   
-  # https://{APIGW_HOSTNAME}/ords/r/apex_app/ai_support/support-sr?p2_id={id}
+  # https://xxxxx/ords/r/apex_app/ai_support/support-sr?p2_id={id}

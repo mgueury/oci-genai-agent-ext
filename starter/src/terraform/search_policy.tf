@@ -20,7 +20,10 @@ resource "oci_identity_policy" "starter_search_policy" {
         "allow any-user to manage database-tools-family in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_generative_ai_agent_agent.starter_agent.id}'",
         "allow any-user to read secret-bundle in compartment id ${local.lz_serv_cmp_ocid} where request.principal.id='${oci_generative_ai_agent_agent.starter_agent.id}'",
         # OpenID
-        "allow any-user to read secret-family in compartment id ${local.lz_app_cmp_ocid} where ALL {request.principal.type= 'ApiGateway'}"
+        "allow any-user to read secret-family in compartment id ${local.lz_app_cmp_ocid} where ALL {request.principal.type= 'ApiGateway'}",
+        # Kubernetes
+        "allow any-user to manage generative-ai-family in compartment id ${local.lz_serv_cmp_ocid} where ALL {request.principal.type='instance'}"
+
     ]
 }
 
