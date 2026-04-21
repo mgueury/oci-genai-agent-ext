@@ -29,14 +29,14 @@ append_done
 append_done "APEX APP"
 append_done "${ORDS_EXTERNAL_URL}/r/apex_app/ai_agent_rag/"
 append_done "  User: APEX_APP / $TF_VAR_db_password"
-append_done 
-append_done "-----------------------------------------------------------------------"
-append_done "Streamlit:"
-append_done "http://${NLB_IP}:8080/"
 append_done
 append_done "-----------------------------------------------------------------------"
 append_done "LangGraph Agent Chat:"
 append_done "${BASE_URL}/index.html"
+append_done
+append_done "-----------------------------------------------------------------------"
+append_done "Oracle Digital Assistant (Web Channel)"
+append_done "${BASE_URL}/oda.html"
 append_done
 if [ "$TF_VAR_openid" == "true" ]; then
     append_done "-----------------------------------------------------------------------"
