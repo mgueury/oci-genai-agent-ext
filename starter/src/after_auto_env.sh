@@ -27,6 +27,8 @@ else
     append_tf_env "export TF_VAR_genai_embed_model=\"$TF_VAR_genai_embed_model\""
     append_tf_env
 
+    append_tf_env "export TF_VAR_rag_storage=\"$TF_VAR_rag_storage\""
+
     # LiveLabs
     if [ "$APIGW_HOSTNAME" = "" ]; then
        append_tf_env "# LiveLabs Green Button"    
