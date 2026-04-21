@@ -27,19 +27,7 @@ def search(question: str) -> dict:
     """Search in document repository."""
     print(f"<search> question={question}", flush=True)    
     print(f"<search> RAG_STORAGE={RAG_STORAGE}", flush=True)    
-    if RAG_STORAGE == "vector_store":
-        return shared.responses_search( question )
-    else: 
-        # Create session
-        session_id = shared.genai_agent_get_session()
-        response = shared.genai_agent_chat(session_id, question)
-        source_url = "none"
-        if response.message.content.citations:
-            source_url = response.message.content.citations[0].source_location.url.replace( " ", "%20" )
-
-        d = {"response": response.message.content.text, "citation": source_url}
-        pprint.pprint(d)
-        return d
+    return shared.responses_search( question )
 
 @mcp.tool()
 def list_documents() ->  List[DocInfo]:

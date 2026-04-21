@@ -6,8 +6,6 @@ if [ "$TF_VAR_rag_storage" == "db26ai" ]; then
     echo "before_config.sh: RAG Storage db26ai"
     mv src/terraform/genai_kb_26ai._tf src/terraform/genai_kb_26ai.tf
     mv src/terraform/genai_kb_os.tf src/terraform/genai_kb_os._tf
-    # No Ingestion Job for DB26ai
-    sed -i '/oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job/d' src/terraform/build.tf 
   fi
 fi
 

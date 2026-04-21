@@ -126,9 +126,6 @@ resource "null_resource" "build_deploy" {
     oci_database_autonomous_database.starter_atp,
     oci_objectstorage_bucket.starter_bucket,
     tls_private_key.ssh_key,  
-    oci_generative_ai_agent_agent_endpoint.starter_agent_endpoint,
-    oci_generative_ai_agent_knowledge_base.starter_agent_kb,
-    oci_generative_ai_agent_data_ingestion_job.starter_agent_ingestion_job,
     null_resource.tf_env  
   ]
 

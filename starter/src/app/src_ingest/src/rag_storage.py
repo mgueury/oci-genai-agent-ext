@@ -93,8 +93,8 @@ def updateCount(count):
             countUpdate = countUpdate + count 
         elif countUpdate>0:
             try:
-                shared.genai_agent_datasource_ingest()
-                log( "<updateCount>GenAI agent datasource ingest job created")
+                # XXXX
+                log( "<updateCount>ingest job created")
                 countUpdate = 0
             except (Exception) as e:
                 log(f"\u270B <updateCount>ERROR: {e}") 
