@@ -18,7 +18,7 @@ compartment_ocid="__TO_FILL__"
 # vault_key_ocid="__TO_FILL__"
 
 # Vector Store
-# rag_storage="vector_store"
+rag_storage="vector_store"
 # project_ocid="__TO_FILL__"
 # responses_model_id="openai.gpt-oss-120b"
 

@@ -9,7 +9,7 @@ import shared
 def eventDocument(value):
     log( "<eventDocument>")
     eventType = value["eventType"]
-    # ex: /n/fr03kabcd/psql-public-bucket/o/country.pdf"
+    # ex: /n/fr03kabcd/prefix-upload-bucket/o/country.pdf"
     resourceId = value["data"]["resourceId"]
     log( "eventType=" + eventType + " - " + resourceId ) 
     # eventType == "com.oraclecloud.objectstorage.createobject":

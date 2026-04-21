@@ -100,7 +100,7 @@ def dictInt(d,key):
 # Converts a JPEG image file to a Base64 data URI.
 
 def image2DataUri(image_path):
-    log( "<image2DataUri>")
+    log( f"<image2DataUri> image_path={image_path}")
     mime_type, _ = mimetypes.guess_type(image_path)
     if mime_type is None:
         raise ValueError("Error: Could not determine the MIME type of the file.")
@@ -186,7 +186,7 @@ def generic_chat(prompt, image_path=None, a_model=None, a_region=None):
     global signer
     log( "<generic_chat>")
     model = a_model or os.getenv("TF_VAR_genai_meta_model")
-    endpoint = 'https://inference.generativeai.'+REGION+'.oci.oraclecloud.com/20231130/actions/chat'
+    endpoint = 'https://inference.generativeai.'+a_region+'.oci.oraclecloud.com/20231130/actions/chat'
     body = { 
         "compartmentId": COMPARTMENT_OCID,
         "servingMode": {

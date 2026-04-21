@@ -125,7 +125,7 @@ def upload_file( value, object_name, file_path, content_type, metadata ):
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
         bucketName = value["data"]["additionalDetails"]["bucketName"]
-        bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")        
+        bucketGenAI = bucketName.replace("-upload-bucket","-converted-bucket")        
 
         os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)
         upload_manager = oci.object_storage.UploadManager(os_client, max_parallel_uploads=10)
@@ -142,7 +142,7 @@ def delete_file( value, object_name ):
         try: 
             namespace = value["data"]["additionalDetails"]["namespace"]
             bucketName = value["data"]["additionalDetails"]["bucketName"]
-            bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")               
+            bucketGenAI = bucketName.replace("-upload-bucket","-converted-bucket")               
             os_client = oci.object_storage.ObjectStorageClient(config=shared_config, signer=shared_signer)            
             os_client.delete_object(namespace_name=namespace, bucket_name=bucketGenAI, object_name=object_name)
         except:
@@ -158,7 +158,7 @@ def delete_folder(value, folder):
     else:
         namespace = value["data"]["additionalDetails"]["namespace"]
         bucketName = value["data"]["additionalDetails"]["bucketName"]
-        bucketGenAI = bucketName.replace("-public-bucket","-agent-bucket")
+        bucketGenAI = bucketName.replace("-upload-bucket","-converted-bucket")
         shared.delete_bucket_folder(namespace, bucketGenAI, folder)
     log( "</delete_folder>" )    
 

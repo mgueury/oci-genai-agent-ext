@@ -7,7 +7,7 @@ resource "oci_events_rule" "starter_rule" {
     }
   }
   compartment_id = local.lz_serv_cmp_ocid
-  condition      = "{\"eventType\":[\"com.oraclecloud.objectstorage.createobject\",\"com.oraclecloud.objectstorage.deleteobject\",\"com.oraclecloud.objectstorage.updateobject\"],\"data\":{\"additionalDetails\":{\"bucketName\":[\"${var.prefix}-public-bucket\"]}}}"
+  condition      = "{\"eventType\":[\"com.oraclecloud.objectstorage.createobject\",\"com.oraclecloud.objectstorage.deleteobject\",\"com.oraclecloud.objectstorage.updateobject\"],\"data\":{\"additionalDetails\":{\"bucketName\":[\"${var.prefix}-upload-bucket\"]}}}"
   display_name = "${var.prefix}-input-rule"
   is_enabled = "true"
 }
