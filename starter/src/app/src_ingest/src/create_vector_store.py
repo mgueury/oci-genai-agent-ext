@@ -9,6 +9,8 @@ def main() -> None:
     PREFIX = os.getenv("TF_VAR_prefix")
     REGION = os.getenv("TF_VAR_region")
     
+    print("<create_vector_store.py>")
+
     cp_client = OpenAI(
         base_url=f"https://generativeai.{REGION}.oci.oraclecloud.com/20231130/openai/v1",
         api_key="unused",
