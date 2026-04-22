@@ -26,12 +26,31 @@ def main() -> None:
         expires_after={"anchor": "last_active_at", "days": 365}, # 1 YEAR ? 
         metadata={"prefix": "{PREFIX}"},
     )
+
     print(vector_store)
     print(vector_store.id)
+
     # Create bash file
     with open("responses_env.sh", "w") as f:
         f.write(f'export VECTOR_STORE_ID="{vector_store.id}"\n')
 
     print("responses_env.sh file created.")
+    
+    elapsed = 0
+    while elapsed < 500:
+        vs = cp_client.vector_stores.retrieve(vector_store_id)
+        if vs.status in [ "completed", "failed" ]:
+            break
+        time.sleep(5)  
+        elapsed += 5
+
+    if status.status == "completed":
+        print("Vector store created successfully.")
+    elif status.status == "failed":
+        print("Vector store creation failed.")
+    else:
+        print("Timeout reached before completion.")
+    print(f"Time {elapsed} secs")
+
 if __name__ == "__main__":
     main()
