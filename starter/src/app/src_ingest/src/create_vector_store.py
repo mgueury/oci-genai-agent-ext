@@ -38,15 +38,15 @@ def main() -> None:
     
     elapsed = 0
     while elapsed < 500:
-        vs = cp_client.vector_stores.retrieve(vector_store_id)
-        if vs.status in [ "completed", "failed" ]:
+        vector_store = cp_client.vector_stores.retrieve(vector_store_id)
+        if vector_store.status in [ "completed", "failed" ]:
             break
         time.sleep(5)  
         elapsed += 5
 
-    if status.status == "completed":
+    if vector_store.status == "completed":
         print("Vector store created successfully.")
-    elif status.status == "failed":
+    elif vector_store.status == "failed":
         print("Vector store creation failed.")
     else:
         print("Timeout reached before completion.")
