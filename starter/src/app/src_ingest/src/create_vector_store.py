@@ -30,7 +30,6 @@ def main() -> None:
     )
 
     print(vector_store)
-    print(vector_store.id)
 
     # Create bash file
     with open("responses_env.sh", "w") as f:
@@ -39,6 +38,7 @@ def main() -> None:
     print("responses_env.sh file created.")
     
     elapsed = 0
+    vector_store_id=vector_store.id
     while elapsed < 500:
         vector_store = cp_client.vector_stores.retrieve(vector_store_id)
         if vector_store.status in [ "completed", "failed" ]:
