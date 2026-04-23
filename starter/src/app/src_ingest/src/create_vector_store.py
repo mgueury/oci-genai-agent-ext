@@ -1,5 +1,6 @@
 import time
 import os
+from datetime import datetime
 import httpx
 from oci_genai_auth import OciInstancePrincipalAuth
 from openai import OpenAI
@@ -8,6 +9,7 @@ def main() -> None:
     COMPARTMENT_OCID = os.getenv("TF_VAR_compartment_ocid")
     PREFIX = os.getenv("TF_VAR_prefix")
     REGION = os.getenv("TF_VAR_region")
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M")
     
     print("<create_vector_store.py>")
 
@@ -23,7 +25,7 @@ def main() -> None:
     )
 
     vector_store = cp_client.vector_stores.create(
-        name=f"{PREFIX}-vs",
+        name=f"{PREFIX}-vs-{timestamp}",
         description=f"{PREFIX} vector store",
         expires_after={"anchor": "last_active_at", "days": 365}, # 1 YEAR ? 
         metadata={"prefix": "{PREFIX}"},
@@ -41,18 +43,21 @@ def main() -> None:
     vector_store_id=vector_store.id
     while elapsed < 500:
         vector_store = cp_client.vector_stores.retrieve(vector_store_id)
-        if vector_store.status in [ "completed", "failed" ]:
+        print( vector_store.status )
+        if vector_store.status != "in_progress":
             break
         time.sleep(5)  
         elapsed += 5
 
     if vector_store.status == "completed":
         print("Vector store created successfully.")
-    elif vector_store.status == "failed":
-        print("Vector store creation failed.")
-    else:
+    elif elapsed>=500:
         print("Timeout reached before completion.")
+    else:
+        print("Vector store creation failed. Status={vector_store.status}")
     print(f"Time {elapsed} secs")
 
 if __name__ == "__main__":
     main()
+
+    
