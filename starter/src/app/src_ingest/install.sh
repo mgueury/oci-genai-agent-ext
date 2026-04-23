@@ -52,6 +52,7 @@ if [ "$TF_VAR_rag_storage" == "vector_store" ]; then
         echo "Vector Store"
         source myenv/bin/activate
         python src/create_vector_store.py
+        exit_on_error "create_vector_store.py failed"
 
         . ./resource_env.sh
         # Store the config in APEX

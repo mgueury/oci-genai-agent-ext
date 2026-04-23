@@ -32,13 +32,7 @@ def main() -> None:
     )
 
     print(vector_store)
-
-    # Create bash file
-    with open("responses_env.sh", "w") as f:
-        f.write(f'export VECTOR_STORE_ID="{vector_store.id}"\n')
-
-    print("responses_env.sh file created.")
-    
+  
     elapsed = 0
     vector_store_id=vector_store.id
     while elapsed < 500:
@@ -49,13 +43,21 @@ def main() -> None:
         time.sleep(5)  
         elapsed += 5
 
+    print(f"Time {elapsed} secs")
     if vector_store.status == "completed":
         print("Vector store created successfully.")
     elif elapsed>=500:
         print("Timeout reached before completion.")
     else:
         print("Vector store creation failed. Status={vector_store.status}")
-    print(f"Time {elapsed} secs")
+        exit( 1 )
+
+    # Create bash file
+    with open("responses_env.sh", "w") as f:
+        f.write(f'# VECTOR_STORE {PREFIX}-vs-{timestamp}"\n')
+        f.write(f'export VECTOR_STORE_ID="{vector_store.id}"\n')
+
+    print("responses_env.sh file created.")
 
 if __name__ == "__main__":
     main()
